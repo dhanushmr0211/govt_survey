@@ -3,6 +3,8 @@ import { SubmissionQueueView } from '../modules/poleSurvey/components/Submission
 
 export default function EmployeeDashboard() {
   const user = useAuthStore((state) => state.user);
+  const isMasterAdmin = user?.role === 'MASTER_ADMIN';
+  const hasSectionC = isMasterAdmin || user?.section_c;
 
   return (
     <div className="space-y-6">
@@ -11,7 +13,7 @@ export default function EmployeeDashboard() {
         <span className="text-sm text-gray-500">Welcome, {user?.name}</span>
       </div>
       
-      <SubmissionQueueView />
+      {hasSectionC && <SubmissionQueueView />}
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>

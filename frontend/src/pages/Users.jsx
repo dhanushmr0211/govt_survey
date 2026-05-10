@@ -2,14 +2,18 @@ import { useState, useEffect } from 'react';
 import TopNav from '../components/TopNav';
 import { Users as UsersIcon, UserPlus, Search, Shield, User } from 'lucide-react';
 import { CreateAdminModal } from '../shared/components/CreateAdminModal';
+import { useAuthStore } from '../store/authStore';
 
 export default function Users() {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = useAuthStore((state) => state.user);
   const [users, setUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  if (user.role !== 'MASTER_ADMIN' && user.role !== 'ADMIN' && user.role !== 'EMPLOYEE') {
+  const isMasterAdmin = user?.role === 'MASTER_ADMIN';
+  const hasSectionD = user?.section_d;
+
+  if (!isMasterAdmin && !hasSectionD) {
     return (
       <div className="app-container">
         <TopNav user={user} />

@@ -6,11 +6,13 @@ export const TodaySubmissionsView = () => {
   const projectId = 2; // Fixed to match database
   const token = localStorage.getItem('token');
   const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [activeTab, setActiveTab] = useState('pending');
 
   const { data: queue = [], isLoading } = useQuery({
-    queryKey: ['todaySubmissions'],
+    queryKey: ['submissions', activeTab],
     queryFn: async () => {
-      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/queue/today`, {
+      const endpoint = activeTab === 'pending' ? 'queue/pending' : 'queue/confirmed';
+      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/${endpoint}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.queue || [];
@@ -22,7 +24,22 @@ export const TodaySubmissionsView = () => {
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Today's Submissions</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Submissions</h2>
+      </div>
+      
+      <div className="flex border-b border-gray-200 mb-4">
+        <button
+          className={`px-4 py-2 text-sm font-medium ${activeTab === 'pending' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+          onClick={() => setActiveTab('pending')}
+        >
+          Pending
+        </button>
+        <button
+          className={`px-4 py-2 text-sm font-medium ${activeTab === 'confirmed' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+          onClick={() => setActiveTab('confirmed')}
+        >
+          Confirmed
+        </button>
       </div>
       
       <div className="overflow-x-auto">

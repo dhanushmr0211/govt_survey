@@ -17,7 +17,10 @@ export const Sidebar = () => {
     if (item.name === 'Today Submissions') {
       return user?.role === 'MOBILE_USER';
     }
-    if (item.name === 'Users' || item.name === 'Projects') {
+    if (item.name === 'Users') {
+      return user?.role === 'MASTER_ADMIN' || user?.section_d;
+    }
+    if (item.name === 'Projects') {
       return user?.role === 'MASTER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'EMPLOYEE';
     }
     return true;

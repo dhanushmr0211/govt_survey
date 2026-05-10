@@ -18,7 +18,8 @@ const {
   getWardSummaryHandler,
   getWardDetailsHandler,
   getPendingSubmissionsHandler,
-  getTodaySubmissionsHandler
+  getTodaySubmissionsHandler,
+  getConfirmedSubmissionsHandler
 } = require('../controllers/summary.controller');
 
 const poleSurveyRouter = express.Router({ mergeParams: true });
@@ -46,6 +47,7 @@ poleSurveyRouter.get('/summary/districts', getDistrictSummaryHandler);
 poleSurveyRouter.get('/summary/ulbs/:ulbId/wards', getWardSummaryHandler);
 poleSurveyRouter.get('/summary/ulbs/:ulbId/wards/:wardNumber/details', getWardDetailsHandler);
 poleSurveyRouter.get('/queue/pending', getPendingSubmissionsHandler);
+poleSurveyRouter.get('/queue/confirmed', getConfirmedSubmissionsHandler);
 poleSurveyRouter.get('/queue/today', getTodaySubmissionsHandler);
 
 // Files

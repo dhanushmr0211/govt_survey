@@ -106,7 +106,7 @@ export default function MobileSurvey() {
                   : 'border-gray-200 hover:border-primary/50'
               }`}
             >
-              <span className="text-sm font-medium">Today's Submissions</span>
+              <span className="text-sm font-medium">Submissions</span>
             </button>
           </div>
         </div>

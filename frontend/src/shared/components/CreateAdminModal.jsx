@@ -22,6 +22,7 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
     section_a: false,
     section_b: false,
     section_c: false,
+    section_d: false,
   });
 
   console.log('CreateAdminModal isOpen:', isOpen);
@@ -134,18 +135,22 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
 
           <div>
             <label className="block text-gray-700 font-medium mb-1">Section Access</label>
-            <div className="flex gap-4 p-2 border border-gray-100 rounded">
+            <div className="flex gap-4 p-2 border border-gray-100 rounded flex-wrap">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="section_a" checked={formData.section_a} onChange={handleChange} className="rounded text-primary focus:ring-primary" />
-                <span>Section A</span>
+                <span>Summary</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="section_b" checked={formData.section_b} onChange={handleChange} className="rounded text-primary focus:ring-primary" />
-                <span>Section B</span>
+                <span>Today's Summary</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="section_c" checked={formData.section_c} onChange={handleChange} className="rounded text-primary focus:ring-primary" />
-                <span>Section C</span>
+                <span>Issues</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="section_d" checked={formData.section_d} onChange={handleChange} className="rounded text-primary focus:ring-primary" />
+                <span>Users</span>
               </label>
             </div>
           </div>

@@ -9,6 +9,11 @@ import { SubmissionQueueView } from '../modules/poleSurvey/components/Submission
 export default function AdminDashboard() {
   const user = useAuthStore((state) => state.user);
   const token = localStorage.getItem('token');
+  const isMasterAdmin = user?.role === 'MASTER_ADMIN';
+  const hasSectionA = isMasterAdmin || user?.section_a;
+  const hasSectionB = isMasterAdmin || user?.section_b;
+  const hasSectionC = isMasterAdmin || user?.section_c;
+  
   const [activeView, setActiveView] = useState('projects');
   const [selectedProject, setSelectedProject] = useState(null); // { id, name }
   const [selectedUlb, setSelectedUlb] = useState(null);
@@ -42,24 +47,30 @@ export default function AdminDashboard() {
           
           {selectedProject && (
             <div className="ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
-              <button
-                onClick={() => { setActiveView('pole_survey_summary'); setSelectedUlb(null); }}
-                className={`w-full text-left p-2 text-xs rounded ${activeView === 'pole_survey_summary' ? 'text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
-              >
-                1: SUMMARY
-              </button>
-              <button
-                onClick={() => { setActiveView('pole_survey_today'); setSelectedUlb(null); }}
-                className={`w-full text-left p-2 text-xs rounded ${activeView === 'pole_survey_today' ? 'text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
-              >
-                2: TODAY'S SUMMARY
-              </button>
-              <button
-                onClick={() => { setActiveView('pole_survey_issues'); setSelectedUlb(null); }}
-                className={`w-full text-left p-2 text-xs rounded ${activeView === 'pole_survey_issues' ? 'text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
-              >
-                3: ISSUES
-              </button>
+              {hasSectionA && (
+                <button
+                  onClick={() => { setActiveView('pole_survey_summary'); setSelectedUlb(null); }}
+                  className={`w-full text-left p-2 text-xs rounded ${activeView === 'pole_survey_summary' ? 'text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  1: SUMMARY
+                </button>
+              )}
+              {hasSectionB && (
+                <button
+                  onClick={() => { setActiveView('pole_survey_today'); setSelectedUlb(null); }}
+                  className={`w-full text-left p-2 text-xs rounded ${activeView === 'pole_survey_today' ? 'text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  2: TODAY'S SUMMARY
+                </button>
+              )}
+              {hasSectionC && (
+                <button
+                  onClick={() => { setActiveView('pole_survey_issues'); setSelectedUlb(null); }}
+                  className={`w-full text-left p-2 text-xs rounded ${activeView === 'pole_survey_issues' ? 'text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  3: ISSUES
+                </button>
+              )}
             </div>
           )}
           
@@ -92,7 +103,9 @@ export default function AdminDashboard() {
                   key={project.id}
                   onClick={() => {
                     setSelectedProject(project);
-                    setActiveView('pole_survey_summary');
+                    if (hasSectionA) setActiveView('pole_survey_summary');
+                    else if (hasSectionB) setActiveView('pole_survey_today');
+                    else if (hasSectionC) setActiveView('pole_survey_issues');
                   }}
                   className="p-6 border border-gray-200 rounded-lg hover:border-primary cursor-pointer transition-colors"
                 >

@@ -148,6 +148,40 @@ async function getPendingSubmissions(projectId) {
   return combined;
 }
 
+async function getConfirmedSubmissions(projectId) {
+  const spSql = `
+    SELECT 
+      'switch_point' as type,
+      sp.*,
+      u.name as user_name,
+      sp.switch_point_number as identifier
+    FROM switch_points sp
+    JOIN users u ON sp.created_by = u.id
+    WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted = FALSE
+  `;
+  
+  const poleSql = `
+    SELECT 
+      'pole' as type,
+      p.*,
+      u.name as user_name,
+      sp.ward_number,
+      p.pole_number as identifier
+    FROM poles p
+    JOIN switch_points sp ON p.switch_point_id = sp.id
+    JOIN users u ON p.created_by = u.id
+    WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
+  `;
+  
+  const spResult = await query(spSql, [projectId]);
+  const poleResult = await query(poleSql, [projectId]);
+  
+  const combined = [...spResult.rows, ...poleResult.rows];
+  combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  
+  return combined;
+}
+
 async function getTodaySubmissions(projectId) {
   const today = new Date().toISOString().split('T')[0];
   
@@ -184,4 +218,4 @@ async function getTodaySubmissions(projectId) {
   return combined;
 }
 
-module.exports = { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions };
+module.exports = { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions };

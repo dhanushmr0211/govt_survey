@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
 
 const loginApi = async (email, password) => {
   const res = await fetch('http://10.73.182.200:3000/api/v1/auth/login', {
@@ -19,6 +20,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const setUser = useAuthStore((state) => state.setUser);
+  const setToken = useAuthStore((state) => state.setToken);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -27,8 +30,8 @@ export default function Login() {
     
     try {
       const data = await loginApi(email, password);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      setUser(data.user);
+      setToken(data.token);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);

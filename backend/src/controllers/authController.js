@@ -7,6 +7,7 @@ const userService = require('../services/userService');
 const projectUserModel = require('../models/projectUserModel');
 const { ROLES, normalizeRole, isKnownRole } = require('../constants/roles');
 const { invalidateProjectAccess } = require('../middleware/projectAccess');
+const adminSectionAccessModel = require('../models/adminSectionAccessModel');
 
 const registerSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -16,6 +17,10 @@ const registerSchema = z.object({
   role: z.string().trim().max(50).optional(),
   project_id: z.number().int().positive().optional(),
   projects: z.array(z.number().int().positive()).optional(),
+  section_a: z.boolean().optional(),
+  section_b: z.boolean().optional(),
+  section_c: z.boolean().optional(),
+  section_d: z.boolean().optional(),
 });
 
 const loginSchema = z.object({
@@ -49,7 +54,10 @@ async function register(req, res, next) {
     }
 
     const passwordHash = await bcrypt.hash(data.password, 12);
-    const user = await userService.createUser(data.name, data.email, passwordHash, selectedRole, Number(req.user.sub), data.phone);
+    const user = await userService.createUser(data.name, data.email, passwordHash, selectedRole, req.user.sub ? Number(req.user.sub) : null, data.phone);
+
+    // Save section access
+    await adminSectionAccessModel.setSectionAccess(user.id, data.section_a || false, data.section_b || false, data.section_c || false, data.section_d || false);
 
     // Handle Project Assignment
     if (creatorRole === ROLES.MASTER_ADMIN && data.projects) {
@@ -74,6 +82,7 @@ async function register(req, res, next) {
 
     return res.status(201).json({ user });
   } catch (error) {
+    console.error('Error in register:', error);
     return next(error);
   }
 }
@@ -94,8 +103,19 @@ async function login(req, res, next) {
     }
 
     const role = normalizeRole(user.role);
+    const sectionAccess = await adminSectionAccessModel.getSectionAccess(user.id);
+    
     const token = jwt.sign(
-      { sub: String(user.id), email: user.email, role, name: user.name },
+      { 
+        sub: String(user.id), 
+        email: user.email, 
+        role, 
+        name: user.name,
+        section_a: sectionAccess.section_a,
+        section_b: sectionAccess.section_b,
+        section_c: sectionAccess.section_c,
+        section_d: sectionAccess.section_d
+      },
       env.jwtSecret,
       { expiresIn: env.jwtExpiresIn }
     );
@@ -107,6 +127,9 @@ async function login(req, res, next) {
         name: user.name,
         email: user.email,
         role,
+        section_a: sectionAccess.section_a,
+        section_b: sectionAccess.section_b,
+        section_c: sectionAccess.section_c,
       },
     });
   } catch (error) {
