@@ -1,7 +1,11 @@
+import { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { SummaryView } from '../modules/poleSurvey/components/SummaryView';
+import { WardDetailsView } from '../modules/poleSurvey/components/WardDetailsView';
 
 export default function ClientDashboard() {
   const user = useAuthStore((state) => state.user);
+  const [selectedUlb, setSelectedUlb] = useState(null);
 
   return (
     <div className="space-y-6">
@@ -15,9 +19,12 @@ export default function ClientDashboard() {
           <h2 className="text-lg font-semibold text-gray-900">Project Summary</h2>
           <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">Export to Excel</button>
         </div>
-        <div className="text-gray-500 text-center py-10">
-          Confirmed data summary will appear here.
-        </div>
+        
+        {!selectedUlb ? (
+          <SummaryView onViewDetails={(ulb) => setSelectedUlb(ulb)} hideZeroCounts={true} />
+        ) : (
+          <WardDetailsView ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
+        )}
       </div>
     </div>
   );

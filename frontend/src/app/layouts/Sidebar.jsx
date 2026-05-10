@@ -6,12 +6,22 @@ export const Sidebar = () => {
   const location = useLocation();
   const logout = useAuthStore((state) => state.logout);
 
+  const user = useAuthStore((state) => state.user);
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+    { name: 'Today Submissions', icon: FolderTree, path: '/today-submissions' },
     { name: 'Projects', icon: FolderTree, path: '/projects' },
     { name: 'Users', icon: Users, path: '/users' },
     { name: 'Settings', icon: Settings, path: '/settings' },
-  ];
+  ].filter(item => {
+    if (item.name === 'Today Submissions') {
+      return user?.role === 'MOBILE_USER';
+    }
+    if (item.name === 'Users' || item.name === 'Projects') {
+      return user?.role === 'MASTER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'EMPLOYEE';
+    }
+    return true;
+  });
 
   return (
     <div className="w-64 bg-primary text-white flex flex-col">

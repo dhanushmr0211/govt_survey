@@ -9,7 +9,7 @@ const projectRouter = express.Router();
 
 projectRouter.use(authenticate);
 
-projectRouter.get('/', listProjects);
+projectRouter.get('/', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.EMPLOYEE), listProjects);
 projectRouter.post('/', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN), createProject);
 
 module.exports = { projectRouter };

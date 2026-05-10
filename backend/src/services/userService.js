@@ -16,4 +16,8 @@ async function listAllUsers() {
   return userModel.findAll();
 }
 
-module.exports = { findUserById, findUserByEmail, createUser, listAllUsers };
+async function listMobileUsersByProjects(projectIds) {
+  return userModel.findMobileUsersByProjects(projectIds);
+}
+
+module.exports = { findUserById, findUserByEmail, createUser, listAllUsers, listMobileUsersByProjects };

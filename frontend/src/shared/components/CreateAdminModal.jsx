@@ -3,24 +3,35 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
 export const CreateAdminModal = ({ isOpen, onClose }) => {
+  let loggedInUser = {};
+  try {
+    loggedInUser = JSON.parse(localStorage.getItem('user') || '{}');
+  } catch (e) {
+    console.error('Failed to parse user from localStorage', e);
+  }
+  const targetRole = loggedInUser.role === 'MASTER_ADMIN' ? 'ADMIN' : loggedInUser.role === 'ADMIN' ? 'EMPLOYEE' : 'MOBILE_USER';
+  const targetRoleName = (loggedInUser.role === 'MASTER_ADMIN' || loggedInUser.role === 'ADMIN') ? 'User' : 'Mobile User';
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     password: 'password123',
-    role: 'ADMIN',
+    role: targetRole,
     projects: [],
     section_a: false,
     section_b: false,
     section_c: false,
   });
 
+  console.log('CreateAdminModal isOpen:', isOpen);
+
   // Fetch projects
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://127.0.0.1:3000/api/v1/projects', {
+      const res = await axios.get('http://10.73.182.200:3000/api/v1/projects', {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.projects || [];
@@ -50,7 +61,7 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
     const token = localStorage.getItem('token');
     try {
       // 1. Create User
-      const res = await axios.post('http://127.0.0.1:3000/api/v1/auth/register', formData, {
+      const res = await axios.post('http://10.73.182.200:3000/api/v1/auth/register', formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log('Admin created:', res.data);
@@ -67,7 +78,7 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg w-full max-w-md space-y-4 shadow-xl">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900">Create Admin</h2>
+          <h2 className="text-xl font-bold text-gray-900">Create {targetRoleName}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
         </div>
         
@@ -84,6 +95,26 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
             <label className="block text-gray-700 font-medium mb-1">Phone Number</label>
             <input type="text" name="phone" value={formData.phone} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
+          {(loggedInUser.role === 'MASTER_ADMIN' || loggedInUser.role === 'ADMIN') && (
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Role</label>
+              <select name="role" value={formData.role} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-primary">
+                {loggedInUser.role === 'MASTER_ADMIN' && (
+                  <>
+                    <option value="ADMIN">Admin</option>
+                    <option value="CLIENT">Client</option>
+                  </>
+                )}
+                {loggedInUser.role === 'ADMIN' && (
+                  <>
+                    <option value="EMPLOYEE">Employee</option>
+                    <option value="CLIENT">Client</option>
+                    <option value="MOBILE_USER">Mobile User</option>
+                  </>
+                )}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-gray-700 font-medium mb-1">Assign Projects</label>
@@ -121,7 +152,7 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
 
           <div className="flex justify-end gap-2 mt-6">
             <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-200 rounded text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
-            <button type="submit" className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors">Create Admin</button>
+            <button type="submit" className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors">Create {targetRoleName}</button>
           </div>
         </form>
       </div>

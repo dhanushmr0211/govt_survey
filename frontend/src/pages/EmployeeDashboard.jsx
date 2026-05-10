@@ -1,4 +1,5 @@
 import { useAuthStore } from '../store/authStore';
+import { SubmissionQueueView } from '../modules/poleSurvey/components/SubmissionQueueView';
 
 export default function EmployeeDashboard() {
   const user = useAuthStore((state) => state.user);
@@ -10,12 +11,7 @@ export default function EmployeeDashboard() {
         <span className="text-sm text-gray-500">Welcome, {user?.name}</span>
       </div>
       
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">My Submission Queue</h2>
-        <div className="text-gray-500 text-center py-10">
-          Pending surveys to inspect will appear here.
-        </div>
-      </div>
+      <SubmissionQueueView />
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>

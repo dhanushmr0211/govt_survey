@@ -6,6 +6,7 @@ import Projects from './pages/Projects'
 import Users from './pages/Users'
 import { ProtectedRoute } from './core/auth/ProtectedRoute'
 import { DashboardLayout } from './app/layouts/DashboardLayout'
+import { TodaySubmissionsView } from './modules/poleSurvey/components/TodaySubmissionsView'
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/today-submissions" element={<TodaySubmissionsView />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/users" element={<Users />} />
             <Route path="/profile" element={<Profile />} />

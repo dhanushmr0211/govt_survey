@@ -27,7 +27,15 @@ function createApp() {
   app.use(compression());
   app.use(
     cors({
-      origin: env.corsOrigin,
+      origin: function (origin, callback) {
+        const allowedOrigins = env.corsOrigin ? env.corsOrigin.split(',') : [];
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          console.log('Origin not allowed:', origin);
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
       credentials: true,
     })
   );

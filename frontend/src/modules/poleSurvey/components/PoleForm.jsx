@@ -36,7 +36,7 @@ export const PoleForm = ({ ulb, onBack }) => {
     queryFn: async () => {
       if (!formData.ward_number) return [];
       const token = localStorage.getItem('token');
-      const res = await axios.get(`http://127.0.0.1:3000/api/v1/projects/${projectId}/pole-survey/switch-points?ward_number=${formData.ward_number}`, {
+      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/switch-points?ward_number=${formData.ward_number}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.switchPoints || [];
@@ -60,7 +60,7 @@ export const PoleForm = ({ ulb, onBack }) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.post(`http://127.0.0.1:3000/api/v1/projects/${projectId}/pole-survey/pole`, {
+      const res = await axios.post(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/pole`, {
         ...formData,
         pole_height_mtrs: Number(formData.pole_height),
         pole_to_pole_distance_mtrs: Number(formData.distance_mtrs),

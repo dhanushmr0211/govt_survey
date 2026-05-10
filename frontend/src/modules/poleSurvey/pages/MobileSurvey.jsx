@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { SwitchPointForm } from '../components/SwitchPointForm';
 import { PoleForm } from '../components/PoleForm';
+import { TodaySubmissionsView } from '../components/TodaySubmissionsView';
 
 export default function MobileSurvey() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,7 +17,7 @@ export default function MobileSurvey() {
     queryFn: async () => {
       if (searchTerm.length < 2) return [];
       const token = localStorage.getItem('token');
-      const res = await axios.get(`http://127.0.0.1:3000/api/v1/projects/${projectId}/pole-survey/ulbs/search?q=${searchTerm}`, {
+      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/ulbs/search?q=${searchTerm}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.ulbs || [];
@@ -76,7 +77,7 @@ export default function MobileSurvey() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <button
               onClick={() => setView('switch_point')}
               className={`p-4 rounded-lg border flex flex-col items-center justify-center gap-2 transition-colors ${
@@ -97,6 +98,16 @@ export default function MobileSurvey() {
             >
               <span className="text-sm font-medium">Pole Details</span>
             </button>
+            <button
+              onClick={() => setView('submissions')}
+              className={`p-4 rounded-lg border flex flex-col items-center justify-center gap-2 transition-colors ${
+                view === 'submissions'
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-gray-200 hover:border-primary/50'
+              }`}
+            >
+              <span className="text-sm font-medium">Today's Submissions</span>
+            </button>
           </div>
         </div>
       )}
@@ -107,6 +118,10 @@ export default function MobileSurvey() {
 
       {view === 'pole' && selectedUlb && (
         <PoleForm ulb={selectedUlb} onBack={() => setView(null)} />
+      )}
+
+      {view === 'submissions' && (
+        <TodaySubmissionsView />
       )}
     </div>
   );

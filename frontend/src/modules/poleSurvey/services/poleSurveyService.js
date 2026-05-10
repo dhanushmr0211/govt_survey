@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:3000/api/v1'; // In production, this would use import.meta.env.VITE_API_URL
+const API_URL = 'http://10.73.182.200:3000/api/v1'; // In production, this would use import.meta.env.VITE_API_URL
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');

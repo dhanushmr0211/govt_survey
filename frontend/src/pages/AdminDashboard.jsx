@@ -1,36 +1,131 @@
+import { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import { SummaryView } from '../modules/poleSurvey/components/SummaryView';
+import { WardDetailsView } from '../modules/poleSurvey/components/WardDetailsView';
+import { SubmissionQueueView } from '../modules/poleSurvey/components/SubmissionQueueView';
 
 export default function AdminDashboard() {
   const user = useAuthStore((state) => state.user);
+  const token = localStorage.getItem('token');
+  const [activeView, setActiveView] = useState('projects');
+  const [selectedProject, setSelectedProject] = useState(null); // { id, name }
+  const [selectedUlb, setSelectedUlb] = useState(null);
+
+  const { data: projects = [], isLoading } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      const res = await axios.get('http://10.73.182.200:3000/api/v1/projects', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.projects || [];
+    },
+  });
+
+  if (isLoading) return <div className="text-gray-500 text-center py-10">Loading projects...</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-        <span className="text-sm text-gray-500">Welcome, {user?.name}</span>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Section A</h2>
-          <p className="text-sm text-gray-500">Visible if permitted.</p>
+    <div className="flex h-screen bg-gray-50 -m-6">
+      {/* Sidebar */}
+      <div className="w-64 bg-white border-r border-gray-100 flex flex-col">
+        <div className="p-4 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-gray-900">Govt Survey</h2>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Section B</h2>
-          <p className="text-sm text-gray-500">Visible if permitted.</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">Section C</h2>
-          <p className="text-sm text-gray-500">Visible if permitted.</p>
-        </div>
+        <nav className="flex-1 p-4 space-y-2">
+          <button
+            onClick={() => { setActiveView('projects'); setSelectedUlb(null); }}
+            className={`w-full text-left p-2 rounded text-sm ${activeView === 'projects' ? 'bg-primary/5 text-primary font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+          >
+            Projects
+          </button>
+          
+          {selectedProject && (
+            <div className="ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
+              <button
+                onClick={() => { setActiveView('pole_survey_summary'); setSelectedUlb(null); }}
+                className={`w-full text-left p-2 text-xs rounded ${activeView === 'pole_survey_summary' ? 'text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                1: SUMMARY
+              </button>
+              <button
+                onClick={() => { setActiveView('pole_survey_today'); setSelectedUlb(null); }}
+                className={`w-full text-left p-2 text-xs rounded ${activeView === 'pole_survey_today' ? 'text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                2: TODAY'S SUMMARY
+              </button>
+              <button
+                onClick={() => { setActiveView('pole_survey_issues'); setSelectedUlb(null); }}
+                className={`w-full text-left p-2 text-xs rounded ${activeView === 'pole_survey_issues' ? 'text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                3: ISSUES
+              </button>
+            </div>
+          )}
+          
+          <button
+            onClick={() => alert('Download Report flow will be implemented later.')}
+            className="w-full text-left p-2 text-sm text-gray-600 hover:bg-gray-50 rounded"
+          >
+            DOWNLOAD REPORT
+          </button>
+        </nav>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Create Resource</h2>
-        <div className="flex gap-4">
-          <button className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors">Create Project</button>
-          <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">Create Employee</button>
+      {/* Main Content */}
+      <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {activeView === 'projects' ? 'My Projects' : selectedProject?.name}
+            </h1>
+            <p className="text-sm text-gray-500">Welcome, {user?.name}</p>
+          </div>
         </div>
+
+        {activeView === 'projects' && (
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Assigned Projects</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {projects.map((project) => (
+                <div 
+                  key={project.id}
+                  onClick={() => {
+                    setSelectedProject(project);
+                    setActiveView('pole_survey_summary');
+                  }}
+                  className="p-6 border border-gray-200 rounded-lg hover:border-primary cursor-pointer transition-colors"
+                >
+                  <h3 className="font-semibold text-gray-900">{project.name}</h3>
+                  <p className="text-sm text-gray-500 mt-1">Manage project details, summaries, and approvals.</p>
+                </div>
+              ))}
+              {projects.length === 0 && (
+                <div className="text-gray-500 text-center py-10 col-span-3">No projects assigned yet.</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeView === 'pole_survey_summary' && !selectedUlb && (
+          <SummaryView onViewDetails={(ulb) => setSelectedUlb(ulb)} />
+        )}
+        
+        {activeView === 'pole_survey_summary' && selectedUlb && (
+          <WardDetailsView ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
+        )}
+        
+        {activeView === 'pole_survey_today' && !selectedUlb && (
+          <SummaryView date={new Date().toISOString().split('T')[0]} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
+        )}
+
+        {activeView === 'pole_survey_today' && selectedUlb && (
+          <WardDetailsView ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
+        )}
+        
+        {activeView === 'pole_survey_issues' && (
+          <SubmissionQueueView />
+        )}
       </div>
     </div>
   );

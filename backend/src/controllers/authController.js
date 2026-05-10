@@ -38,7 +38,7 @@ async function register(req, res, next) {
     const creatorRole = req.user.role;
     const allowedCreations = {
       [ROLES.MASTER_ADMIN]: [ROLES.ADMIN, ROLES.CLIENT],
-      [ROLES.ADMIN]: [ROLES.EMPLOYEE, ROLES.CLIENT],
+      [ROLES.ADMIN]: [ROLES.EMPLOYEE, ROLES.CLIENT, ROLES.MOBILE_USER],
       [ROLES.EMPLOYEE]: [ROLES.MOBILE_USER],
       [ROLES.CLIENT]: [],
       [ROLES.MOBILE_USER]: [],
@@ -57,9 +57,11 @@ async function register(req, res, next) {
         await projectUserModel.addUserToProject(user.id, pid, selectedRole);
       }
       invalidateProjectAccess(user.id);
-    } else if (creatorRole === ROLES.ADMIN && data.project_id) {
-      // Admin explicitly assigns project
-      await projectUserModel.addUserToProject(user.id, data.project_id, selectedRole);
+    } else if (creatorRole === ROLES.ADMIN && (data.project_id || data.projects)) {
+      const pids = data.projects || [data.project_id];
+      for (const pid of pids) {
+        await projectUserModel.addUserToProject(user.id, pid, selectedRole);
+      }
       invalidateProjectAccess(user.id);
     } else if (creatorRole === ROLES.EMPLOYEE) {
       // Employee passes down all their assigned projects to the new Mobile User
@@ -136,7 +138,20 @@ async function me(req, res, next) {
 
 async function listUsers(req, res, next) {
   try {
-    const users = await userService.listAllUsers();
+    // Only Master Admin, Admin, and Employee can list users
+    if (req.user.role !== ROLES.MASTER_ADMIN && req.user.role !== ROLES.ADMIN && req.user.role !== ROLES.EMPLOYEE) {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to view users' });
+    }
+
+    let users = [];
+    if (req.user.role === ROLES.MASTER_ADMIN || req.user.role === ROLES.ADMIN) {
+      users = await userService.listAllUsers();
+    } else if (req.user.role === ROLES.EMPLOYEE) {
+      const employeeProjectIds = await projectUserModel.getProjectIds(Number(req.user.sub));
+      if (employeeProjectIds.length > 0) {
+        users = await userService.listMobileUsersByProjects(employeeProjectIds);
+      }
+    }
     return res.json({ users });
   } catch (error) {
     return next(error);

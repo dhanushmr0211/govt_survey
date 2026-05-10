@@ -9,12 +9,26 @@ export default function Users() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  if (user.role !== 'MASTER_ADMIN' && user.role !== 'ADMIN' && user.role !== 'EMPLOYEE') {
+    return (
+      <div className="app-container">
+        <TopNav user={user} />
+        <main className="main-content">
+          <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
+            <h1 style={{ color: '#ef4444', marginBottom: '1rem' }}>Unauthorized Access</h1>
+            <p style={{ color: 'var(--text-muted)' }}>You do not have permission to access the Team Management page.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   // Fetch users from real backend API
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://127.0.0.1:3000/api/v1/auth/users', {
+        const res = await fetch('http://10.73.182.200:3000/api/v1/auth/users', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -32,19 +46,56 @@ export default function Users() {
     fetchUsers();
   }, []);
 
+  const adminsCount = users.filter(u => u.role === 'ADMIN').length;
+  const mobileUsersCount = users.filter(u => u.role === 'MOBILE_USER').length;
+  const clientsCount = users.filter(u => u.role === 'CLIENT').length;
+
   return (
     <div className="app-container">
       <TopNav user={user} />
       
       <main className="main-content">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <div>
-            <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Team Management</h1>
+            <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Team Management</h1>
             <p style={{ color: 'var(--text-muted)' }}>Manage administrators and field surveyors.</p>
           </div>
-          {user.role === 'MASTER_ADMIN' && (
-            <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}><UserPlus size={18} /> Add User</button>
+          {(user.role === 'MASTER_ADMIN' || user.role === 'ADMIN' || user.role === 'EMPLOYEE') && (
+            <button className="btn btn-primary" onClick={() => { alert('Button clicked!'); setIsModalOpen(true); }}>
+              <UserPlus size={18} /> {user.role === 'MASTER_ADMIN' ? 'Create Admin' : user.role === 'ADMIN' ? 'Create Employee' : 'Create Mobile User'}
+            </button>
           )}
+        </div>
+
+        {/* Stats Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div className="card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
+            <div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Admins</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{adminsCount}</p>
+            </div>
+            <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '0.75rem', borderRadius: '50%', display: 'flex' }}>
+              <Shield size={20} color="#3b82f6" />
+            </div>
+          </div>
+          <div className="card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
+            <div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Mobile Users</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{mobileUsersCount}</p>
+            </div>
+            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '0.75rem', borderRadius: '50%', display: 'flex' }}>
+              <User size={20} color="#10b981" />
+            </div>
+          </div>
+          <div className="card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
+            <div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Clients</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{clientsCount}</p>
+            </div>
+            <div style={{ background: 'rgba(139, 92, 246, 0.1)', padding: '0.75rem', borderRadius: '50%', display: 'flex' }}>
+              <UsersIcon size={20} color="var(--primary-purple)" />
+            </div>
+          </div>
         </div>
 
         <div className="card">

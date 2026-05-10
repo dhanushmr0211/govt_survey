@@ -39,4 +39,16 @@ async function softDelete(id) {
   return result.rows[0] || null;
 }
 
-module.exports = { findById, findByEmail, create, findAll, countAll, softDelete };
+async function findMobileUsersByProjects(projectIds) {
+  const result = await query(
+    `SELECT DISTINCT u.id, u.name, u.email, u.role, u.created_at 
+     FROM users u
+     JOIN project_users pu ON pu.user_id = u.id
+     WHERE u.role = 'MOBILE_USER' AND pu.project_id = ANY($1) AND u.is_deleted = FALSE
+     ORDER BY u.id DESC`,
+    [projectIds]
+  );
+  return result.rows;
+}
+
+module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects };

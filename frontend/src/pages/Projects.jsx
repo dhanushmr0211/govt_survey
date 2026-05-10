@@ -13,7 +13,7 @@ export default function Projects() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch('http://127.0.0.1:3000/api/v1/projects', {
+      const res = await fetch('http://10.73.182.200:3000/api/v1/projects', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -40,7 +40,7 @@ export default function Projects() {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://127.0.0.1:3000/api/v1/projects', {
+      const res = await fetch('http://10.73.182.200:3000/api/v1/projects', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -97,9 +97,7 @@ export default function Projects() {
             <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Projects & Surveys</h1>
             <p style={{ color: 'var(--text-muted)' }}>Manage all government survey projects across regions.</p>
           </div>
-          {user.role !== 'EMPLOYEE' && (
-            <button className="btn btn-primary" onClick={() => setShowModal(true)}><Plus size={18} /> New Project</button>
-          )}
+
         </div>
 
         <div className="card" style={{ marginBottom: '2rem', padding: '1rem', display: 'flex', gap: '1rem' }}>
@@ -116,9 +114,7 @@ export default function Projects() {
             <FolderKanban size={48} color="var(--border-color)" style={{ margin: '0 auto 1rem' }} />
             <h3 style={{ marginBottom: '0.5rem' }}>No projects found</h3>
             <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Get started by creating your first survey project.</p>
-            {user.role !== 'EMPLOYEE' && (
-              <button className="btn btn-primary" onClick={() => setShowModal(true)}><Plus size={18} /> Create Project</button>
-            )}
+
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
@@ -129,7 +125,7 @@ export default function Projects() {
                   <button className="btn" style={{ padding: '4px', background: 'transparent', color: '#ef4444' }}><Trash2 size={16}/></button>
                 </div>
                 
-                <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem', paddingRight: '3rem' }}>{project.name}</h3>
+                <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem', paddingRight: '3rem' }}>Pole Survey</h3>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem', color: '#4b5563' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

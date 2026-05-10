@@ -13,6 +13,7 @@ async function listProjects(req, res, next) {
   try {
     const { page, limit, offset } = parsePagination(req.query);
     const projectIds = await accessibleProjectIds(Number(req.user.sub), req.user.role);
+    console.log('accessibleProjectIds for user', req.user.sub, ':', projectIds);
     
     let result;
     if (projectIds === null) {

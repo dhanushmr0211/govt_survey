@@ -13,6 +13,13 @@ const {
 } = require('../controllers/survey.controller');
 const { uploadFileHandler, getFilesHandler } = require('../../../controllers/entityFileController');
 const { upload } = require('../../../utils/upload');
+const {
+  getDistrictSummaryHandler,
+  getWardSummaryHandler,
+  getWardDetailsHandler,
+  getPendingSubmissionsHandler,
+  getTodaySubmissionsHandler
+} = require('../controllers/summary.controller');
 
 const poleSurveyRouter = express.Router({ mergeParams: true });
 
@@ -33,6 +40,13 @@ poleSurveyRouter.patch('/poles/:id', updatePoleHandler);
 
 poleSurveyRouter.post('/switch-points/:id/confirm', confirmSwitchPointHandler);
 poleSurveyRouter.post('/poles/:id/confirm', confirmPoleHandler);
+
+// Reports / Summary
+poleSurveyRouter.get('/summary/districts', getDistrictSummaryHandler);
+poleSurveyRouter.get('/summary/ulbs/:ulbId/wards', getWardSummaryHandler);
+poleSurveyRouter.get('/summary/ulbs/:ulbId/wards/:wardNumber/details', getWardDetailsHandler);
+poleSurveyRouter.get('/queue/pending', getPendingSubmissionsHandler);
+poleSurveyRouter.get('/queue/today', getTodaySubmissionsHandler);
 
 // Files
 poleSurveyRouter.post('/files', upload.single('file'), uploadFileHandler);

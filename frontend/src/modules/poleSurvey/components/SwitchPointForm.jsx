@@ -24,7 +24,7 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
     const token = localStorage.getItem('token');
     const projectId = 2; // Fixed to match database
     try {
-      const res = await axios.post(`http://127.0.0.1:3000/api/v1/projects/${projectId}/pole-survey/switch-point`, {
+      const res = await axios.post(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/switch-point`, {
         ...formData,
         ulb_id: ulb.id,
         meter_exists: formData.meter_exists === 'yes',
