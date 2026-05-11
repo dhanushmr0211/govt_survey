@@ -1,9 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { useState } from 'react';
+import { useSummary } from '../../../shared/hooks/useSummary';
 
-export const SummaryView = ({ date = null, onViewDetails, hideZeroCounts = false }) => {
-  const projectId = 2; // Fixed to match database
+export const SummaryView = ({ projectId = 2, date = null, onViewDetails, hideZeroCounts = false }) => {
   const token = localStorage.getItem('token');
   const [selectedFilter, setSelectedFilter] = useState('today');
   const [customDate, setCustomDate] = useState(new Date().toISOString().split('T')[0]);
@@ -20,21 +18,7 @@ export const SummaryView = ({ date = null, onViewDetails, hideZeroCounts = false
     mode = 'cumulative';
   }
 
-  const { data: summary = [], isLoading } = useQuery({
-    queryKey: ['districtSummary', effectiveDate, mode],
-    queryFn: async () => {
-      let url = `http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/summary/districts`;
-      const queryParams = [];
-      if (effectiveDate) queryParams.push(`date=${effectiveDate}`);
-      if (mode) queryParams.push(`mode=${mode}`);
-      if (queryParams.length > 0) url += `?${queryParams.join('&')}`;
-      
-      const res = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.data.summary || [];
-    },
-  });
+  const { data: summary = [], isLoading } = useSummary(projectId, effectiveDate, mode);
 
   if (isLoading) return <div className="text-gray-500">Loading summary...</div>;
 

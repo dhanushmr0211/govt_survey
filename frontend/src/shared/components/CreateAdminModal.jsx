@@ -23,6 +23,8 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
     section_b: false,
     section_c: false,
     section_d: false,
+    section_e: false,
+    section_f: false,
   });
 
   console.log('CreateAdminModal isOpen:', isOpen);
@@ -37,6 +39,7 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
       });
       return res.data.projects || [];
     },
+    enabled: isOpen,
   });
 
   const handleChange = (e) => {
@@ -151,6 +154,14 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="section_d" checked={formData.section_d} onChange={handleChange} className="rounded text-primary focus:ring-primary" />
                 <span>Users</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="section_e" checked={formData.section_e} onChange={handleChange} className="rounded text-primary focus:ring-primary" />
+                <span>Employee Tracking</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="section_f" checked={formData.section_f} onChange={handleChange} className="rounded text-primary focus:ring-primary" />
+                <span>Mobile User Tracking</span>
               </label>
             </div>
           </div>

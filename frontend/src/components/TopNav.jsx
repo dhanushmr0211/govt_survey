@@ -12,14 +12,13 @@ export default function TopNav({ user }) {
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Today Submissions', path: '/today-submissions' },
-    { name: 'Projects', path: '/projects' },
+    { name: 'Submissions', path: '/today-submissions' },
     { name: 'Users', path: '/users' }
   ].filter(item => {
-    if (item.name === 'Today Submissions') {
+    if (item.name === 'Submissions') {
       return user?.role === 'MOBILE_USER';
     }
-    if (item.name === 'Users' || item.name === 'Projects') {
+    if (item.name === 'Users') {
       return user?.role === 'MASTER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'EMPLOYEE';
     }
     return true;

@@ -37,9 +37,15 @@ const pool = env.cloudSqlConnectionName
     });
 
 async function query(text, params) {
+  const start = Date.now();
   const client = await pool.connect();
   try {
-    return await client.query(text, params);
+    const res = await client.query(text, params);
+    const duration = Date.now() - start;
+    if (duration > 500) {
+      console.warn(`[SLOW QUERY] ${duration}ms - Query: ${text.replace(/\s+/g, ' ').trim()}`);
+    }
+    return res;
   } finally {
     client.release();
   }

@@ -32,8 +32,9 @@ async function getIssuesHandler(req, res, next) {
   try {
     const projectId = Number(req.params.projectId);
     const { page, limit, offset } = parsePagination(req.query);
+    const { resolvedBy, status } = req.query;
 
-    const issues = await issueModel.getIssuesByProject(projectId, limit, offset);
+    const issues = await issueModel.getIssuesByProject(projectId, limit, offset, resolvedBy ? Number(resolvedBy) : null, status || null);
 
     return res.json({
       issues,

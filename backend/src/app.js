@@ -42,6 +42,7 @@ function createApp() {
   app.use(hpp());
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: false }));
+  app.use('/uploads', express.static(require('path').join(__dirname, '../uploads')));
 
   // Custom morgan token for correlation IDs
   morgan.token('request-id', (req) => req.id || '-');

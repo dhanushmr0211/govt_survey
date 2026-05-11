@@ -113,109 +113,204 @@ async function getWardDetails(ulbId, wardNumber) {
   return result.rows;
 }
 
-async function getPendingSubmissions(projectId) {
-  const spSql = `
-    SELECT 
-      'switch_point' as type,
-      sp.*,
-      u.name as user_name,
-      sp.switch_point_number as identifier
-    FROM switch_points sp
-    JOIN users u ON sp.created_by = u.id
-    WHERE sp.project_id = $1 AND sp.status = 'PENDING' AND sp.is_deleted = FALSE
+async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = null) {
+  const offset = (page - 1) * limit;
+  const sql = `
+    SELECT *, COUNT(*) OVER() AS total_count FROM (
+      SELECT 
+        'switch_point' as type,
+        sp.id,
+        sp.created_by as user_id,
+        u.name as user_name,
+        sp.created_at,
+        sp.ward_number,
+        sp.switch_point_number as identifier
+      FROM switch_points sp
+      JOIN users u ON sp.created_by = u.id
+      WHERE sp.project_id = $1 AND sp.status = 'PENDING' AND sp.is_deleted = FALSE
+      AND ($4::int IS NULL OR sp.created_by = $4)
+      
+      UNION ALL
+      
+      SELECT 
+        'pole' as type,
+        p.id,
+        p.created_by as user_id,
+        u.name as user_name,
+        p.created_at,
+        sp.ward_number,
+        p.pole_number as identifier
+      FROM poles p
+      JOIN switch_points sp ON p.switch_point_id = sp.id
+      JOIN users u ON p.created_by = u.id
+      WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted = FALSE
+      AND ($4::int IS NULL OR p.created_by = $4)
+    ) combined
+    ORDER BY created_at DESC
+    LIMIT $2 OFFSET $3
   `;
   
-  const poleSql = `
-    SELECT 
-      'pole' as type,
-      p.*,
-      u.name as user_name,
-      sp.ward_number,
-      p.pole_number as identifier
-    FROM poles p
-    JOIN switch_points sp ON p.switch_point_id = sp.id
-    JOIN users u ON p.created_by = u.id
-    WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted = FALSE
-  `;
-  
-  const spResult = await query(spSql, [projectId]);
-  const poleResult = await query(poleSql, [projectId]);
-  
-  // Combine and sort by date
-  const combined = [...spResult.rows, ...poleResult.rows];
-  combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  
-  return combined;
+  const result = await query(sql, [projectId, limit, offset, userId]);
+  const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
+  return { rows: result.rows, total };
 }
 
-async function getConfirmedSubmissions(projectId) {
-  const spSql = `
-    SELECT 
-      'switch_point' as type,
-      sp.*,
-      u.name as user_name,
-      sp.switch_point_number as identifier
-    FROM switch_points sp
-    JOIN users u ON sp.created_by = u.id
-    WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted = FALSE
+async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null) {
+  const offset = (page - 1) * limit;
+  const sql = `
+    SELECT *, COUNT(*) OVER() AS total_count FROM (
+      SELECT 
+        'switch_point' as type,
+        sp.id,
+        sp.created_by as user_id,
+        u.name as user_name,
+        sp.created_at,
+        sp.ward_number,
+        sp.switch_point_number as identifier,
+        sp.confirmed_by
+      FROM switch_points sp
+      JOIN users u ON sp.created_by = u.id
+      WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted = FALSE
+      AND ($4::int IS NULL OR sp.created_by = $4)
+      AND ($5::int IS NULL OR sp.confirmed_by = $5)
+      
+      UNION ALL
+      
+      SELECT 
+        'pole' as type,
+        p.id,
+        p.created_by as user_id,
+        u.name as user_name,
+        p.created_at,
+        sp.ward_number,
+        p.pole_number as identifier,
+        p.confirmed_by
+      FROM poles p
+      JOIN switch_points sp ON p.switch_point_id = sp.id
+      JOIN users u ON p.created_by = u.id
+      WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
+      AND ($4::int IS NULL OR p.created_by = $4)
+      AND ($5::int IS NULL OR p.confirmed_by = $5)
+    ) combined
+    ORDER BY created_at DESC
+    LIMIT $2 OFFSET $3
   `;
   
-  const poleSql = `
-    SELECT 
-      'pole' as type,
-      p.*,
-      u.name as user_name,
-      sp.ward_number,
-      p.pole_number as identifier
-    FROM poles p
-    JOIN switch_points sp ON p.switch_point_id = sp.id
-    JOIN users u ON p.created_by = u.id
-    WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
-  `;
-  
-  const spResult = await query(spSql, [projectId]);
-  const poleResult = await query(poleSql, [projectId]);
-  
-  const combined = [...spResult.rows, ...poleResult.rows];
-  combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  
-  return combined;
+  const result = await query(sql, [projectId, limit, offset, userId, confirmedBy]);
+  const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
+  return { rows: result.rows, total };
 }
 
-async function getTodaySubmissions(projectId) {
+async function getTodaySubmissions(projectId, page = 1, limit = 50) {
   const today = new Date().toISOString().split('T')[0];
-  
-  const spSql = `
-    SELECT 
-      'switch_point' as type,
-      sp.*,
-      u.name as user_name,
-      sp.switch_point_number as identifier
-    FROM switch_points sp
-    JOIN users u ON sp.created_by = u.id
-    WHERE sp.project_id = $1 AND sp.created_at::date = $2 AND sp.is_deleted = FALSE
+  const offset = (page - 1) * limit;
+  const sql = `
+    SELECT *, COUNT(*) OVER() AS total_count FROM (
+      SELECT 
+        'switch_point' as type,
+        sp.id,
+        sp.created_by as user_id,
+        u.name as user_name,
+        sp.created_at,
+        sp.ward_number,
+        sp.switch_point_number as identifier
+      FROM switch_points sp
+      JOIN users u ON sp.created_by = u.id
+      WHERE sp.project_id = $1 AND sp.created_at::date = $2 AND sp.is_deleted = FALSE
+      
+      UNION ALL
+      
+      SELECT 
+        'pole' as type,
+        p.id,
+        p.created_by as user_id,
+        u.name as user_name,
+        p.created_at,
+        sp.ward_number,
+        p.pole_number as identifier
+      FROM poles p
+      JOIN switch_points sp ON p.switch_point_id = sp.id
+      JOIN users u ON p.created_by = u.id
+      WHERE p.project_id = $1 AND p.created_at::date = $2 AND p.is_deleted = FALSE
+    ) combined
+    ORDER BY created_at DESC
+    LIMIT $3 OFFSET $4
   `;
   
-  const poleSql = `
-    SELECT 
-      'pole' as type,
-      p.*,
-      u.name as user_name,
-      sp.ward_number,
-      p.pole_number as identifier
-    FROM poles p
-    JOIN switch_points sp ON p.switch_point_id = sp.id
-    JOIN users u ON p.created_by = u.id
-    WHERE p.project_id = $1 AND p.created_at::date = $2 AND p.is_deleted = FALSE
-  `;
-  
-  const spResult = await query(spSql, [projectId, today]);
-  const poleResult = await query(poleSql, [projectId, today]);
-  
-  const combined = [...spResult.rows, ...poleResult.rows];
-  combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  
-  return combined;
+  const result = await query(sql, [projectId, today, limit, offset]);
+  const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
+  return { rows: result.rows, total };
 }
 
-module.exports = { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions };
+async function getMyStats(projectId, userId) {
+  const spResult = await query(
+    'SELECT COUNT(*) as total FROM switch_points WHERE project_id = $1 AND created_by = $2 AND is_deleted = FALSE',
+    [projectId, userId]
+  );
+  const poleResult = await query(
+    'SELECT COUNT(*) as total FROM poles WHERE project_id = $1 AND created_by = $2 AND is_deleted = FALSE',
+    [projectId, userId]
+  );
+  return {
+    switch_points: parseInt(spResult.rows[0].total, 10),
+    poles: parseInt(poleResult.rows[0].total, 10)
+  };
+}
+
+async function getEmployeeTracking(projectId) {
+  const sql = `
+    SELECT 
+      u.id, 
+      u.email,
+      u.name,
+      (
+        SELECT COUNT(*) FROM poles p 
+        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.is_deleted = FALSE
+      ) + 
+      (
+        SELECT COUNT(*) FROM switch_points sp 
+        WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND sp.is_deleted = FALSE
+      ) as total_resolved,
+      (
+        SELECT COUNT(*) FROM poles p 
+        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.confirmed_at::date = CURRENT_DATE AND p.is_deleted = FALSE
+      ) + 
+      (
+        SELECT COUNT(*) FROM switch_points sp 
+        WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND sp.confirmed_at::date = CURRENT_DATE AND sp.is_deleted = FALSE
+      ) as today_resolved
+    FROM users u
+    WHERE u.role = 'EMPLOYEE'
+    ORDER BY total_resolved DESC;
+  `;
+  const result = await query(sql, [projectId]);
+  return result.rows;
+}
+
+async function getMobileUserTracking(projectId) {
+  const sql = `
+    SELECT 
+      u.id, 
+      u.email,
+      u.name,
+      COALESCE(SUM(stats.total_count), 0) as total,
+      COALESCE(SUM(stats.today_count), 0) as today_total
+    FROM users u
+    LEFT JOIN (
+      SELECT created_by, COUNT(*) as total_count, COUNT(*) FILTER (WHERE created_at::date = CURRENT_DATE) as today_count
+      FROM (
+        SELECT created_by, created_at FROM switch_points WHERE project_id = $1 AND is_deleted = FALSE
+        UNION ALL
+        SELECT created_by, created_at FROM poles WHERE project_id = $1 AND is_deleted = FALSE
+      ) combined
+      GROUP BY created_by
+    ) stats ON u.id = stats.created_by
+    WHERE u.role = 'MOBILE_USER'
+    GROUP BY u.id, u.email, u.name
+    ORDER BY total DESC;
+  `;
+  const result = await query(sql, [projectId]);
+  return result.rows;
+}
+
+module.exports = { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions, getMyStats, getEmployeeTracking, getMobileUserTracking };

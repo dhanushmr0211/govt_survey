@@ -24,10 +24,31 @@ async function countAll() {
 }
 
 async function findAll(limit, offset) {
-  const result = await query(
-    'SELECT id, name, email, role, created_at FROM users WHERE is_deleted = FALSE ORDER BY id DESC LIMIT $1 OFFSET $2',
-    [limit, offset]
-  );
+  let sql = `
+    SELECT u.id, u.name, u.email, u.role, u.created_at,
+           COALESCE(asa.section_a, false) AS section_a,
+           COALESCE(asa.section_b, false) AS section_b,
+           COALESCE(asa.section_c, false) AS section_c,
+           COALESCE(asa.section_d, false) AS section_d,
+           COALESCE(asa.section_e, false) AS section_e,
+           COALESCE(asa.section_f, false) AS section_f
+    FROM users u
+    LEFT JOIN admin_section_access asa ON u.id = asa.admin_id
+    WHERE u.is_deleted = FALSE
+    ORDER BY u.id DESC
+  `;
+  
+  const params = [];
+  if (limit !== undefined) {
+    sql += ' LIMIT $1';
+    params.push(limit);
+    if (offset !== undefined) {
+      sql += ' OFFSET $2';
+      params.push(offset);
+    }
+  }
+  
+  const result = await query(sql, params);
   return result.rows;
 }
 
@@ -51,4 +72,12 @@ async function findMobileUsersByProjects(projectIds) {
   return result.rows;
 }
 
-module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects };
+async function touch(id) {
+  const result = await query(
+    'UPDATE users SET updated_at = NOW() WHERE id = $1 RETURNING id',
+    [id]
+  );
+  return result.rows[0] || null;
+}
+
+module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, touch };

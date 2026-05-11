@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import TopNav from '../components/TopNav';
 import { Users as UsersIcon, UserPlus, Search, Shield, User } from 'lucide-react';
 import { CreateAdminModal } from '../shared/components/CreateAdminModal';
+import { EditUserModal } from '../shared/components/EditUserModal';
 import { useAuthStore } from '../store/authStore';
 
 export default function Users() {
   const user = useAuthStore((state) => state.user);
   const [users, setUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const isMasterAdmin = user?.role === 'MASTER_ADMIN';
@@ -27,26 +30,27 @@ export default function Users() {
     );
   }
 
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://10.73.182.200:3000/api/v1/auth/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUsers(data.users || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch users from real backend API
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('http://10.73.182.200:3000/api/v1/auth/users', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setUsers(data.users || []);
-        }
-      } catch (err) {
-        console.error("Failed to fetch users:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUsers();
   }, []);
 
@@ -153,7 +157,9 @@ export default function Users() {
                       </span>
                     </td>
                     <td style={{ padding: '1rem' }}>
-                      <button className="btn" style={{ background: 'transparent', color: '#3b82f6', padding: '0' }}>Edit</button>
+                      {u.role !== 'MOBILE_USER' && (
+                        <button className="btn" style={{ background: 'transparent', color: '#3b82f6', padding: '0' }} onClick={() => { setUserToEdit(u); setIsEditModalOpen(true); }}>Edit</button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -163,6 +169,7 @@ export default function Users() {
         </div>
       </main>
       <CreateAdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <EditUserModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} user={userToEdit} onSave={fetchUsers} />
     </div>
   )
 }

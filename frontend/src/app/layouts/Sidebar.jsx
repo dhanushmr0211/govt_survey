@@ -8,20 +8,16 @@ export const Sidebar = () => {
 
   const user = useAuthStore((state) => state.user);
   const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-    { name: 'Today Submissions', icon: FolderTree, path: '/today-submissions' },
-    { name: 'Projects', icon: FolderTree, path: '/projects' },
+    { name: 'Projects', icon: LayoutDashboard, path: '/dashboard' },
+    { name: 'Submissions', icon: FolderTree, path: '/today-submissions' },
     { name: 'Users', icon: Users, path: '/users' },
     { name: 'Settings', icon: Settings, path: '/settings' },
   ].filter(item => {
-    if (item.name === 'Today Submissions') {
+    if (item.name === 'Submissions') {
       return user?.role === 'MOBILE_USER';
     }
     if (item.name === 'Users') {
       return user?.role === 'MASTER_ADMIN' || user?.section_d;
-    }
-    if (item.name === 'Projects') {
-      return user?.role === 'MASTER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'EMPLOYEE';
     }
     return true;
   });

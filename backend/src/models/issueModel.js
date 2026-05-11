@@ -10,11 +10,15 @@ async function createIssue(projectId, entityType, entityId, raisedBy, issueNote)
   return result.rows[0];
 }
 
-async function getIssuesByProject(projectId, limit, offset) {
-  const result = await query(
-    `SELECT * FROM issues WHERE project_id = $1 ORDER BY raised_at DESC LIMIT $2 OFFSET $3`,
-    [projectId, limit, offset]
-  );
+async function getIssuesByProject(projectId, limit, offset, resolvedBy = null, status = null) {
+  const sql = `
+    SELECT * FROM issues 
+    WHERE project_id = $1 
+    AND ($4::int IS NULL OR resolved_by = $4)
+    AND ($5::text IS NULL OR status = $5::issue_status)
+    ORDER BY raised_at DESC LIMIT $2 OFFSET $3
+  `;
+  const result = await query(sql, [projectId, limit, offset, resolvedBy, status]);
   return result.rows;
 }
 

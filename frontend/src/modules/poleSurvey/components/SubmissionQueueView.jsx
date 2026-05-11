@@ -1,24 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-export const SubmissionQueueView = () => {
-  const projectId = 2; // Fixed to match database
+export const SubmissionQueueView = ({ projectId = 2 }) => {
   const token = localStorage.getItem('token');
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
   const queryClient = useQueryClient();
 
-  const { data: queue = [], isLoading } = useQuery({
-    queryKey: ['submissions', activeTab],
+  const [page, setPage] = useState(1);
+  const limit = 50;
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab]);
+
+  const { data = { queue: [], total: 0 }, isLoading } = useQuery({
+    queryKey: ['submissions', activeTab, page],
     queryFn: async () => {
       const endpoint = activeTab === 'pending' ? 'queue/pending' : 'queue/confirmed';
-      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/${endpoint}`, {
+      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/${endpoint}?page=${page}&limit=${limit}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return res.data.queue || [];
+      return { queue: res.data.queue || [], total: res.data.total || 0 };
     },
   });
+
+  const { queue, total } = data;
 
   const confirmMutation = useMutation({
     mutationFn: async ({ id, type }) => {
@@ -41,7 +49,21 @@ export const SubmissionQueueView = () => {
     }
   });
 
-  if (isLoading) return <div className="text-gray-500">Loading queue...</div>;
+  if (isLoading) {
+    return (
+      <div className="bg-white p-6 rounded-lg border border-gray-100 shadow-sm space-y-4">
+        <div className="flex justify-between items-center mb-4">
+          <div className="h-6 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+          <div className="h-6 bg-gray-200 rounded w-1/6 animate-pulse"></div>
+        </div>
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-10 bg-gray-100 rounded animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
@@ -118,6 +140,28 @@ export const SubmissionQueueView = () => {
           </tbody>
         </table>
       </div>
+
+      {queue.length > 0 && (
+        <div className="flex justify-between items-center mt-4 p-4 bg-white border-t border-gray-100">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className={`px-4 py-2 border rounded text-sm font-medium ${page === 1 ? 'text-gray-400 bg-gray-50 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-700">
+            Page <span className="font-medium">{page}</span> of <span className="font-medium">{Math.ceil(total / limit) || 1}</span> ({total} items)
+          </span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={queue.length < limit}
+            className={`px-4 py-2 border rounded text-sm font-medium ${queue.length < limit ? 'text-gray-400 bg-gray-50 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       {queue.length === 0 && (
         <div className="text-gray-500 text-center py-10">No pending submissions found.</div>

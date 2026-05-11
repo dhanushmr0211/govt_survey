@@ -1,13 +1,12 @@
 const imageModel = require('../models/imageModel');
-const { buildObjectName, uploadBuffer, getSignedReadUrl, deleteObject } = require('../config/gcs');
+const storageProvider = require('./storage/storageProvider');
 
 async function uploadImage(recordId, file) {
-  const objectName = buildObjectName(recordId, file.originalname);
-  const uploaded = await uploadBuffer(file.buffer, objectName, file.mimetype);
-  const image = await imageModel.create(recordId, uploaded.bucketName, uploaded.objectName, uploaded.contentType);
+  const uploaded = await storageProvider.upload(file);
+  const image = await imageModel.create(recordId, 'default', uploaded.fileKey, file.mimetype);
   return {
     ...image,
-    signed_url: await getSignedReadUrl(image.object_name),
+    signed_url: uploaded.url,
   };
 }
 
@@ -19,7 +18,7 @@ async function getImagesByRecord(recordId, limit, offset) {
   const imagesWithUrls = await Promise.all(
     images.map(async (image) => ({
       ...image,
-      signed_url: await getSignedReadUrl(image.object_name),
+      signed_url: await storageProvider.getPublicUrl(image.object_name),
     }))
   );
 
@@ -30,7 +29,7 @@ async function deleteImage(id) {
   const image = await imageModel.findById(id);
 
   if (image) {
-    await deleteObject(image.object_name);
+    await storageProvider.delete(image.object_name);
   }
 
   return imageModel.deleteById(id);

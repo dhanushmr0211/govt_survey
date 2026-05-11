@@ -19,7 +19,10 @@ const {
   getWardDetailsHandler,
   getPendingSubmissionsHandler,
   getTodaySubmissionsHandler,
-  getConfirmedSubmissionsHandler
+  getConfirmedSubmissionsHandler,
+  getMyStatsHandler,
+  getEmployeeTrackingHandler,
+  getMobileUserTrackingHandler
 } = require('../controllers/summary.controller');
 
 const poleSurveyRouter = express.Router({ mergeParams: true });
@@ -43,6 +46,9 @@ poleSurveyRouter.post('/switch-points/:id/confirm', confirmSwitchPointHandler);
 poleSurveyRouter.post('/poles/:id/confirm', confirmPoleHandler);
 
 // Reports / Summary
+poleSurveyRouter.get('/my-stats', getMyStatsHandler);
+poleSurveyRouter.get('/employee-tracking', getEmployeeTrackingHandler);
+poleSurveyRouter.get('/mobile-user-tracking', getMobileUserTrackingHandler);
 poleSurveyRouter.get('/summary/districts', getDistrictSummaryHandler);
 poleSurveyRouter.get('/summary/ulbs/:ulbId/wards', getWardSummaryHandler);
 poleSurveyRouter.get('/summary/ulbs/:ulbId/wards/:wardNumber/details', getWardDetailsHandler);

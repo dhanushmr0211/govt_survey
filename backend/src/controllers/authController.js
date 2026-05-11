@@ -21,6 +21,17 @@ const registerSchema = z.object({
   section_b: z.boolean().optional(),
   section_c: z.boolean().optional(),
   section_d: z.boolean().optional(),
+  section_e: z.boolean().optional(),
+  section_f: z.boolean().optional(),
+});
+
+const updateAccessSchema = z.object({
+  section_a: z.boolean().optional(),
+  section_b: z.boolean().optional(),
+  section_c: z.boolean().optional(),
+  section_d: z.boolean().optional(),
+  section_e: z.boolean().optional(),
+  section_f: z.boolean().optional(),
 });
 
 const loginSchema = z.object({
@@ -57,7 +68,7 @@ async function register(req, res, next) {
     const user = await userService.createUser(data.name, data.email, passwordHash, selectedRole, req.user.sub ? Number(req.user.sub) : null, data.phone);
 
     // Save section access
-    await adminSectionAccessModel.setSectionAccess(user.id, data.section_a || false, data.section_b || false, data.section_c || false, data.section_d || false);
+    await adminSectionAccessModel.setSectionAccess(user.id, data.section_a || false, data.section_b || false, data.section_c || false, data.section_d || false, data.section_e || false, data.section_f || false);
 
     // Handle Project Assignment
     if (creatorRole === ROLES.MASTER_ADMIN && data.projects) {
@@ -114,7 +125,9 @@ async function login(req, res, next) {
         section_a: sectionAccess.section_a,
         section_b: sectionAccess.section_b,
         section_c: sectionAccess.section_c,
-        section_d: sectionAccess.section_d
+        section_d: sectionAccess.section_d,
+        section_e: sectionAccess.section_e,
+        section_f: sectionAccess.section_f
       },
       env.jwtSecret,
       { expiresIn: env.jwtExpiresIn }
@@ -130,6 +143,9 @@ async function login(req, res, next) {
         section_a: sectionAccess.section_a,
         section_b: sectionAccess.section_b,
         section_c: sectionAccess.section_c,
+        section_d: sectionAccess.section_d,
+        section_e: sectionAccess.section_e,
+        section_f: sectionAccess.section_f,
       },
     });
   } catch (error) {
@@ -181,4 +197,31 @@ async function listUsers(req, res, next) {
   }
 }
 
-module.exports = { register, login, me, listUsers };
+async function updateAccess(req, res, next) {
+  try {
+    const { id } = req.params;
+    const data = updateAccessSchema.parse(req.body);
+    
+    if (req.user.role !== ROLES.MASTER_ADMIN && req.user.role !== ROLES.ADMIN) {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to update access' });
+    }
+
+    await adminSectionAccessModel.setSectionAccess(
+      Number(id),
+      data.section_a || false,
+      data.section_b || false,
+      data.section_c || false,
+      data.section_d || false,
+      data.section_e || false,
+      data.section_f || false
+    );
+
+    await userService.touch(Number(id));
+
+    return res.json({ message: 'Access updated successfully' });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+module.exports = { register, login, me, listUsers, updateAccess };
