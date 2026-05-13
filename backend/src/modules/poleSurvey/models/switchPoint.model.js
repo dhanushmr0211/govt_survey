@@ -24,11 +24,16 @@ async function updateSwitchPoint(id, projectId, data) {
     `UPDATE switch_points 
      SET ward_number = COALESCE($3, ward_number),
          switch_point_number = COALESCE($4, switch_point_number),
-         meter_rr_number = COALESCE($5, meter_rr_number),
+         switch_point_type = COALESCE($5, switch_point_type),
+         meter_exists = COALESCE($6, meter_exists),
+         meter_type = COALESCE($7, meter_type),
+         meter_rr_number = COALESCE($8, meter_rr_number),
+         meter_serial_number = COALESCE($9, meter_serial_number),
+         meter_condition = COALESCE($10, meter_condition),
          updated_at = NOW()
      WHERE id = $1 AND project_id = $2 AND is_deleted = FALSE
      RETURNING *`,
-    [id, projectId, data.ward_number, data.switch_point_number, data.meter_rr_number]
+    [id, projectId, data.ward_number, data.switch_point_number, data.switch_point_type, data.meter_exists, data.meter_type, data.meter_rr_number, data.meter_serial_number, data.meter_condition]
   );
   return result.rows[0];
 }
@@ -44,10 +49,10 @@ async function confirmSwitchPoint(id, projectId, userId) {
   return result.rows[0];
 }
 
-async function getSwitchPointsByWard(projectId, wardNumber) {
+async function getSwitchPointsByWard(projectId, ulbId, wardNumber) {
   const result = await query(
-    `SELECT id, switch_point_number FROM switch_points WHERE project_id = $1 AND ward_number = $2 AND is_deleted = FALSE ORDER BY created_at DESC LIMIT 10`,
-    [projectId, wardNumber]
+    `SELECT id, switch_point_number FROM switch_points WHERE project_id = $1 AND ulb_id = $2 AND ward_number = $3 AND is_deleted = FALSE ORDER BY created_at DESC LIMIT 10`,
+    [projectId, ulbId, wardNumber]
   );
   return result.rows;
 }

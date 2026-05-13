@@ -15,19 +15,27 @@ async function authenticate(req, res, next) {
   try {
     const payload = jwt.verify(token, env.jwtSecret);
     
-    // Check if user has been updated since token was issued
-    const userResult = await query('SELECT updated_at FROM users WHERE id = $1', [payload.sub]);
+    // Check that the token still belongs to an active user and has not
+    // outlived an access update.
+    const userResult = await query(
+      'SELECT id, EXTRACT(EPOCH FROM updated_at)::int as updated_at_seconds FROM users WHERE id = $1 AND is_deleted = FALSE',
+      [payload.sub]
+    );
     const user = userResult.rows[0];
+
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
     
-    if (user && user.updated_at) {
-      const updatedAtSeconds = Math.floor(new Date(user.updated_at).getTime() / 1000);
-      if (payload.iat < updatedAtSeconds) {
+    if (user.updated_at_seconds) {
+      if (payload.iat < user.updated_at_seconds) {
         return res.status(401).json({ message: 'Permissions updated. Please log in again.' });
       }
     }
 
     req.user = {
       ...payload,
+      id: Number(user.id),
       role: normalizeRole(payload.role),
     };
     return next();

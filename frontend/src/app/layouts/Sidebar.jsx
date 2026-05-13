@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FolderTree, Users, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, FolderTree, Users, Settings, LogOut, Landmark } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 export const Sidebar = () => {
@@ -10,24 +10,28 @@ export const Sidebar = () => {
   const navItems = [
     { name: 'Projects', icon: LayoutDashboard, path: '/dashboard' },
     { name: 'Submissions', icon: FolderTree, path: '/today-submissions' },
-    { name: 'Users', icon: Users, path: '/users' },
-    { name: 'Settings', icon: Settings, path: '/settings' },
+    { name: 'Settings', icon: Settings, path: '/profile' },
   ].filter(item => {
     if (item.name === 'Submissions') {
       return user?.role === 'MOBILE_USER';
-    }
-    if (item.name === 'Users') {
-      return user?.role === 'MASTER_ADMIN' || user?.section_d;
     }
     return true;
   });
 
   return (
-    <div className="w-64 bg-primary text-white flex flex-col">
-      <div className="p-6 flex items-center gap-2 font-bold text-xl border-b border-primary-dark">
-        <span>Govt Survey</span>
+    <aside className="w-72 shrink-0 border-r border-slate-200 bg-slate-950 text-white flex flex-col">
+      <div className="p-6 border-b border-white/10">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/25">
+            <Landmark size={22} />
+          </div>
+          <div>
+            <p className="text-base font-bold tracking-tight">Govt Survey</p>
+            <p className="text-xs font-medium text-slate-400">Operations Console</p>
+          </div>
+        </div>
       </div>
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-1.5">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
@@ -35,10 +39,10 @@ export const Sidebar = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold transition-colors ${
                 isActive
-                  ? 'bg-primary-dark text-white'
-                  : 'text-primary-light hover:bg-primary-dark hover:text-white'
+                  ? 'bg-white text-slate-950 shadow-sm'
+                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
               }`}
             >
               <Icon size={20} />
@@ -47,15 +51,15 @@ export const Sidebar = () => {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-primary-dark">
+      <div className="p-4 border-t border-white/10">
         <button
           onClick={logout}
-          className="flex items-center gap-3 w-full p-3 text-primary-light hover:bg-primary-dark hover:text-white rounded-lg transition-colors"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
         >
           <LogOut size={20} />
           <span>Logout</span>
         </button>
       </div>
-    </div>
+    </aside>
   );
 };

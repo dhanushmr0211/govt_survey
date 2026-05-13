@@ -54,4 +54,12 @@ async function softDelete(id) {
   return result.rows[0] || null;
 }
 
-module.exports = { findAll, findByIds, findById, create, countAll, countByIds, softDelete };
+async function getIdsByClientId(clientId) {
+  const result = await query(
+    'SELECT id FROM projects WHERE created_by = $1 AND is_deleted = FALSE',
+    [clientId]
+  );
+  return result.rows.map(r => r.id);
+}
+
+module.exports = { findAll, findByIds, findById, create, countAll, countByIds, softDelete, getIdsByClientId };

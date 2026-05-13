@@ -14,11 +14,11 @@ export default function Dashboard() {
     case 'MASTER_ADMIN':
       return <MasterAdminDashboard />;
     case 'ADMIN':
-      return <AdminDashboard />;
+      return <MasterAdminDashboard />;
     case 'EMPLOYEE':
-      return <EmployeeDashboard />;
+      return <MasterAdminDashboard />;
     case 'CLIENT':
-      return <ClientDashboard />;
+      return <MasterAdminDashboard />;
     case 'MOBILE_USER':
       return <MobileSurvey />;
     default:

@@ -9,6 +9,8 @@ export const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
     section_d: false,
     section_e: false,
     section_f: false,
+    section_g: false,
+    section_h: false,
   });
 
   useEffect(() => {
@@ -20,6 +22,8 @@ export const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
         section_d: user.section_d || false,
         section_e: user.section_e || false,
         section_f: user.section_f || false,
+        section_g: user.section_g || false,
+        section_h: user.section_h || false,
       });
     }
   }, [user]);
@@ -81,6 +85,14 @@ export const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="section_f" checked={formData.section_f} onChange={handleChange} className="rounded text-primary focus:ring-primary" />
                 <span>Section F: Mobile User Tracking</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="section_g" checked={formData.section_g} onChange={handleChange} className="rounded text-primary focus:ring-primary" />
+                <span>Section G: Download Report</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="section_h" checked={formData.section_h} onChange={handleChange} className="rounded text-primary focus:ring-primary" />
+                <span>Section H: Edit Details</span>
               </label>
             </div>
           </div>

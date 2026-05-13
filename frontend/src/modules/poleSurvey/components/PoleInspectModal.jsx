@@ -1,56 +1,186 @@
-import { X, Check, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { X, Check, AlertTriangle, Edit2, Save } from 'lucide-react';
 import { confirmPole } from '../services/poleSurveyService';
 import { useMutation } from '@tanstack/react-query';
+import { useAuthStore } from '../../../store/authStore';
 
 export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
   const projectId = 1; // Should be dynamic
+  const user = useAuthStore((state) => state.user);
+  console.log('PoleInspectModal user:', user);
+  const canEdit = user?.role === 'MASTER_ADMIN' || user?.section_h;
 
-  const mutation = useMutation({
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({ ...pole });
+
+  const confirmMutation = useMutation({
     mutationFn: () => confirmPole(projectId, pole.id),
     onSuccess: () => {
       onSuccess();
     },
   });
 
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      // Call API to update pole (and switch point if needed)
+      const response = await fetch(`/api/projects/${projectId}/poles/${pole.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${useAuthStore.getState().token}`
+        },
+        body: JSON.stringify(formData)
+      });
+      if (!response.ok) throw new Error('Failed to save changes');
+      return response.json();
+    },
+    onSuccess: () => {
+      setIsEditing(false);
+      onSuccess(); // Refresh list or show success
+    },
+  });
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const renderField = (label, name, value, options = null) => {
+    if (!isEditing) {
+      return (
+        <div className="flex justify-between border-b border-gray-50 py-1">
+          <span className="text-gray-500">{label}:</span>
+          <span className="font-medium">{value || 'N/A'}</span>
+        </div>
+      );
+    }
+
+    if (options) {
+      return (
+        <div className="flex flex-col border-b border-gray-50 py-1">
+          <span className="text-xs text-gray-500">{label}:</span>
+          <select
+            name={name}
+            value={formData[name] || ''}
+            onChange={handleChange}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+          >
+            <option value="">Select...</option>
+            {options.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col border-b border-gray-50 py-1">
+        <span className="text-xs text-gray-500">{label}:</span>
+        <input
+          type="text"
+          name={name}
+          value={formData[name] || ''}
+          onChange={handleChange}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-7xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">Inspect Pole #{pole.pole_number}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={20} />
-          </button>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Inspect Pole #{pole.pole_number || 'N/A'}</h2>
+            <p className="text-sm text-gray-500">ULB: {pole.ulb_name || 'N/A'} | Role: {user?.role || 'N/A'}</p>
+          </div>
+          <div className="flex items-center gap-4">
+            {canEdit && !isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2 text-primary hover:text-primary-dark font-medium text-sm"
+              >
+                <Edit2 size={16} />
+                <span>Edit</span>
+              </button>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-gray-500">Ward Number</p>
-              <p className="font-medium text-gray-900">{pole.ward_number}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Coordinates</p>
-              <p className="font-medium text-gray-900">{pole.latitude}, {pole.longitude}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Condition</p>
-              <p className="font-medium text-gray-900">{pole.pole_condition}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Light Status</p>
-              <p className="font-medium text-gray-900">{pole.light_working_status}</p>
-            </div>
-          </div>
+        <div className="p-6 overflow-y-auto flex-1">
+          <div className="flex flex-col lg:flex-row gap-6">
+            
+            {/* Left Side: Details */}
+            <div className="lg:w-1/3 space-y-6 overflow-y-auto max-h-[70vh] pr-2">
+              
+              {/* Switch Point Details */}
+              <div>
+                <h3 className="font-bold text-primary border-b pb-2 mb-3 text-base">Switch Point Details</h3>
+                <div className="space-y-2">
+                  {renderField('Ward Number', 'ward_number', pole.ward_number)}
+                  {renderField('Switch Point Number', 'switch_point_number', pole.switch_point_number)}
+                  {renderField('Switch Point Type', 'switch_point_type', pole.switch_point_type, ['DP', 'MCB', 'SWITCH', 'HOOK'])}
+                  {renderField('Does Meter Exists', 'meter_exists', pole.meter_exists ? 'YES' : 'NO', ['YES', 'NO'])}
+                  {renderField('Meter Type', 'meter_type', pole.meter_type, ['1P', '3P'])}
+                  {renderField('Meter RR Number', 'meter_rr_number', pole.meter_rr_number)}
+                  {renderField('Meter Serial Number', 'meter_serial_number', pole.meter_serial_number)}
+                  {renderField('Meter Condition', 'meter_condition', pole.meter_condition, ['working', 'not working', 'missing'])}
+                </div>
+              </div>
 
-          {/* Photo Grid Placeholder */}
-          <div>
-            <p className="text-sm text-gray-500 mb-2">Photos</p>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-gray-100 h-24 rounded flex items-center justify-center text-gray-400 text-xs">Photo 1</div>
-              <div className="bg-gray-100 h-24 rounded flex items-center justify-center text-gray-400 text-xs">Photo 2</div>
-              <div className="bg-gray-100 h-24 rounded flex items-center justify-center text-gray-400 text-xs">Photo 3</div>
+              {/* Pole Details */}
+              <div>
+                <h3 className="font-bold text-primary border-b pb-2 mb-3 text-base">Pole Details</h3>
+                <div className="space-y-2">
+                  {renderField('Ward No#', 'ward_number', pole.ward_number)}
+                  {renderField('Switch point No#', 'switch_point_number', pole.switch_point_number)}
+                  {renderField('Conductor Type', 'conductor_type', pole.conductor_type, ['ABC', 'ACSR', 'UG'])}
+                  {renderField('Pole No#', 'pole_number', pole.pole_number)}
+                  {renderField('Pole Type', 'pole_type', pole.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
+                  {renderField('Pole Height (mtrs)', 'pole_height_mtrs', pole.pole_height_mtrs, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                  {renderField('Pole Condition', 'pole_condition', pole.pole_condition, ['Good', 'defective', 'missing'])}
+                  {renderField('Pole To Pole Distance', 'pole_to_pole_distance_mtrs', pole.pole_to_pole_distance_mtrs)}
+                  {renderField('ARM Type', 'arm_type', pole.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
+                  {renderField('ARM Status', 'arm_status', pole.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
+                  {renderField('Present ARM No#', 'present_arm_no', pole.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
+                  {renderField('Present ARM Length', 'present_arm_length_mtrs', pole.present_arm_length_mtrs, ['0', '1', '1.5', '2', '2.5'])}
+                  {renderField('Lights in Pole', 'how_many_lights_in_pole', pole.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
+                  {renderField('Light Mounting Height', 'light_mounting_height', pole.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
+                  {renderField('Light Type', 'light_type', pole.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                  {renderField('Light Capacity', 'light_capacity', pole.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                  {renderField('Light Working Status', 'light_working_status', pole.light_working_status, ['yes', 'no'])}
+                  {renderField('Road Category', 'road_category', pole.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
+                  {renderField('Road Type', 'road_type', pole.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
+                  {renderField('Road Width', 'road_width_mtrs', pole.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                  {renderField('Pole Earthing Exists', 'pole_earthing_exists', pole.pole_earthing_exists, ['YES', 'NO'])}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Side: Images */}
+            <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gray-50 h-[65vh] rounded-lg flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200">
+                <span className="text-sm font-semibold">Image 1</span>
+                <span className="text-xs">Switch Point / Meter</span>
+              </div>
+              <div className="bg-gray-50 h-[65vh] rounded-lg flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200">
+                <span className="text-sm font-semibold">Image 2</span>
+                <span className="text-xs">Pole View</span>
+              </div>
+              <div className="bg-gray-50 h-[65vh] rounded-lg flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200">
+                <span className="text-sm font-semibold">Image 3</span>
+                <span className="text-xs">Light / Bracket View</span>
+              </div>
             </div>
           </div>
         </div>
@@ -71,14 +201,25 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
             >
               Cancel
             </button>
-            <button
-              onClick={() => mutation.mutate()}
-              disabled={mutation.isLoading}
-              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
-            >
-              <Check size={16} />
-              <span>{mutation.isLoading ? 'Confirming...' : 'Confirm'}</span>
-            </button>
+            {isEditing ? (
+              <button
+                onClick={() => saveMutation.mutate()}
+                disabled={saveMutation.isLoading}
+                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                <Save size={16} />
+                <span>{saveMutation.isLoading ? 'Saving...' : 'Save Changes'}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => confirmMutation.mutate()}
+                disabled={confirmMutation.isLoading}
+                className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
+              >
+                <Check size={16} />
+                <span>{confirmMutation.isLoading ? 'Confirming...' : 'Confirm'}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

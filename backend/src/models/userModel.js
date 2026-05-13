@@ -31,7 +31,9 @@ async function findAll(limit, offset) {
            COALESCE(asa.section_c, false) AS section_c,
            COALESCE(asa.section_d, false) AS section_d,
            COALESCE(asa.section_e, false) AS section_e,
-           COALESCE(asa.section_f, false) AS section_f
+           COALESCE(asa.section_f, false) AS section_f,
+           COALESCE(asa.section_g, false) AS section_g,
+           COALESCE(asa.section_h, false) AS section_h
     FROM users u
     LEFT JOIN admin_section_access asa ON u.id = asa.admin_id
     WHERE u.is_deleted = FALSE
@@ -74,10 +76,31 @@ async function findMobileUsersByProjects(projectIds) {
 
 async function touch(id) {
   const result = await query(
-    'UPDATE users SET updated_at = NOW() WHERE id = $1 RETURNING id',
+    'UPDATE users SET updated_at = NOW() WHERE id = $1 RETURNING id, updated_at',
     [id]
   );
   return result.rows[0] || null;
 }
 
-module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, touch };
+async function findByProject(projectId) {
+  const result = await query(
+    `SELECT u.id, u.name, u.email, u.role, u.created_at,
+            COALESCE(asa.section_a, false) AS section_a,
+            COALESCE(asa.section_b, false) AS section_b,
+            COALESCE(asa.section_c, false) AS section_c,
+            COALESCE(asa.section_d, false) AS section_d,
+            COALESCE(asa.section_e, false) AS section_e,
+            COALESCE(asa.section_f, false) AS section_f,
+            COALESCE(asa.section_g, false) AS section_g,
+            COALESCE(asa.section_h, false) AS section_h
+     FROM users u
+     JOIN project_users pu ON u.id = pu.user_id
+     LEFT JOIN admin_section_access asa ON u.id = asa.admin_id
+     WHERE pu.project_id = $1 AND u.is_deleted = FALSE
+     ORDER BY u.id DESC`,
+    [projectId]
+  );
+  return result.rows;
+}
+
+module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, touch, findByProject };

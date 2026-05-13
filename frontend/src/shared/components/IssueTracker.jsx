@@ -42,7 +42,7 @@ export const IssueTracker = ({ issue, logs = [] }) => {
               <div className="absolute -left-6 top-1.5 w-4 h-4 bg-white border-2 border-primary rounded-full"></div>
               <div className="text-sm">
                 <p className="font-medium text-gray-900">Escalated to Level {log.to_level}</p>
-                <p className="text-xs text-gray-500">{new Date(log.escalated_at).toLocaleString()}</p>
+                <p className="text-xs text-gray-500">{new Date(log.escalated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
               </div>
             </div>
           ))}
@@ -51,7 +51,7 @@ export const IssueTracker = ({ issue, logs = [] }) => {
             <div className="absolute -left-6 top-1.5 w-4 h-4 bg-primary rounded-full"></div>
             <div className="text-sm">
               <p className="font-medium text-gray-900">Issue Raised</p>
-              <p className="text-xs text-gray-500">{new Date(issue.raised_at).toLocaleString()}</p>
+              <p className="text-xs text-gray-500">{new Date(issue.raised_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
             </div>
           </div>
         </div>

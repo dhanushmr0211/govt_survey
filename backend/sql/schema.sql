@@ -64,7 +64,11 @@ CREATE TABLE IF NOT EXISTS admin_section_access (
   admin_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   section_a BOOLEAN DEFAULT FALSE,
   section_b BOOLEAN DEFAULT FALSE,
-  section_c BOOLEAN DEFAULT FALSE
+  section_c BOOLEAN DEFAULT FALSE,
+  section_d BOOLEAN DEFAULT FALSE,
+  section_e BOOLEAN DEFAULT FALSE,
+  section_f BOOLEAN DEFAULT FALSE,
+  section_g BOOLEAN DEFAULT FALSE
 );
 
 -- SHARED FILES (Replaces hardcoded image columns)

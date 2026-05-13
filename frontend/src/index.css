@@ -1,14 +1,93 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #E53E3E;
-  --color-primary-dark: #C53030;
-  --color-primary-light: #FEB2B2;
-  --color-background: #F7FAFC;
+  --color-primary: #DC2626;
+  --color-primary-dark: #991B1B;
+  --color-primary-light: #FEE2E2;
+  --color-background: #F4F7FB;
 }
 
 @layer base {
+  * {
+    box-sizing: border-box;
+  }
+
   body {
     @apply bg-background text-gray-900 font-sans antialiased min-h-screen;
+  }
+
+  button,
+  a,
+  input,
+  select {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+  }
+
+  ::selection {
+    @apply bg-primary text-white;
+  }
+}
+
+@layer components {
+  .premium-panel {
+    @apply rounded-lg border border-slate-200/80 bg-white shadow-sm;
+  }
+
+  .premium-table {
+    @apply w-full text-left text-sm text-slate-600;
+  }
+
+  .premium-table thead {
+    @apply bg-slate-50 text-xs font-semibold uppercase text-slate-500;
+  }
+
+  .premium-table th {
+    @apply px-4 py-3;
+  }
+
+  .premium-table td {
+    @apply px-4 py-3;
+  }
+
+  .premium-table tbody tr {
+    @apply border-b border-slate-100 transition-colors hover:bg-slate-50/80;
+  }
+
+  .app-container {
+    @apply min-h-full;
+  }
+
+  .main-content {
+    @apply mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8;
+  }
+
+  .card {
+    @apply rounded-lg border border-slate-200 bg-white p-5 shadow-sm;
+  }
+
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50;
+  }
+
+  .btn-primary {
+    @apply border-primary bg-primary text-white hover:bg-primary-dark;
+  }
+
+  .input-group {
+    @apply flex flex-col gap-2;
+  }
+
+  .input-field {
+    @apply rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

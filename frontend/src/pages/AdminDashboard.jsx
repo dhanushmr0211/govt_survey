@@ -8,10 +8,10 @@ import { useEmployeeTracking } from '../shared/hooks/useEmployeeTracking';
 import { useMobileUserTracking } from '../shared/hooks/useMobileUserTracking';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import { BarChart3, CalendarDays, ClipboardList, Download, FolderKanban, Smartphone, UserCheck } from 'lucide-react';
 
 export default function AdminDashboard() {
   const user = useAuthStore((state) => state.user);
-  const token = localStorage.getItem('token');
   const isMasterAdmin = user?.role === 'MASTER_ADMIN';
   const hasSectionA = isMasterAdmin || user?.section_a;
   const hasSectionB = isMasterAdmin || user?.section_b;
@@ -22,97 +22,117 @@ export default function AdminDashboard() {
   const [activeView, setActiveView] = useState('projects');
   const [selectedProject, setSelectedProject] = useState(null); // { id, name }
   const [selectedUlb, setSelectedUlb] = useState(null);
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
   const { data: projects = [], isLoading } = useProjects();
 
-  if (isLoading) return <div className="text-gray-500 text-center py-10">Loading projects...</div>;
+  if (isLoading) return <div className="premium-panel p-10 text-center text-slate-500">Loading projects...</div>;
+
+  const projectName = activeView === 'projects' ? 'My Projects' : selectedProject?.name || 'Project Workspace';
+  const sectionItems = (selectedProject && activeView !== 'projects') ? [
+    hasSectionA && { key: 'pole_survey_summary', label: 'Summary', icon: BarChart3 },
+    hasSectionB && { key: 'pole_survey_today', label: "Today's Summary", icon: CalendarDays },
+    hasSectionC && { key: 'pole_survey_issues', label: 'Issues', icon: ClipboardList },
+  ].filter(Boolean) : [];
+
+  const utilityItems = [
+    hasSectionE && { key: 'employee_tracking', label: 'Employee Tracking', icon: UserCheck },
+    hasSectionF && { key: 'mobile_user_tracking', label: 'Mobile User Tracking', icon: Smartphone },
+  ].filter(Boolean);
 
   return (
-    <div className="flex h-screen bg-gray-50 -m-6">
+    <div className="min-h-full -m-4 bg-slate-100 sm:-m-6 xl:-m-8">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-100 flex flex-col">
-        <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">Govt Survey</h2>
-        </div>
-        <nav className="flex-1 p-4 space-y-2">
-          <button
-            onClick={() => { setActiveView('projects'); setSelectedUlb(null); }}
-            className={`w-full text-left p-2 rounded text-sm ${activeView === 'projects' ? 'bg-primary/5 text-primary font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
-          >
-            Projects
-          </button>
-          
-          {selectedProject && (
-            <div className="ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
-              {hasSectionA && (
-                <button
-                  onClick={() => { setActiveView('pole_survey_summary'); setSelectedUlb(null); }}
-                  className={`w-full text-left p-2 text-xs rounded ${activeView === 'pole_survey_summary' ? 'text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
-                >
-                  1: SUMMARY
-                </button>
-              )}
-              {hasSectionB && (
-                <button
-                  onClick={() => { setActiveView('pole_survey_today'); setSelectedUlb(null); }}
-                  className={`w-full text-left p-2 text-xs rounded ${activeView === 'pole_survey_today' ? 'text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
-                >
-                  2: TODAY'S SUMMARY
-                </button>
-              )}
-              {hasSectionC && (
-                <button
-                  onClick={() => { setActiveView('pole_survey_issues'); setSelectedUlb(null); }}
-                  className={`w-full text-left p-2 text-xs rounded ${activeView === 'pole_survey_issues' ? 'text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
-                >
-                  3: ISSUES
-                </button>
-              )}
-            </div>
-          )}
-          
-          {hasSectionE && (
+      <div className="mx-auto flex min-h-full w-full max-w-[1760px] gap-5 p-4 sm:p-6 xl:p-8">
+        <aside className="hidden w-72 shrink-0 flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:flex">
+          <div className="mb-4 rounded-lg bg-slate-950 p-4 text-white">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Admin workspace</p>
+            <p className="mt-1 text-lg font-bold">{user?.name || 'Admin'}</p>
+          </div>
+          <nav className="space-y-2">
             <button
-              onClick={() => setActiveView('employee_tracking')}
-              className={`w-full text-left p-2 text-sm rounded ${activeView === 'employee_tracking' ? 'text-primary font-medium bg-gray-50' : 'text-gray-600 hover:bg-gray-50'}`}
+              onClick={() => { setActiveView('projects'); setSelectedUlb(null); }}
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${activeView === 'projects' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}
             >
-              EMPLOYEE TRACKING
+              <FolderKanban size={18} /> Projects
             </button>
-          )}
 
-          {hasSectionF && (
+            {sectionItems.length > 0 && (
+              <div className="space-y-1 border-l border-slate-200 pl-3">
+                {sectionItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
+                      className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-primary-light text-primary-dark' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+                    >
+                      <Icon size={16} /> {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {utilityItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => setActiveView(item.key)}
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}
+                >
+                  <Icon size={18} /> {item.label}
+                </button>
+              );
+            })}
+
             <button
-              onClick={() => setActiveView('mobile_user_tracking')}
-              className={`w-full text-left p-2 text-sm rounded ${activeView === 'mobile_user_tracking' ? 'text-primary font-medium bg-gray-50' : 'text-gray-600 hover:bg-gray-50'}`}
+              onClick={() => setIsDownloadModalOpen(true)}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950"
+              disabled={!selectedProject}
+              title={!selectedProject ? 'Please select a project first' : ''}
             >
-              MOBILE USER TRACKING
+              <Download size={18} /> Download Report
             </button>
-          )}
+          </nav>
+        </aside>
 
-          <button
-            onClick={() => alert('Download Report flow will be implemented later.')}
-            className="w-full text-left p-2 text-sm text-gray-600 hover:bg-gray-50 rounded"
-          >
-            DOWNLOAD REPORT
-          </button>
-        </nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 p-6 overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
+        {/* Main Content */}
+        <section className="min-w-0 flex-1">
+          <div className="mb-5 flex flex-col justify-between gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {activeView === 'projects' ? 'My Projects' : selectedProject?.name}
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Dashboard</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">
+              {projectName}
             </h1>
-            <p className="text-sm text-gray-500">Welcome, {user?.name}</p>
+            <p className="mt-1 text-sm text-slate-500">Welcome, {user?.name}. Manage survey activity from one wide operational view.</p>
+          </div>
+          <div className="flex flex-wrap gap-2 lg:hidden">
+            {[{ key: 'projects', label: 'Projects', icon: FolderKanban }, ...sectionItems, ...utilityItems].map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => { setActiveView(item.key); if (item.key !== 'projects') setSelectedUlb(null); }}
+                  className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold ${activeView === item.key ? 'bg-primary text-white' : 'bg-slate-100 text-slate-700'}`}
+                >
+                  <Icon size={14} /> {item.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {activeView === 'projects' && (
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Assigned Projects</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="premium-panel p-6">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-950">Assigned Projects</h2>
+                <p className="text-sm text-slate-500">Open a project to access summary, today, and issue workflows.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
               {projects.map((project) => (
                 <div 
                   key={project.id}
@@ -122,14 +142,18 @@ export default function AdminDashboard() {
                     else if (hasSectionB) setActiveView('pole_survey_today');
                     else if (hasSectionC) setActiveView('pole_survey_issues');
                   }}
-                  className="p-6 border border-gray-200 rounded-lg hover:border-primary cursor-pointer transition-colors"
+                  className="group cursor-pointer rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
                 >
-                  <h3 className="font-semibold text-gray-900">{project.name}</h3>
-                  <p className="text-sm text-gray-500 mt-1">Manage project details, summaries, and approvals.</p>
+                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-light text-primary-dark">
+                    <FolderKanban size={22} />
+                  </div>
+                  <h3 className="font-bold text-slate-950">{project.name}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">Manage project details, summaries, approvals, and tracking.</p>
+                  <p className="mt-5 text-sm font-semibold text-primary">Open workspace</p>
                 </div>
               ))}
               {projects.length === 0 && (
-                <div className="text-gray-500 text-center py-10 col-span-3">No projects assigned yet.</div>
+                <div className="col-span-full py-12 text-center text-slate-500">No projects assigned yet.</div>
               )}
             </div>
           </div>
@@ -162,6 +186,13 @@ export default function AdminDashboard() {
         {activeView === 'mobile_user_tracking' && (
           <MobileUserTrackingView projectId={selectedProject?.id || 2} />
         )}
+        </section>
+
+        <DownloadReportModal 
+          isOpen={isDownloadModalOpen} 
+          onClose={() => setIsDownloadModalOpen(false)} 
+          projectId={selectedProject?.id || 2}
+        />
       </div>
     </div>
   );
@@ -230,70 +261,6 @@ function EmployeeTrackingView({ projectId }) {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{emp.total_resolved}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <button onClick={() => setSelectedEmp(emp)} className="text-primary hover:text-primary/80 font-medium">View More</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function EmployeeIssuesList({ projectId, userId, status }) {
-  const token = localStorage.getItem('token');
-  const [selectedIssue, setSelectedIssue] = useState(null);
-  
-  const { data, isLoading } = useQuery({
-    queryKey: ['employee-issues', projectId, userId, status],
-    queryFn: async () => {
-      let url = `http://10.73.182.200:3000/api/v1/projects/${projectId}/issues?status=${status}`;
-      if (userId) url += `&resolvedBy=${userId}`;
-      
-      const res = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.data;
-    }
-  });
-
-  if (isLoading) return <div>Loading issues...</div>;
-
-  const issues = data?.issues || [];
-
-  return (
-    <div className="mt-4">
-      <h3 className="text-md font-medium text-gray-900 mb-2">{status === 'OPEN' ? 'Open' : 'Resolved'} Issues ({issues.length})</h3>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead>
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entity ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {issues.map((issue) => (
-              <tr key={issue.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${issue.entity_type === 'switch_point' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}>
-                    {issue.entity_type === 'switch_point' ? 'Switch Point' : 'Pole'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{issue.entity_id}</td>
-                <td className="px-6 py-4 text-sm text-gray-900 truncate max-w-xs">{issue.issue_note}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(issue.raised_at).toLocaleDateString()}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(issue.raised_at).toLocaleTimeString()}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  {status === 'OPEN' ? (
-                    <span onClick={() => setSelectedIssue(issue)} className="text-red-600 cursor-pointer hover:text-red-800">INSPECT</span>
-                  ) : (
-                    <span onClick={() => setSelectedIssue(issue)} className="text-primary cursor-pointer hover:text-primary/80">VIEW MORE DETAILS</span>
-                  )}
                 </td>
               </tr>
             ))}
@@ -429,8 +396,8 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sub.user_id}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{sub.user_name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(sub.created_at).toLocaleDateString()}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(sub.created_at).toLocaleTimeString()}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(sub.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(sub.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sub.ward_number}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{sub.identifier}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -465,8 +432,20 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
                   </div>
                   <div>
                     <p className="text-gray-500 text-xs">Date/Time</p>
-                    <p className="font-medium">{new Date(selectedSub.created_at).toLocaleString()}</p>
+                    <p className="font-medium">{new Date(selectedSub.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
                   </div>
+                  {selectedSub.confirmed_by_name && (
+                    <>
+                      <div>
+                        <p className="text-gray-500 text-xs">Confirmed By</p>
+                        <p className="font-medium">{selectedSub.confirmed_by_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 text-xs">Confirmed At</p>
+                        <p className="font-medium">{selectedSub.confirmed_at ? new Date(selectedSub.confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</p>
+                      </div>
+                    </>
+                  )}
                   <div>
                     <p className="text-gray-500 text-xs">Ward Number</p>
                     <p className="font-medium">{selectedSub.ward_number}</p>
@@ -490,11 +469,26 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
                       </>
                     ) : (
                       <>
+                        <div><p className="text-gray-500">Switch Point No#</p><p className="font-medium">{selectedSub.switch_point_number || 'N/A'}</p></div>
+                        <div><p className="text-gray-500">Pole No#</p><p className="font-medium">{selectedSub.identifier || 'N/A'}</p></div>
+                        <div><p className="text-gray-500">Conductor Type</p><p className="font-medium">{selectedSub.conductor_type || 'N/A'}</p></div>
                         <div><p className="text-gray-500">Pole Type</p><p className="font-medium">{selectedSub.pole_type || 'N/A'}</p></div>
                         <div><p className="text-gray-500">Height</p><p className="font-medium">{selectedSub.pole_height_mtrs || 'N/A'}m</p></div>
                         <div><p className="text-gray-500">Condition</p><p className="font-medium">{selectedSub.pole_condition || 'N/A'}</p></div>
+                        <div><p className="text-gray-500">Distance</p><p className="font-medium">{selectedSub.pole_to_pole_distance_mtrs || 'N/A'}m</p></div>
+                        <div><p className="text-gray-500">ARM Type</p><p className="font-medium">{selectedSub.arm_type || 'N/A'}</p></div>
+                        <div><p className="text-gray-500">ARM Status</p><p className="font-medium">{selectedSub.arm_status || 'N/A'}</p></div>
+                        <div><p className="text-gray-500">Present ARM No#</p><p className="font-medium">{selectedSub.present_arm_no || 'N/A'}</p></div>
+                        <div><p className="text-gray-500">Present ARM Length</p><p className="font-medium">{selectedSub.present_arm_length_mtrs || 'N/A'}m</p></div>
+                        <div><p className="text-gray-500">Lights Count</p><p className="font-medium">{selectedSub.how_many_lights_in_pole || 'N/A'}</p></div>
+                        <div><p className="text-gray-500">Light Mounting Height</p><p className="font-medium">{selectedSub.light_mounting_height || 'N/A'}</p></div>
                         <div><p className="text-gray-500">Light Type</p><p className="font-medium">{selectedSub.light_type || 'N/A'}</p></div>
-                        <div><p className="text-gray-500">Working</p><p className="font-medium">{selectedSub.light_working_status || 'N/A'}</p></div>
+                        <div><p className="text-gray-500">Light Capacity</p><p className="font-medium">{selectedSub.light_capacity || 'N/A'}</p></div>
+                        <div><p className="text-gray-500">Light Working Status</p><p className="font-medium">{selectedSub.light_working_status || 'N/A'}</p></div>
+                        <div><p className="text-gray-500">Road Category</p><p className="font-medium">{selectedSub.road_category || 'N/A'}</p></div>
+                        <div><p className="text-gray-500">Road Type</p><p className="font-medium">{selectedSub.road_type || 'N/A'}</p></div>
+                        <div><p className="text-gray-500">Road Width</p><p className="font-medium">{selectedSub.road_width_mtrs || 'N/A'}m</p></div>
+                        <div><p className="text-gray-500">Pole Earthing Exists</p><p className="font-medium">{selectedSub.pole_earthing_exists || 'N/A'}</p></div>
                       </>
                     )}
                   </div>
@@ -525,6 +519,112 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function DownloadReportModal({ isOpen, onClose, projectId }) {
+  const token = localStorage.getItem('token');
+  const [district, setDistrict] = useState('');
+  const [tillDate, setTillDate] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const { data: summary = [] } = useQuery({
+    queryKey: ['districts', projectId],
+    queryFn: async () => {
+      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/summary/districts`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return res.data.summary;
+    },
+    enabled: isOpen && !!projectId
+  });
+
+  const districts = Array.from(new Set(summary.map(s => s.district_id))).map(id => {
+    const row = summary.find(s => s.district_id === id);
+    return { id, name: row.district_name };
+  });
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      let url = `http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/report/download`;
+      let params = [];
+      if (district) params.push(`district=${district}`);
+      if (tillDate) params.push(`tillDate=${tillDate}`);
+      if (params.length > 0) url += `?${params.join('&')}`;
+
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+
+      const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = `report_${projectId}_${district || 'all'}_${tillDate || 'all'}.xlsx`;
+      link.click();
+      onClose();
+    } catch (error) {
+      console.error(error);
+      alert('Failed to download report');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Download Report</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">Close</button>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Select District</label>
+            <select
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+            >
+              <option value="">All Districts</option>
+              {districts.map(d => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Till Date</label>
+            <input
+              type="date"
+              value={tillDate}
+              onChange={(e) => setTillDate(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-6">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
+          >
+            {isDownloading ? 'Downloading...' : 'Download'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

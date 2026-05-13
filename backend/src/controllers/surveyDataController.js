@@ -18,7 +18,9 @@ async function searchUlbsHandler(req, res) {
 
 async function createSwitchPointHandler(req, res) {
   try {
+    const { projectId } = req.params;
     const data = req.body;
+    data.project_id = Number(projectId);
     data.created_by = req.user?.id; // Assuming auth middleware sets req.user
     
     const newSwitchPoint = await createSwitchPoint(data);
@@ -31,7 +33,9 @@ async function createSwitchPointHandler(req, res) {
 
 async function createPoleHandler(req, res) {
   try {
+    const { projectId } = req.params;
     const data = req.body;
+    data.project_id = Number(projectId);
     data.created_by = req.user?.id;
     
     if (!data.switch_point_id) {

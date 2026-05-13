@@ -16,13 +16,15 @@ const registerSchema = z.object({
   phone: z.string().trim().max(20).optional(),
   role: z.string().trim().max(50).optional(),
   project_id: z.number().int().positive().optional(),
-  projects: z.array(z.number().int().positive()).optional(),
+  projects: z.array(z.number().int().positive()).min(1, 'Please assign at least one project'),
   section_a: z.boolean().optional(),
   section_b: z.boolean().optional(),
   section_c: z.boolean().optional(),
   section_d: z.boolean().optional(),
   section_e: z.boolean().optional(),
   section_f: z.boolean().optional(),
+  section_g: z.boolean().optional(),
+  section_h: z.boolean().optional(),
 });
 
 const updateAccessSchema = z.object({
@@ -32,6 +34,8 @@ const updateAccessSchema = z.object({
   section_d: z.boolean().optional(),
   section_e: z.boolean().optional(),
   section_f: z.boolean().optional(),
+  section_g: z.boolean().optional(),
+  section_h: z.boolean().optional(),
 });
 
 const loginSchema = z.object({
@@ -68,7 +72,7 @@ async function register(req, res, next) {
     const user = await userService.createUser(data.name, data.email, passwordHash, selectedRole, req.user.sub ? Number(req.user.sub) : null, data.phone);
 
     // Save section access
-    await adminSectionAccessModel.setSectionAccess(user.id, data.section_a || false, data.section_b || false, data.section_c || false, data.section_d || false, data.section_e || false, data.section_f || false);
+    await adminSectionAccessModel.setSectionAccess(user.id, data.section_a || false, data.section_b || false, data.section_c || false, data.section_d || false, data.section_e || false, data.section_f || false, data.section_g || false, data.section_h || false);
 
     // Handle Project Assignment
     if (creatorRole === ROLES.MASTER_ADMIN && data.projects) {
@@ -127,7 +131,9 @@ async function login(req, res, next) {
         section_c: sectionAccess.section_c,
         section_d: sectionAccess.section_d,
         section_e: sectionAccess.section_e,
-        section_f: sectionAccess.section_f
+        section_f: sectionAccess.section_f,
+        section_g: sectionAccess.section_g,
+        section_h: sectionAccess.section_h
       },
       env.jwtSecret,
       { expiresIn: env.jwtExpiresIn }
@@ -146,6 +152,8 @@ async function login(req, res, next) {
         section_d: sectionAccess.section_d,
         section_e: sectionAccess.section_e,
         section_f: sectionAccess.section_f,
+        section_g: sectionAccess.section_g,
+        section_h: sectionAccess.section_h,
       },
     });
   } catch (error) {
@@ -168,6 +176,7 @@ async function me(req, res, next) {
         name: user.name,
         email: user.email,
         role: normalizeRole(user.role),
+        ...(await adminSectionAccessModel.getSectionAccess(user.id)),
       },
     });
   } catch (error) {
@@ -182,13 +191,19 @@ async function listUsers(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to view users' });
     }
 
+    const { projectId } = req.query;
     let users = [];
-    if (req.user.role === ROLES.MASTER_ADMIN || req.user.role === ROLES.ADMIN) {
-      users = await userService.listAllUsers();
-    } else if (req.user.role === ROLES.EMPLOYEE) {
-      const employeeProjectIds = await projectUserModel.getProjectIds(Number(req.user.sub));
-      if (employeeProjectIds.length > 0) {
-        users = await userService.listMobileUsersByProjects(employeeProjectIds);
+    
+    if (projectId) {
+      users = await userService.listUsersByProject(Number(projectId));
+    } else {
+      if (req.user.role === ROLES.MASTER_ADMIN || req.user.role === ROLES.ADMIN) {
+        users = await userService.listAllUsers();
+      } else if (req.user.role === ROLES.EMPLOYEE) {
+        const employeeProjectIds = await projectUserModel.getProjectIds(Number(req.user.sub));
+        if (employeeProjectIds.length > 0) {
+          users = await userService.listMobileUsersByProjects(employeeProjectIds);
+        }
       }
     }
     return res.json({ users });
@@ -206,14 +221,18 @@ async function updateAccess(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to update access' });
     }
 
+    const existingAccess = await adminSectionAccessModel.getSectionAccess(Number(id));
+
     await adminSectionAccessModel.setSectionAccess(
       Number(id),
-      data.section_a || false,
-      data.section_b || false,
-      data.section_c || false,
-      data.section_d || false,
-      data.section_e || false,
-      data.section_f || false
+      data.section_a ?? existingAccess.section_a,
+      data.section_b ?? existingAccess.section_b,
+      data.section_c ?? existingAccess.section_c,
+      data.section_d ?? existingAccess.section_d,
+      data.section_e ?? existingAccess.section_e,
+      data.section_f ?? existingAccess.section_f,
+      data.section_g ?? existingAccess.section_g,
+      data.section_h ?? existingAccess.section_h
     );
 
     await userService.touch(Number(id));

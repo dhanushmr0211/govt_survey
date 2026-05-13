@@ -59,13 +59,8 @@ async function accessibleProjectIds(userId, role) {
     return cached;
   }
 
-  let ids;
-  if (role === ROLES.CLIENT) {
-    ids = await projectModel.getIdsByClientId(userId);
-  } else {
-    ids = await projectUserModel.getProjectIds(userId);
-  }
-
+  const ids = await projectUserModel.getProjectIds(userId);
+  
   projectAccessCache.set(key, ids);
   return ids;
 }

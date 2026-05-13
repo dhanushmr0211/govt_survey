@@ -1,9 +1,6 @@
 const express = require('express');
 const { authenticate } = require('../../../middleware/auth');
 const {
-  searchUlbsHandler,
-  createSwitchPointHandler,
-  createPoleHandler,
   getSwitchPointsHandler,
   getPolesHandler,
   updateSwitchPointHandler,
@@ -11,6 +8,12 @@ const {
   confirmSwitchPointHandler,
   confirmPoleHandler
 } = require('../controllers/survey.controller');
+
+const { 
+  searchUlbsHandler, 
+  createSwitchPointHandler, 
+  createPoleHandler 
+} = require('../../../controllers/surveyDataController');
 const { uploadFileHandler, getFilesHandler } = require('../../../controllers/entityFileController');
 const { upload } = require('../../../utils/upload');
 const {
@@ -18,6 +21,7 @@ const {
   getWardSummaryHandler,
   getWardDetailsHandler,
   getPendingSubmissionsHandler,
+  downloadReportHandler,
   getTodaySubmissionsHandler,
   getConfirmedSubmissionsHandler,
   getMyStatsHandler,
@@ -49,6 +53,7 @@ poleSurveyRouter.post('/poles/:id/confirm', confirmPoleHandler);
 poleSurveyRouter.get('/my-stats', getMyStatsHandler);
 poleSurveyRouter.get('/employee-tracking', getEmployeeTrackingHandler);
 poleSurveyRouter.get('/mobile-user-tracking', getMobileUserTrackingHandler);
+poleSurveyRouter.get('/report/download', downloadReportHandler);
 poleSurveyRouter.get('/summary/districts', getDistrictSummaryHandler);
 poleSurveyRouter.get('/summary/ulbs/:ulbId/wards', getWardSummaryHandler);
 poleSurveyRouter.get('/summary/ulbs/:ulbId/wards/:wardNumber/details', getWardDetailsHandler);

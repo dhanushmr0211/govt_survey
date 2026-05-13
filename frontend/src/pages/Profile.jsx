@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import TopNav from '../components/TopNav';
-import { BarChart3, Calendar, TrendingUp, CheckCircle, User, FileText, Shield, Settings, Activity } from 'lucide-react';
+import { Activity, FileText, Settings, Shield, User } from 'lucide-react';
 
 export default function Profile() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -11,13 +11,13 @@ export default function Profile() {
     { name: 'Admin Details', icon: FileText },
     { name: 'Security', icon: Shield },
     { name: 'Preferences', icon: Settings },
-    { name: 'Activity History', icon: Activity }
+    { name: 'Activity History', icon: Activity },
   ];
 
   return (
     <div className="app-container">
       <TopNav user={user} />
-      
+
       <main className="main-content">
         <div className="card profile-header" style={{ justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
@@ -29,65 +29,26 @@ export default function Profile() {
               <p>{user.email}</p>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <span className="badge">{user.role}</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>📍 Regional Office • Active</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Regional Office - Active</span>
               </div>
             </div>
           </div>
           <button className="btn btn-primary">Edit Profile</button>
         </div>
 
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-info">
-              <h3>Total Surveys</h3>
-              <p>12</p>
-            </div>
-            <div className="stat-icon" style={{ background: '#3b82f6' }}>
-              <BarChart3 size={20} />
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-info">
-              <h3>Completion Rate</h3>
-              <p>100%</p>
-            </div>
-            <div className="stat-icon" style={{ background: '#10b981' }}>
-              <CheckCircle size={20} />
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-info">
-              <h3>Active Since</h3>
-              <p>2026</p>
-            </div>
-            <div className="stat-icon" style={{ background: '#8b5cf6' }}>
-              <Calendar size={20} />
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-info">
-              <h3>Rating</h3>
-              <p style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>5 <span style={{ color: '#fbbf24' }}>★</span></p>
-            </div>
-            <div className="stat-icon" style={{ background: '#f59e0b' }}>
-              <TrendingUp size={20} />
-            </div>
-          </div>
-        </div>
-
         <div className="card">
           <div className="tabs-container">
-            {tabs.map(tab => {
+            {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
-                <button 
+                <button
                   key={tab.name}
                   className={`tab ${activeTab === tab.name ? 'active' : ''}`}
                   onClick={() => setActiveTab(tab.name)}
                 >
                   <Icon size={16} /> {tab.name}
                 </button>
-              )
+              );
             })}
           </div>
 
@@ -112,7 +73,7 @@ export default function Profile() {
                 </div>
                 <div className="input-group" style={{ gridColumn: '1 / -1' }}>
                   <label>Bio / Notes</label>
-                  <textarea className="input-field" rows="4" placeholder="Enter details..."></textarea>
+                  <textarea className="input-field" rows="4" placeholder="Enter details..." />
                 </div>
                 <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end' }}>
                   <button className="btn btn-primary">Save Changes</button>
@@ -128,5 +89,5 @@ export default function Profile() {
         </div>
       </main>
     </div>
-  )
+  );
 }

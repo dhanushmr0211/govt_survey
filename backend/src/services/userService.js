@@ -24,4 +24,8 @@ async function touch(id) {
   return userModel.touch(id);
 }
 
-module.exports = { findUserById, findUserByEmail, createUser, listAllUsers, listMobileUsersByProjects, touch };
+async function listUsersByProject(projectId) {
+  return userModel.findByProject(projectId);
+}
+
+module.exports = { findUserById, findUserByEmail, createUser, listAllUsers, listMobileUsersByProjects, touch, listUsersByProject };

@@ -118,7 +118,7 @@ export default function Projects() {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Calendar size={16} color="#3b82f6" />
-                        <span>Created: {new Date(project.created_at).toLocaleDateString()}</span>
+                        <span>Created: {new Date(project.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Clock size={16} color="var(--primary-green)" />

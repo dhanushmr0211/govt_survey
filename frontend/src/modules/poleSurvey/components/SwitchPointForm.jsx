@@ -6,12 +6,12 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
   const [formData, setFormData] = useState({
     ward_number: '',
     switch_point_number: '',
-    switch_point_type: 'DP',
-    meter_exists: 'no',
-    meter_type: '1P',
+    switch_point_type: '',
+    meter_exists: '',
+    meter_type: '',
     meter_rr_number: '',
     meter_serial_number: '',
-    meter_condition: 'working',
+    meter_condition: '',
   });
 
   const handleChange = (e) => {
@@ -24,10 +24,15 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
     const token = localStorage.getItem('token');
     const projectId = 2; // Fixed to match database
     try {
+      const isMeterYes = formData.meter_exists === 'yes';
       const res = await axios.post(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/switch-point`, {
         ...formData,
         ulb_id: ulb.id,
-        meter_exists: formData.meter_exists === 'yes',
+        meter_exists: isMeterYes,
+        meter_type: isMeterYes ? formData.meter_type : null,
+        meter_condition: isMeterYes ? formData.meter_condition : null,
+        meter_rr_number: isMeterYes ? formData.meter_rr_number : null,
+        meter_serial_number: isMeterYes ? formData.meter_serial_number : null,
         latitude: null,
         longitude: null,
       }, {
@@ -60,7 +65,8 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
         </div>
         <div>
           <label className="block text-gray-700 font-medium mb-1">Switch Point Type</label>
-          <select name="switch_point_type" value={formData.switch_point_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+          <select name="switch_point_type" value={formData.switch_point_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required>
+            <option value="">Select Type</option>
             <option value="DP">DP</option>
             <option value="MCB">MCB</option>
             <option value="SWITCH">SWITCH</option>
@@ -69,7 +75,8 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
         </div>
         <div>
           <label className="block text-gray-700 font-medium mb-1">Does Meter Exist?</label>
-          <select name="meter_exists" value={formData.meter_exists} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+          <select name="meter_exists" value={formData.meter_exists} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required>
+            <option value="">Select</option>
             <option value="yes">Yes</option>
             <option value="no">No</option>
           </select>
@@ -79,7 +86,8 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
           <>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Meter Type</label>
-              <select name="meter_type" value={formData.meter_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+              <select name="meter_type" value={formData.meter_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required>
+                <option value="">Select Meter Type</option>
                 <option value="1P">1P</option>
                 <option value="3P">3P</option>
               </select>
@@ -94,7 +102,8 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Meter Condition</label>
-              <select name="meter_condition" value={formData.meter_condition} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+              <select name="meter_condition" value={formData.meter_condition} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required>
+                <option value="">Select Condition</option>
                 <option value="working">Working</option>
                 <option value="not working">Not Working</option>
                 <option value="missing">Missing</option>

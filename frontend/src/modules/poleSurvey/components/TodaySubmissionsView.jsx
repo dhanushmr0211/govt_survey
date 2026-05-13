@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 
-export const TodaySubmissionsView = () => {
+export const TodaySubmissionsView = ({ ulb }) => {
   const projectId = 2; // Fixed to match database
   const token = localStorage.getItem('token');
   const [selectedSubmission, setSelectedSubmission] = useState(null);
@@ -71,14 +71,14 @@ export const TodaySubmissionsView = () => {
             <tr>
               <th className="px-4 py-2">Type</th>
               <th className="px-4 py-2">Ward</th>
-              <th className="px-4 py-2">Identifier</th>
+              <th className="px-4 py-2">ULB</th>
               <th className="px-4 py-2">Time</th>
               <th className="px-4 py-2">Action</th>
             </tr>
           </thead>
           <tbody>
             {queue.map((item) => {
-              const date = new Date(item.created_at.replace('Z', ''));
+              const date = new Date(item.created_at);
               return (
                 <tr key={`${item.type}-${item.id}`} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-2">
@@ -87,8 +87,8 @@ export const TodaySubmissionsView = () => {
                     </span>
                   </td>
                   <td className="px-4 py-2">{item.ward_number}</td>
-                  <td className="px-4 py-2">{item.identifier}</td>
-                  <td className="px-4 py-2">{date.toLocaleTimeString()}</td>
+                  <td className="px-4 py-2">{item.ulb_name || 'N/A'}</td>
+                   <td className="px-4 py-2">{date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
                   <td className="px-4 py-2">
                     <button
                       onClick={() => setSelectedSubmission(item)}
@@ -127,13 +127,13 @@ export const TodaySubmissionsView = () => {
       )}
 
       {queue.length === 0 && (
-        <div className="text-gray-500 text-center py-6">No submissions done today.</div>
+        <div className="text-gray-500 text-center py-6">No {activeTab} submissions found.</div>
       )}
 
       {/* Inspect Modal */}
       {selectedSubmission && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-width-4xl w-full mx-4" style={{ maxWidth: '600px' }}>
+          <div className="bg-white p-6 rounded-lg max-width-4xl w-full mx-4" style={{ maxWidth: '800px' }}>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 Details: {selectedSubmission.type === 'switch_point' ? 'Switch Point' : 'Pole'}
@@ -143,9 +143,10 @@ export const TodaySubmissionsView = () => {
             
             <div className="grid grid-cols-1 gap-4 text-sm max-h-96 overflow-y-auto">
               <div className="grid grid-cols-2 gap-2">
+                <div><p className="text-gray-500 text-xs">ULB</p><p className="font-medium">{selectedSubmission.ulb_name || 'N/A'}</p></div>
                 <div><p className="text-gray-500 text-xs">Ward Number</p><p className="font-medium">{selectedSubmission.ward_number}</p></div>
                 <div><p className="text-gray-500 text-xs">Identifier</p><p className="font-medium">{selectedSubmission.identifier}</p></div>
-                <div><p className="text-gray-500 text-xs">Time</p><p className="font-medium">{new Date(selectedSubmission.created_at.replace('Z', '')).toLocaleTimeString()}</p></div>
+                 <div><p className="text-gray-500 text-xs">Time</p><p className="font-medium">{new Date(selectedSubmission.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</p></div>
               </div>
 
               <div className="border-t pt-2 mt-2">
@@ -162,14 +163,26 @@ export const TodaySubmissionsView = () => {
                     </>
                   ) : (
                     <>
-                      <div><p className="text-gray-500">Conductor Type</p><p className="font-medium">{selectedSubmission.conductor_type}</p></div>
-                      <div><p className="text-gray-500">Pole Type</p><p className="font-medium">{selectedSubmission.pole_type}</p></div>
-                      <div><p className="text-gray-500">Height</p><p className="font-medium">{selectedSubmission.pole_height_mtrs}m</p></div>
-                      <div><p className="text-gray-500">Condition</p><p className="font-medium">{selectedSubmission.pole_condition}</p></div>
-                      <div><p className="text-gray-500">Distance</p><p className="font-medium">{selectedSubmission.pole_to_pole_distance_mtrs}m</p></div>
-                      <div><p className="text-gray-500">ARM Type</p><p className="font-medium">{selectedSubmission.arm_type}</p></div>
-                      <div><p className="text-gray-500">Lights Count</p><p className="font-medium">{selectedSubmission.how_many_lights_in_pole}</p></div>
-                      <div><p className="text-gray-500">Light Type</p><p className="font-medium">{selectedSubmission.light_type}</p></div>
+                      <div><p className="text-gray-500">Switch Point No#</p><p className="font-medium">{selectedSubmission.switch_point_number || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Pole No#</p><p className="font-medium">{selectedSubmission.identifier || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Conductor Type</p><p className="font-medium">{selectedSubmission.conductor_type || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Pole Type</p><p className="font-medium">{selectedSubmission.pole_type || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Height</p><p className="font-medium">{selectedSubmission.pole_height_mtrs || 'N/A'}m</p></div>
+                      <div><p className="text-gray-500">Condition</p><p className="font-medium">{selectedSubmission.pole_condition || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Distance</p><p className="font-medium">{selectedSubmission.pole_to_pole_distance_mtrs || 'N/A'}m</p></div>
+                      <div><p className="text-gray-500">ARM Type</p><p className="font-medium">{selectedSubmission.arm_type || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">ARM Status</p><p className="font-medium">{selectedSubmission.arm_status || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Present ARM No#</p><p className="font-medium">{selectedSubmission.present_arm_no || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Present ARM Length</p><p className="font-medium">{selectedSubmission.present_arm_length_mtrs || 'N/A'}m</p></div>
+                      <div><p className="text-gray-500">Lights Count</p><p className="font-medium">{selectedSubmission.how_many_lights_in_pole || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Light Mounting Height</p><p className="font-medium">{selectedSubmission.light_mounting_height || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Light Type</p><p className="font-medium">{selectedSubmission.light_type || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Light Capacity</p><p className="font-medium">{selectedSubmission.light_capacity || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Light Working Status</p><p className="font-medium">{selectedSubmission.light_working_status || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Road Category</p><p className="font-medium">{selectedSubmission.road_category || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Road Type</p><p className="font-medium">{selectedSubmission.road_type || 'N/A'}</p></div>
+                      <div><p className="text-gray-500">Road Width</p><p className="font-medium">{selectedSubmission.road_width_mtrs || 'N/A'}m</p></div>
+                      <div><p className="text-gray-500">Pole Earthing Exists</p><p className="font-medium">{selectedSubmission.pole_earthing_exists || 'N/A'}</p></div>
                     </>
                   )}
                 </div>
