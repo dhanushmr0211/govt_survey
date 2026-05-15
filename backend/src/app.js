@@ -20,6 +20,10 @@ function createApp() {
 
   app.disable('x-powered-by');
 
+  // Trust Cloud Run / Google's load balancer proxy
+  // Required for express-rate-limit to correctly read client IPs
+  app.set('trust proxy', 1);
+
   // Attach a unique correlation ID to every request (before logging)
   app.use(requestId);
 
