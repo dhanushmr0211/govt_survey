@@ -28,6 +28,8 @@ export const PoleForm = ({ ulb, onBack }) => {
     road_width: '',
     pole_earthing_exists: '',
   });
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   const projectId = 2; // Updated to match database id
 
@@ -37,7 +39,7 @@ export const PoleForm = ({ ulb, onBack }) => {
     queryFn: async () => {
       if (!formData.ward_number) return [];
       const token = localStorage.getItem('token');
-      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/switch-points?ward_number=${formData.ward_number}&ulb_id=${ulb.id}`, {
+      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/switch-points?ward_number=${formData.ward_number}&ulb_id=${ulb.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.switchPoints || [];
@@ -73,26 +75,55 @@ export const PoleForm = ({ ulb, onBack }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (selectedFiles.length === 0) {
+      alert('Please select at least one photo before submitting.');
+      return;
+    }
+
     const token = localStorage.getItem('token');
+    setUploading(true);
     try {
-      const res = await axios.post(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/pole`, {
+      // Step 1: Create the pole record
+      const res = await axios.post(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/pole`, {
         ...formData,
         pole_height_mtrs: Number(formData.pole_height),
         pole_to_pole_distance_mtrs: Number(formData.distance_mtrs),
         present_arm_length_mtrs: Number(formData.present_arm_length),
         how_many_lights_in_pole: formData.how_many_lights,
         road_width_mtrs: Number(formData.road_width),
-        latitude: null,
-        longitude: null,
+        latitude: 0,
+        longitude: 0,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('Pole created:', res.data);
-      alert('Pole created successfully!');
+
+      // Backend returns the pole directly (not wrapped in { pole: ... })
+      const poleId = res.data.id;
+
+      // Step 2: Upload each selected photo to Cloud Storage
+      if (poleId && selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          const formDataUpload = new FormData();
+          formDataUpload.append('file', file);
+          formDataUpload.append('entity_type', 'pole');
+          formDataUpload.append('entity_id', poleId);
+          await axios.post(
+            `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files`,
+            formDataUpload,
+            // Do NOT set Content-Type manually — browser auto-sets it with the multipart boundary
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        }
+      }
+
+      alert('Pole submitted successfully with photos!');
       onBack();
     } catch (error) {
       console.error('Error creating pole:', error);
       alert(error.response?.data?.message || 'Error creating pole');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -304,11 +335,15 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         <div>
           <label className="block text-gray-700 font-medium mb-1">Photos</label>
-          <FileUploader onUpload={() => {}} />
+          <FileUploader onUpload={(files) => setSelectedFiles(files)} />
         </div>
 
-        <button type="submit" className="w-full bg-primary text-white p-3 rounded-lg font-medium hover:bg-primary-dark transition-colors mt-4">
-          Submit Pole
+        <button
+          type="submit"
+          disabled={uploading}
+          className="w-full bg-primary text-white p-3 rounded-lg font-medium hover:bg-primary-dark transition-colors mt-4 disabled:opacity-60"
+        >
+          {uploading ? 'Submitting...' : 'Submit Pole'}
         </button>
       </div>
     </form>

@@ -25,7 +25,7 @@ export default function MasterAdminDashboard() {
     queryKey: ['projects'],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://10.73.182.200:3000/api/v1/projects', {
+      const res = await axios.get('https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects', {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data;
@@ -434,7 +434,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
   const { data, isLoading } = useQuery({
     queryKey: ['user-submissions', projectId, userId, confirmedBy, status],
     queryFn: async () => {
-      let url = `http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/${endpoint}`;
+      let url = `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/${endpoint}`;
       let params = [];
       if (userId) params.push(`userId=${userId}`);
       if (confirmedBy) params.push(`confirmedBy=${confirmedBy}`);
@@ -614,7 +614,7 @@ function DownloadReportModal({ isOpen, onClose, projectId }) {
   const { data: summary = [] } = useQuery({
     queryKey: ['districts', projectId],
     queryFn: async () => {
-      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/summary/districts`, {
+      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/summary/districts`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return res.data.summary;
@@ -630,7 +630,7 @@ function DownloadReportModal({ isOpen, onClose, projectId }) {
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      let url = `http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/report/download`;
+      let url = `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/report/download`;
       let params = [];
       if (district) params.push(`district=${district}`);
       if (tillDate) params.push(`tillDate=${tillDate}`);

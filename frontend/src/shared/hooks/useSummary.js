@@ -7,7 +7,7 @@ export const useSummary = (projectId, date = null, mode = 'exact') => {
   return useQuery({
     queryKey: ['districtSummary', projectId, date, mode],
     queryFn: async () => {
-      let url = `http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/summary/districts`;
+      let url = `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/summary/districts`;
       const queryParams = [];
       if (date) queryParams.push(`date=${date}`);
       if (mode) queryParams.push(`mode=${mode}`);

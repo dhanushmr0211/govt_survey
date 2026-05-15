@@ -13,6 +13,8 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
     meter_serial_number: '',
     meter_condition: '',
   });
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,11 +23,19 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (selectedFiles.length === 0) {
+      alert('Please select at least one photo before submitting.');
+      return;
+    }
+
     const token = localStorage.getItem('token');
-    const projectId = 2; // Fixed to match database
+    const projectId = 2;
+    setUploading(true);
     try {
       const isMeterYes = formData.meter_exists === 'yes';
-      const res = await axios.post(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/switch-point`, {
+      // Step 1: Create the switch point record
+      const res = await axios.post(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/switch-point`, {
         ...formData,
         ulb_id: ulb.id,
         meter_exists: isMeterYes,
@@ -33,17 +43,38 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
         meter_condition: isMeterYes ? formData.meter_condition : null,
         meter_rr_number: isMeterYes ? formData.meter_rr_number : null,
         meter_serial_number: isMeterYes ? formData.meter_serial_number : null,
-        latitude: null,
-        longitude: null,
+        latitude: 0,
+        longitude: 0,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('Switch Point created:', res.data);
-      alert('Switch Point created successfully!');
+
+      // Backend returns the switch point directly
+      const switchPointId = res.data.id;
+
+      // Step 2: Upload each selected photo to Cloud Storage
+      if (switchPointId && selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          const formDataUpload = new FormData();
+          formDataUpload.append('file', file);
+          formDataUpload.append('entity_type', 'switch_point');
+          formDataUpload.append('entity_id', switchPointId);
+          await axios.post(
+            `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files`,
+            formDataUpload,
+            // Do NOT set Content-Type manually — browser auto-sets it with the multipart boundary
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        }
+      }
+
+      alert('Switch Point submitted successfully!');
       onBack();
     } catch (error) {
       console.error('Error creating switch point:', error);
       alert(error.response?.data?.message || 'Error creating switch point');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -114,11 +145,15 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
 
         <div>
           <label className="block text-gray-700 font-medium mb-1">Photos</label>
-          <FileUploader onUpload={() => {}} />
+          <FileUploader onUpload={(files) => setSelectedFiles(files)} />
         </div>
 
-        <button type="submit" className="w-full bg-primary text-white p-3 rounded-lg font-medium hover:bg-primary-dark transition-colors mt-4">
-          Submit Switch Point
+        <button
+          type="submit"
+          disabled={uploading}
+          className="w-full bg-primary text-white p-3 rounded-lg font-medium hover:bg-primary-dark transition-colors mt-4 disabled:opacity-60"
+        >
+          {uploading ? 'Submitting...' : 'Submit Switch Point'}
         </button>
       </div>
     </form>

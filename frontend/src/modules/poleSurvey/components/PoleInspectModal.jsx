@@ -1,17 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Check, AlertTriangle, Edit2, Save } from 'lucide-react';
 import { confirmPole } from '../services/poleSurveyService';
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '../../../store/authStore';
 
 export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
-  const projectId = 1; // Should be dynamic
+  const projectId = 2; // Must match projectId used in PoleForm
   const user = useAuthStore((state) => state.user);
-  console.log('PoleInspectModal user:', user);
   const canEdit = user?.role === 'MASTER_ADMIN' || user?.section_h;
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ ...pole });
+  const [images, setImages] = useState([]);
+  const [loadingImages, setLoadingImages] = useState(false);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      setLoadingImages(true);
+      try {
+        const response = await fetch(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files?entity_type=pole&entity_id=${pole.id}`, {
+          headers: {
+            'Authorization': `Bearer ${useAuthStore.getState().token}`
+          }
+        });
+        if (!response.ok) throw new Error('Failed to fetch images');
+        const data = await response.json();
+        // Backend returns { files: [...] } not a plain array
+        setImages(data.files || []);
+      } catch (err) {
+        console.error('Error fetching images:', err);
+      } finally {
+        setLoadingImages(false);
+      }
+    };
+    if (pole.id) {
+      fetchImages();
+    }
+  }, [pole.id, projectId]);
 
   const confirmMutation = useMutation({
     mutationFn: () => confirmPole(projectId, pole.id),
@@ -169,18 +194,25 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
 
             {/* Right Side: Images */}
             <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gray-50 h-[65vh] rounded-lg flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200">
-                <span className="text-sm font-semibold">Image 1</span>
-                <span className="text-xs">Switch Point / Meter</span>
-              </div>
-              <div className="bg-gray-50 h-[65vh] rounded-lg flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200">
-                <span className="text-sm font-semibold">Image 2</span>
-                <span className="text-xs">Pole View</span>
-              </div>
-              <div className="bg-gray-50 h-[65vh] rounded-lg flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200">
-                <span className="text-sm font-semibold">Image 3</span>
-                <span className="text-xs">Light / Bracket View</span>
-              </div>
+              {[0, 1, 2].map((index) => {
+                const img = images[index];
+                return (
+                  <div key={index} className="bg-gray-50 h-[65vh] rounded-lg flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 overflow-hidden">
+                    {loadingImages ? (
+                      <span>Loading images...</span>
+                    ) : img ? (
+                      <img src={img.signed_url} alt={`Survey ${index + 1}`} className="w-full h-full object-contain" />
+                    ) : (
+                      <>
+                        <span className="text-sm font-semibold">Image {index + 1}</span>
+                        <span className="text-xs">
+                          {index === 0 ? 'Switch Point / Meter' : index === 1 ? 'Pole View' : 'Light / Bracket View'}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

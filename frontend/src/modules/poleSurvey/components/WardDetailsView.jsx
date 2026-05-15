@@ -18,7 +18,7 @@ export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
   const { data: wards = [], isLoading: isLoadingWards } = useQuery({
     queryKey: ['wardSummary', ulb.ulb_id],
     queryFn: async () => {
-      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/summary/ulbs/${ulb.ulb_id}/wards`, {
+      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/summary/ulbs/${ulb.ulb_id}/wards`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.summary || [];
@@ -29,7 +29,7 @@ export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
     queryKey: ['wardDetails', ulb.ulb_id, selectedWard],
     queryFn: async () => {
       if (!selectedWard) return [];
-      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/summary/ulbs/${ulb.ulb_id}/wards/${selectedWard}/details`, {
+      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/summary/ulbs/${ulb.ulb_id}/wards/${selectedWard}/details`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.details || [];
@@ -40,8 +40,8 @@ export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const endpoint = selectedDetail.type === 'switch_point'
-        ? `http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/switch-points/${selectedDetail.data.id}`
-        : `http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/poles/${selectedDetail.data.pole_id}`;
+        ? `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/switch-points/${selectedDetail.data.id}`
+        : `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/poles/${selectedDetail.data.pole_id}`;
       
       const res = await axios.patch(endpoint, formData, {
         headers: { Authorization: `Bearer ${token}` },

@@ -7,7 +7,7 @@ export const useIssues = (projectId) => {
   return useQuery({
     queryKey: ['issues', projectId],
     queryFn: async () => {
-      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/issues`, {
+      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/issues`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.issues || [];

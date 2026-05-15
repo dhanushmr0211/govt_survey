@@ -29,14 +29,13 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
     section_h: false,
   });
 
-  console.log('CreateAdminModal isOpen:', isOpen);
 
   // Fetch projects
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://10.73.182.200:3000/api/v1/projects', {
+      const res = await axios.get('https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects', {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.projects || [];
@@ -73,10 +72,9 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
     const token = localStorage.getItem('token');
     try {
       // 1. Create User
-      const res = await axios.post('http://10.73.182.200:3000/api/v1/auth/register', formData, {
+      const res = await axios.post('https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/auth/register', formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('Admin created:', res.data);
       onClose();
     } catch (error) {
       console.error('Error creating admin:', error);

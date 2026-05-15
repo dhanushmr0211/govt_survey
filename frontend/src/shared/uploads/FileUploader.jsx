@@ -19,49 +19,19 @@ export const FileUploader = ({ onUpload }) => {
     const mappedFiles = newFiles.map((file) => ({
       file,
       id: Math.random().toString(36).substr(2, 9),
-      progress: 0,
-      status: 'pending', // pending, uploading, success, error
+      status: 'pending',
       preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
     }));
-    setFiles((prev) => [...prev, ...mappedFiles]);
-    
-    // Simulate upload for now
-    mappedFiles.forEach((fileObj) => simulateUpload(fileObj.id));
-  };
-
-  const simulateUpload = (id) => {
-    setFiles((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, status: 'uploading', progress: 0 } : f))
-    );
-
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      
-      // Randomly fail at 50% progress
-      if (progress === 50 && Math.random() < 0.3) {
-        clearInterval(interval);
-        setFiles((prev) =>
-          prev.map((f) => (f.id === id ? { ...f, status: 'error' } : f))
-        );
-        return;
-      }
-
-      setFiles((prev) =>
-        prev.map((f) => (f.id === id ? { ...f, progress } : f))
-      );
-
-      if (progress >= 100) {
-        clearInterval(interval);
-        setFiles((prev) =>
-          prev.map((f) => (f.id === id ? { ...f, status: 'success' } : f))
-        );
-      }
-    }, 200);
+    const updated = [...files, ...mappedFiles];
+    setFiles(updated);
+    // Pass real File objects to parent (PoleForm will upload them on submit)
+    onUpload(updated.map((f) => f.file));
   };
 
   const removeFile = (id) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
+    const updated = files.filter((f) => f.id !== id);
+    setFiles(updated);
+    onUpload(updated.map((f) => f.file));
   };
 
   return (
@@ -106,18 +76,7 @@ export const FileUploader = ({ onUpload }) => {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {f.status === 'success' && <span className="text-xs text-green-600 font-medium">Uploaded</span>}
-                {f.status === 'error' && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-red-600 font-medium">Failed</span>
-                    <button
-                      onClick={() => simulateUpload(f.id)}
-                      className="text-xs text-primary hover:underline font-medium"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                )}
+                {f.status === 'pending' && <span className="text-xs text-green-600 font-medium">Ready</span>}
                 <button onClick={() => removeFile(f.id)} className="text-gray-400 hover:text-gray-600 transition-colors">
                   <X size={18} />
                 </button>

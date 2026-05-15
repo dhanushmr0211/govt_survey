@@ -66,6 +66,9 @@ function createApp() {
       max: env.rateLimitMax,
       standardHeaders: true,
       legacyHeaders: false,
+      message: { 
+        message: 'Too many requests! You have exceeded your limit. Please wait 15 minutes before trying again.' 
+      }
     })
   );
 

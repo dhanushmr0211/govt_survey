@@ -19,7 +19,7 @@ export const TodaySubmissionsView = ({ ulb }) => {
     queryKey: ['submissions', activeTab, page],
     queryFn: async () => {
       const endpoint = activeTab === 'pending' ? 'queue/pending' : 'queue/confirmed';
-      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/${endpoint}?page=${page}&limit=${limit}`, {
+      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/${endpoint}?page=${page}&limit=${limit}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return { queue: res.data.queue || [], total: res.data.total || 0 };

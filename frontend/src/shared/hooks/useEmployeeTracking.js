@@ -7,7 +7,7 @@ export const useEmployeeTracking = (projectId, options = {}) => {
   return useQuery({
     queryKey: ['employee-tracking', projectId],
     queryFn: async () => {
-      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/employee-tracking`, {
+      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/employee-tracking`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.tracking;

@@ -52,7 +52,7 @@ export default function Users() {
       const searchParams = new URLSearchParams(window.location.search);
       const projectId = searchParams.get('projectId');
       
-      let url = 'http://10.73.182.200:3000/api/v1/auth/users';
+      let url = 'https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/auth/users';
       if (projectId) {
         url += `?projectId=${projectId}`;
       }

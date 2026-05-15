@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 const loginApi = async (email, password) => {
-  const res = await fetch('http://10.73.182.200:3000/api/v1/auth/login', {
+  const res = await fetch('https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })

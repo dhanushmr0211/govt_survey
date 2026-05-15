@@ -22,7 +22,7 @@ export const SubmissionQueueView = ({ projectId = 2 }) => {
     queryKey: ['submissions', activeTab, page],
     queryFn: async () => {
       const endpoint = activeTab === 'pending' ? 'queue/pending' : 'queue/confirmed';
-      const res = await axios.get(`http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/${endpoint}?page=${page}&limit=${limit}`, {
+      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/${endpoint}?page=${page}&limit=${limit}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return { queue: res.data.queue || [], total: res.data.total || 0 };
@@ -35,8 +35,8 @@ export const SubmissionQueueView = ({ projectId = 2 }) => {
   const confirmMutation = useMutation({
     mutationFn: async ({ id, type }) => {
       const endpoint = type === 'switch_point' 
-        ? `http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/switch-points/${id}/confirm`
-        : `http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/poles/${id}/confirm`;
+        ? `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/switch-points/${id}/confirm`
+        : `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/poles/${id}/confirm`;
       
       const res = await axios.post(endpoint, {}, {
         headers: { Authorization: `Bearer ${token}` },
@@ -56,8 +56,8 @@ export const SubmissionQueueView = ({ projectId = 2 }) => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const endpoint = selectedSubmission.type === 'switch_point'
-        ? `http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/switch-points/${selectedSubmission.id}`
-        : `http://10.73.182.200:3000/api/v1/projects/${projectId}/pole-survey/poles/${selectedSubmission.id}`;
+        ? `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/switch-points/${selectedSubmission.id}`
+        : `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/poles/${selectedSubmission.id}`;
       
       const res = await axios.patch(endpoint, formData, {
         headers: { Authorization: `Bearer ${token}` },
