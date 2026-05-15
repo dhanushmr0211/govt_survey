@@ -34,13 +34,19 @@ async function uploadBuffer(buffer, objectName, contentType) {
 
 async function getSignedReadUrl(objectName) {
   const file = bucket.file(objectName);
-  const [url] = await file.getSignedUrl({
-    version: 'v4',
-    action: 'read',
-    expires: Date.now() + env.gcsSignedUrlExpirationSeconds * 1000,
-  });
-
-  return url;
+  try {
+    const [url] = await file.getSignedUrl({
+      version: 'v4',
+      action: 'read',
+      expires: Date.now() + env.gcsSignedUrlExpirationSeconds * 1000,
+    });
+    return url;
+  } catch (err) {
+    // On Cloud Run with attached SA (no JSON key), getSignedUrl fails.
+    // Fall back to a public URL.
+    console.error('getSignedUrl failed, using public URL fallback:', err.message);
+    return `https://storage.googleapis.com/${env.gcsBucketName}/${objectName}`;
+  }
 }
 
 async function deleteObject(objectName) {
