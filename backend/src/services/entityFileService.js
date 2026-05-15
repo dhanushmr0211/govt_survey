@@ -30,4 +30,21 @@ async function getFilesForEntity(projectId, entityType, entityId) {
   return filesWithUrls;
 }
 
-module.exports = { uploadFile, getFilesForEntity };
+async function deleteFile(fileId) {
+  const file = await entityFileModel.getFileById(fileId);
+  if (!file) {
+    throw new Error('File not found');
+  }
+  // Delete from GCS
+  try {
+    await deleteObject(file.url);
+  } catch (err) {
+    console.error('Error deleting from GCS:', err);
+    // Continue deleting from DB even if GCS fails
+  }
+  // Delete from DB
+  await entityFileModel.deleteEntityFile(fileId);
+  return true;
+}
+
+module.exports = { uploadFile, getFilesForEntity, deleteFile };

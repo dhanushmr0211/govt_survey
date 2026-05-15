@@ -18,4 +18,20 @@ async function getFilesForEntity(projectId, entityType, entityId) {
   return result.rows;
 }
 
-module.exports = { createEntityFile, getFilesForEntity };
+async function getFileById(id) {
+  const result = await query(
+    'SELECT * FROM entity_files WHERE id = $1',
+    [id]
+  );
+  return result.rows[0];
+}
+
+async function deleteEntityFile(id) {
+  const result = await query(
+    'DELETE FROM entity_files WHERE id = $1 RETURNING *',
+    [id]
+  );
+  return result.rows[0];
+}
+
+module.exports = { createEntityFile, getFilesForEntity, getFileById, deleteEntityFile };

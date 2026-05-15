@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { FileUploader } from '../../../shared/uploads/FileUploader';
+import imageCompression from 'browser-image-compression';
 
 export const PoleForm = ({ ulb, onBack }) => {
   const [formData, setFormData] = useState({
@@ -28,7 +29,8 @@ export const PoleForm = ({ ulb, onBack }) => {
     road_width: '',
     pole_earthing_exists: '',
   });
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [photos, setPhotos] = useState({ image1: null, image2: null, image3: null });
+  const [compressing, setCompressing] = useState({ image1: false, image2: false, image3: false });
   const [uploading, setUploading] = useState(false);
 
   const projectId = 2; // Updated to match database id
@@ -75,12 +77,6 @@ export const PoleForm = ({ ulb, onBack }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (selectedFiles.length === 0) {
-      alert('Please select at least one photo before submitting.');
-      return;
-    }
-
     const token = localStorage.getItem('token');
     setUploading(true);
     try {
@@ -98,12 +94,10 @@ export const PoleForm = ({ ulb, onBack }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Backend returns the pole directly (not wrapped in { pole: ... })
-      const poleId = res.data.id;
-
-      // Step 2: Upload each selected photo to Cloud Storage
-      if (poleId && selectedFiles.length > 0) {
-        for (const file of selectedFiles) {
+      // Step 2: Upload selected photos to Cloud Storage
+      const filesToUpload = Object.values(photos).filter(Boolean);
+      if (poleId && filesToUpload.length > 0) {
+        for (const file of filesToUpload) {
           const formDataUpload = new FormData();
           formDataUpload.append('file', file);
           formDataUpload.append('entity_type', 'pole');
@@ -117,7 +111,7 @@ export const PoleForm = ({ ulb, onBack }) => {
         }
       }
 
-      alert('Pole submitted successfully with photos!');
+      alert('Pole submitted successfully!');
       onBack();
     } catch (error) {
       console.error('Error creating pole:', error);
@@ -333,9 +327,73 @@ export const PoleForm = ({ ulb, onBack }) => {
           </select>
         </div>
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Photos</label>
-          <FileUploader onUpload={(files) => setSelectedFiles(files)} />
+         <div className="space-y-2">
+          <label className="block text-gray-700 font-medium mb-1">Photos (Optional)</label>
+          
+          {[1, 2, 3].map((num) => (
+            <div key={num} className="border border-gray-200 p-2 rounded flex flex-col gap-1">
+              <span className="text-sm font-medium text-gray-600">Image Slot {num}</span>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+
+                  if (file.size > 15 * 1024 * 1024) {
+                    alert("Image too large. Please choose a smaller image.");
+                    return;
+                  }
+
+                  setCompressing(prev => ({ ...prev, [`image${num}`]: true }));
+                  
+                  const options = {
+                    maxSizeMB: 0.4,
+                    maxWidthOrHeight: 1600,
+                    useWebWorker: true,
+                    fileType: 'image/jpeg',
+                    initialQuality: 0.75,
+                  };
+
+                  try {
+                    console.log(`Original size for Slot ${num}: ${(file.size / 1024).toFixed(2)} KB`);
+                    const compressedFile = await imageCompression(file, options);
+                    console.log(`Compressed size for Slot ${num}: ${(compressedFile.size / 1024).toFixed(2)} KB`);
+                    
+                    // Preserve original filename if possible, or append .jpg
+                    const fileName = file.name.split('.')[0] + '_compressed.jpg';
+                    const renamedFile = new File([compressedFile], fileName, { type: 'image/jpeg' });
+                    
+                    setPhotos(prev => ({ ...prev, [`image${num}`]: renamedFile }));
+                  } catch (error) {
+                    console.error(`Compression error for Slot ${num}:`, error);
+                    alert(`Failed to compress image in Slot ${num}. Using original.`);
+                    setPhotos(prev => ({ ...prev, [`image${num}`]: file }));
+                  } finally {
+                    setCompressing(prev => ({ ...prev, [`image${num}`]: false }));
+                  }
+                }}
+                className="text-xs"
+                disabled={compressing[`image${num}`]}
+              />
+              {compressing[`image${num}`] && (
+                <span className="text-xs text-amber-600 animate-pulse">Compressing image...</span>
+              )}
+              {photos[`image${num}`] && !compressing[`image${num}`] && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-green-600 truncate">Selected: {photos[`image${num}`].name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPhotos(prev => ({ ...prev, [`image${num}`]: null }))}
+                    className="text-red-500 hover:text-red-700 text-xs font-semibold ml-2"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
         <button

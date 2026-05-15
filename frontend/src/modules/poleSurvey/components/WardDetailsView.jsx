@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Lightbulb, Zap, Edit2, Save } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
+import imageCompression from 'browser-image-compression';
 
 export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
   const token = localStorage.getItem('token');
@@ -14,6 +15,8 @@ export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
   const canEdit = user?.role === 'MASTER_ADMIN' || user?.section_h;
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  const [images, setImages] = useState([]);
+  const [loadingImages, setLoadingImages] = useState(false);
 
   const { data: wards = [], isLoading: isLoadingWards } = useQuery({
     queryKey: ['wardSummary', ulb.ulb_id],
@@ -65,6 +68,88 @@ export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      if (!selectedDetail) return;
+      setLoadingImages(true);
+      try {
+        const id = selectedDetail.type === 'switch_point' ? selectedDetail.data.id : selectedDetail.data.pole_id;
+        const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files?entity_type=${selectedDetail.type}&entity_id=${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setImages(res.data.files || []);
+      } catch (err) {
+        console.error('Error fetching images:', err);
+        setImages([]);
+      } finally {
+        setLoadingImages(false);
+      }
+    };
+    fetchImages();
+  }, [selectedDetail, projectId, token]);
+
+  const handleDeleteImage = async (fileId) => {
+    if (!window.confirm('Are you sure you want to delete this image?')) return;
+    try {
+      await axios.delete(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files/${fileId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setImages(prev => prev.filter(img => img.id !== fileId));
+    } catch (err) {
+      console.error('Error deleting image:', err);
+      alert('Failed to delete image');
+    }
+  };
+
+  const handleUploadNewImage = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert("Image too large. Please choose a smaller image.");
+      return;
+    }
+
+    const options = {
+      maxSizeMB: 0.4,
+      maxWidthOrHeight: 1600,
+      useWebWorker: true,
+      fileType: 'image/jpeg',
+      initialQuality: 0.75,
+    };
+
+    try {
+      console.log(`Original size: ${(file.size / 1024).toFixed(2)} KB`);
+      const compressedFile = await imageCompression(file, options);
+      console.log(`Compressed size: ${(compressedFile.size / 1024).toFixed(2)} KB`);
+      
+      const fileName = file.name.split('.')[0] + '_compressed.jpg';
+      const renamedFile = new File([compressedFile], fileName, { type: 'image/jpeg' });
+
+      const id = selectedDetail.type === 'switch_point' ? selectedDetail.data.id : selectedDetail.data.pole_id;
+      
+      const formData = new FormData();
+      formData.append('file', renamedFile);
+      formData.append('entity_type', selectedDetail.type);
+      formData.append('entity_id', id);
+
+      await axios.post(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files`, formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Refetch images to get the signed URL correctly
+      const refreshRes = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files?entity_type=${selectedDetail.type}&entity_id=${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setImages(refreshRes.data.files || []);
+      
+      alert('Image uploaded successfully!');
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      alert('Failed to upload image');
+    }
   };
 
   const renderField = (label, name, value, options = null) => {
@@ -357,14 +442,61 @@ export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
               {/* Right Side: Images */}
               <div className="space-y-2">
                 <p className="font-semibold text-gray-700">Images</p>
-                <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">
-                  <div className="text-center">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4-4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    <p className="mt-1">Image Placeholder (Big)</p>
+                {loadingImages ? (
+                  <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">
+                    <p>Loading images...</p>
                   </div>
-                </div>
+                ) : images.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
+                    {images.map((img) => (
+                      <div key={img.id} className="border border-gray-100 rounded-lg overflow-hidden relative">
+                        <img
+                          src={img.signed_url}
+                          alt="Survey"
+                          className="w-full h-auto object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                          }}
+                        />
+                        <p className="text-xs text-gray-400 p-1 text-center">{new Date(img.uploaded_at).toLocaleString()}</p>
+                        {isEditing && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteImage(img.id)}
+                            className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full hover:bg-red-700 shadow-lg"
+                            title="Delete Image"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">
+                    <div className="text-center">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4-4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <p className="mt-1">No images found for this submission.</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload New Photo (Only in Edit Mode) */}
+                {isEditing && (
+                  <div className="border-2 border-dashed border-primary/30 p-4 rounded-lg bg-primary/5 text-center mt-2">
+                    <p className="text-xs font-medium text-primary mb-2">Upload New Photo (Gallery)</p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleUploadNewImage}
+                      className="text-xs"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Will be compressed automatically</p>
+                  </div>
+                )}
               </div>
             </div>
               

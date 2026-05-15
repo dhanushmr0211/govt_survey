@@ -16,7 +16,7 @@ const {
   createSwitchPointHandler, 
   createPoleHandler 
 } = require('../../../controllers/surveyDataController');
-const { uploadFileHandler, getFilesHandler } = require('../../../controllers/entityFileController');
+const { uploadFileHandler, getFilesHandler, deleteFileHandler } = require('../../../controllers/entityFileController');
 const { upload } = require('../../../utils/upload');
 const {
   getDistrictSummaryHandler,
@@ -66,5 +66,6 @@ poleSurveyRouter.get('/queue/today', getTodaySubmissionsHandler);
 // Files
 poleSurveyRouter.post('/files', upload.single('file'), uploadFileHandler);
 poleSurveyRouter.get('/files', getFilesHandler);
+poleSurveyRouter.delete('/files/:id', deleteFileHandler);
 
 module.exports = { poleSurveyRouter };

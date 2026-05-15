@@ -48,4 +48,14 @@ async function getFilesHandler(req, res, next) {
   }
 }
 
-module.exports = { uploadFileHandler, getFilesHandler };
+async function deleteFileHandler(req, res, next) {
+  try {
+    const fileId = Number(req.params.id);
+    await entityFileService.deleteFile(fileId);
+    return res.json({ message: 'File deleted successfully' });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+module.exports = { uploadFileHandler, getFilesHandler, deleteFileHandler };
