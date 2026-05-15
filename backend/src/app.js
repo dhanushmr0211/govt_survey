@@ -28,6 +28,10 @@ function createApp() {
   app.use(
     cors({
       origin: function (origin, callback) {
+        // If corsOrigin is boolean true, allow all origins (CORS_ORIGIN=*)
+        if (env.corsOrigin === true) {
+          return callback(null, true);
+        }
         const allowedOrigins = env.corsOrigin ? env.corsOrigin.split(',') : [];
         if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
