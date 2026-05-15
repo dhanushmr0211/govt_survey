@@ -9,7 +9,7 @@ function requireRole(...roles) {
     }
 
     if (!allowedRoles.includes(normalizeRole(req.user.role))) {
-      return res.status(403).json({ message: `Forbidden: Requires one of [${allowedRoles.join(', ')}]` });
+      return res.status(403).json({ message: 'Forbidden' });
     }
 
     return next();

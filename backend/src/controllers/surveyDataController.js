@@ -1,7 +1,17 @@
 const { searchUlbs } = require('../models/districtUlbModel');
 const { createSwitchPoint } = require('../models/switchPointModel');
 const { createPole } = require('../models/poleModel');
+const { accessibleProjectIds } = require('../middleware/projectAccess');
 
+// Helper to validate lat/lng
+function isValidLatLng(lat, lng) {
+  const l = Number(lat);
+  const g = Number(lng);
+  if (isNaN(l) || isNaN(g)) return false;
+  if (l < -90 || l > 90) return false;
+  if (g < -180 || g > 180) return false;
+  return true;
+}
 async function searchUlbsHandler(req, res) {
   try {
     const { q } = req.query;
@@ -20,6 +30,21 @@ async function createSwitchPointHandler(req, res) {
   try {
     const { projectId } = req.params;
     const data = req.body;
+    
+    // Avoid trusting frontend project_id: Verify access
+    const allowedProjects = await accessibleProjectIds(req.user.id, req.user.role);
+    if (allowedProjects !== null && !allowedProjects.includes(Number(projectId))) {
+      return res.status(403).json({ error: 'Access denied to this project' });
+    }
+
+    // Remove status from frontend input
+    delete data.status;
+
+    // Add lat/lng bounds
+    if (!isValidLatLng(data.latitude, data.longitude)) {
+      return res.status(400).json({ error: 'Invalid latitude or longitude bounds' });
+    }
+
     data.project_id = Number(projectId);
     data.created_by = req.user?.id; // Assuming auth middleware sets req.user
     
@@ -35,6 +60,21 @@ async function createPoleHandler(req, res) {
   try {
     const { projectId } = req.params;
     const data = req.body;
+    
+    // Avoid trusting frontend project_id: Verify access
+    const allowedProjects = await accessibleProjectIds(req.user.id, req.user.role);
+    if (allowedProjects !== null && !allowedProjects.includes(Number(projectId))) {
+      return res.status(403).json({ error: 'Access denied to this project' });
+    }
+
+    // Remove status from frontend input
+    delete data.status;
+
+    // Add lat/lng bounds
+    if (!isValidLatLng(data.latitude, data.longitude)) {
+      return res.status(400).json({ error: 'Invalid latitude or longitude bounds' });
+    }
+
     data.project_id = Number(projectId);
     data.created_by = req.user?.id;
     

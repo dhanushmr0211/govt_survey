@@ -41,13 +41,14 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS projects (
   id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
+  name TEXT UNIQUE NOT NULL,
   project_type project_type_enum NOT NULL DEFAULT 'POLE_SURVEY',
   created_by INT REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   is_deleted BOOLEAN DEFAULT FALSE,
-  deleted_at TIMESTAMP
+  deleted_at TIMESTAMP,
+  deleted_by INT REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS project_users (
@@ -61,7 +62,7 @@ CREATE TABLE IF NOT EXISTS project_users (
 
 CREATE TABLE IF NOT EXISTS admin_section_access (
   id SERIAL PRIMARY KEY,
-  admin_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  admin_id INT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   section_a BOOLEAN DEFAULT FALSE,
   section_b BOOLEAN DEFAULT FALSE,
   section_c BOOLEAN DEFAULT FALSE,
@@ -204,3 +205,7 @@ CREATE INDEX IF NOT EXISTS idx_switch_points_project_id ON switch_points(project
 CREATE INDEX IF NOT EXISTS idx_poles_project_id ON poles(project_id);
 CREATE INDEX IF NOT EXISTS idx_entity_files_project_id ON entity_files(project_id, entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_issues_project_id ON issues(project_id, entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_projects_is_deleted ON projects(is_deleted);
+CREATE INDEX IF NOT EXISTS idx_projects_created_by ON projects(created_by);
+CREATE INDEX IF NOT EXISTS idx_projects_type ON projects(project_type);
+

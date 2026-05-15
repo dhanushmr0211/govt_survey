@@ -1,5 +1,21 @@
 node_modules
 .env
+.env.*
 npm-debug.log*
 .DS_Store
 coverage
+*.log
+
+# Database dumps
+dump.sql
+
+# Migration / seed scripts (local dev only)
+migrate_all.js
+migrate_seed.js
+create_admin.js
+
+# GCP Service Account Keys - NEVER commit these!
+gcp-key.json
+*.json
+!package.json
+!package-lock.json

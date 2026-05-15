@@ -1,0 +1,21 @@
+node_modules
+npm-debug.log*
+.env
+.env.*
+.DS_Store
+coverage
+dump.sql
+*.log
+
+# Dev-only scripts (not needed in container)
+migrate_all.js
+migrate_seed.js
+create_admin.js
+fix_admin_access_constraint.js
+apply_projects_schema.js
+enable_pg_trgm.js
+
+# GCP service account keys (never ship these!)
+*.json
+!package.json
+!package-lock.json

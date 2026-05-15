@@ -1,5 +1,7 @@
 const express = require('express');
 const { authenticate } = require('../../../middleware/auth');
+const { requireRole } = require('../../../middleware/roleGuard');
+const { ROLES } = require('../../../constants/roles');
 const {
   getSwitchPointsHandler,
   getPolesHandler,
@@ -46,8 +48,8 @@ poleSurveyRouter.get('/poles', getPolesHandler);
 poleSurveyRouter.patch('/switch-points/:id', updateSwitchPointHandler);
 poleSurveyRouter.patch('/poles/:id', updatePoleHandler);
 
-poleSurveyRouter.post('/switch-points/:id/confirm', confirmSwitchPointHandler);
-poleSurveyRouter.post('/poles/:id/confirm', confirmPoleHandler);
+poleSurveyRouter.post('/switch-points/:id/confirm', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.CLIENT), confirmSwitchPointHandler);
+poleSurveyRouter.post('/poles/:id/confirm', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.CLIENT), confirmPoleHandler);
 
 // Reports / Summary
 poleSurveyRouter.get('/my-stats', getMyStatsHandler);

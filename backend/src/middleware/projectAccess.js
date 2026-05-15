@@ -1,6 +1,5 @@
 const { ROLES } = require('../constants/roles');
 const projectUserModel = require('../models/projectUserModel');
-const projectModel = require('../models/projectModel');
 const { TTLCache } = require('../utils/cache');
 
 // Cache project-access lookups for 5 minutes.
@@ -19,7 +18,7 @@ function cacheKey(userId, role) {
  *
  * Rules:
  *   MASTER_ADMIN → always allowed (system-wide access)
- *   CLIENT       → allowed if they are the designated client_id for the project
+ *   CLIENT       → allowed if they are assigned to the project via project_users
  *   ADMIN        → allowed if they are assigned to manage the project via project_users
  *   EMPLOYEE     → allowed if they are in project_users for this project
  *   MOBILE_USER  → allowed if they are in project_users for this project

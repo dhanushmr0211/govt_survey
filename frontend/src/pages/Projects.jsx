@@ -1,74 +1,22 @@
 import { useState, useEffect } from 'react';
 import TopNav from '../components/TopNav';
 import { useProjects } from '../shared/hooks/useProjects';
-import { Plus, Search, FolderKanban, MapPin, Calendar, Clock, Edit, Trash2, X } from 'lucide-react';
+import { Search, FolderKanban, MapPin, Calendar, Clock, Edit, Trash2, X } from 'lucide-react';
 import { SummaryView } from '../modules/poleSurvey/components/SummaryView';
 import { SubmissionQueueView } from '../modules/poleSurvey/components/SubmissionQueueView';
 
 export default function Projects() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const { data: projects = [], isLoading: loading } = useProjects();
-  const [showModal, setShowModal] = useState(false);
-  const [newProjectName, setNewProjectName] = useState('');
+
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectView, setProjectView] = useState(null); // 'summary', 'today_summary', 'issues'
 
-  const handleCreateProject = async (e) => {
-    e.preventDefault();
-    if (!newProjectName) return;
-    
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://10.73.182.200:3000/api/v1/projects', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name: newProjectName })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setShowModal(false);
-        setNewProjectName('');
-        fetchProjects(); // Refresh the list
-      } else {
-        alert("Error creating project: " + JSON.stringify(data));
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Failed to create project");
-    }
-  };
 
   return (
     <div className="app-container">
       <TopNav user={user} />
       
-      {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="card" style={{ width: '400px', background: 'white' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.25rem' }}>Create New Project</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}><X size={20}/></button>
-            </div>
-            <form onSubmit={handleCreateProject}>
-              <div className="input-group">
-                <label>Project Name</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  value={newProjectName}
-                  onChange={e => setNewProjectName(e.target.value)}
-                  placeholder="e.g. Highway 44 Expansion" 
-                  required 
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: '1rem' }}>Create Project</button>
-            </form>
-          </div>
-        </div>
-      )}
 
       <main className="main-content">
         {!selectedProject ? (
