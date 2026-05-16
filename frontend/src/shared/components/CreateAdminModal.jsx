@@ -4,11 +4,11 @@ import axios from 'axios';
 import { useAuthStore } from '../../store/authStore';
 import API_BASE_URL from '../../config/api';
 
-export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId }) => {
+export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole }) => {
   const { user: loggedInUser, activeProject } = useAuthStore();
   
-  const targetRole = loggedInUser?.role === 'MASTER_ADMIN' ? 'ADMIN' : loggedInUser?.role === 'ADMIN' ? 'EMPLOYEE' : 'MOBILE_USER';
-  const targetRoleName = (loggedInUser?.role === 'MASTER_ADMIN' || loggedInUser?.role === 'ADMIN') ? 'User' : 'Mobile User';
+  const targetRole = fixedRole || (loggedInUser?.role === 'MASTER_ADMIN' ? 'ADMIN' : loggedInUser?.role === 'ADMIN' ? 'EMPLOYEE' : 'MOBILE_USER');
+  const targetRoleName = fixedRole === 'MOBILE_USER' ? 'Mobile User' : (loggedInUser?.role === 'MASTER_ADMIN' || loggedInUser?.role === 'ADMIN') ? 'User' : 'Mobile User';
 
   const [formData, setFormData] = useState({
     name: '',
@@ -109,20 +109,32 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId }) => {
 
           <div>
             <label className="block text-slate-700 font-semibold mb-1">Project Role</label>
-            <select name="project_role" value={formData.project_role} onChange={handleChange} className="w-full p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-slate-50">
-              {loggedInUser?.role === 'MASTER_ADMIN' && (
+            <select 
+              name="project_role" 
+              value={formData.project_role} 
+              onChange={handleChange} 
+              disabled={!!fixedRole}
+              className="w-full p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-slate-50 disabled:opacity-75"
+            >
+              {fixedRole ? (
+                <option value={fixedRole}>{fixedRole === 'MOBILE_USER' ? 'Mobile User' : fixedRole}</option>
+              ) : (
                 <>
-                  <option value="ADMIN">Admin</option>
-                  <option value="CLIENT">Client</option>
-                  <option value="EMPLOYEE">Employee</option>
-                  <option value="MOBILE_USER">Mobile User</option>
-                </>
-              )}
-              {loggedInUser?.role === 'MEMBER' && (
-                <>
-                  <option value="EMPLOYEE">Employee</option>
-                  <option value="CLIENT">Client</option>
-                  <option value="MOBILE_USER">Mobile User</option>
+                  {loggedInUser?.role === 'MASTER_ADMIN' && (
+                    <>
+                      <option value="ADMIN">Admin</option>
+                      <option value="CLIENT">Client</option>
+                      <option value="EMPLOYEE">Employee</option>
+                      <option value="MOBILE_USER">Mobile User</option>
+                    </>
+                  )}
+                  {loggedInUser?.role === 'MEMBER' && (
+                    <>
+                      <option value="EMPLOYEE">Employee</option>
+                      <option value="CLIENT">Client</option>
+                      <option value="MOBILE_USER">Mobile User</option>
+                    </>
+                  )}
                 </>
               )}
             </select>

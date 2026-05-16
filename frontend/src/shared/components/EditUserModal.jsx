@@ -78,13 +78,13 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
             <div className="grid grid-cols-1 gap-2 p-4 border border-slate-100 rounded-xl bg-slate-50/50">
               {[
                 { id: 'section_a', label: 'Section A: Summary & Dashboard' },
-                { id: 'section_b', label: "Section B: Today's Real-time Summary" },
-                { id: 'section_c', label: 'Section C: Issues & Approval Queue' },
-                { id: 'section_d', label: 'Section D: Team & User Management' },
-                { id: 'section_e', label: 'Section E: Employee Performance Tracking' },
-                { id: 'section_f', label: 'Section F: Mobile User Field Tracking' },
-                { id: 'section_g', label: 'Section G: Excel Report Generation' },
-                { id: 'section_h', label: 'Section H: Edit Survey Details' },
+                { id: 'section_b', label: "Section B: Today's Summary" },
+                { id: 'section_c', label: 'Section C: Issues & Approval' },
+                { id: 'section_d', label: 'Section D: Team Management' },
+                { id: 'section_e', label: 'Section E: Employee Tracking' },
+                { id: 'section_f', label: 'Section F: Mobile User Tracking' },
+                { id: 'section_g', label: 'Section G: Download Reports' },
+                { id: 'section_h', label: 'Section H: Edit User Permissions' },
               ].map(sec => (
                 <label key={sec.id} className="flex items-center gap-3 cursor-pointer py-2 px-3 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-slate-100">
                   <input type="checkbox" name={sec.id} checked={formData[sec.id]} onChange={handleChange} className="rounded text-primary focus:ring-primary w-4 h-4" />

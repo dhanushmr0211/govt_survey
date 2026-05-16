@@ -4,7 +4,7 @@ import { CreateAdminModal } from '../shared/components/CreateAdminModal';
 import { EditUserModal } from '../shared/components/EditUserModal';
 import API_BASE_URL from '../config/api';
 
-export const UsersView = ({ projectId }) => {
+export const UsersView = ({ projectId, roleFilter }) => {
   const [users, setUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -19,7 +19,11 @@ export const UsersView = ({ projectId }) => {
       });
       const data = await res.json();
       if (res.ok) {
-        setUsers(data.users || []);
+        let allUsers = data.users || [];
+        if (roleFilter) {
+          allUsers = allUsers.filter(u => u.project_role === roleFilter);
+        }
+        setUsers(allUsers);
       }
     } catch (err) {
       console.error("Failed to fetch users:", err);
@@ -128,12 +132,14 @@ export const UsersView = ({ projectId }) => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => { setUserToEdit(u); setIsEditModalOpen(true); }}
-                      className="text-orange-500 font-bold text-xs hover:underline"
-                    >
-                      Permissions
-                    </button>
+                    {u.project_role !== 'MOBILE_USER' && (
+                      <button 
+                        onClick={() => { setUserToEdit(u); setIsEditModalOpen(true); }}
+                        className="text-orange-500 font-bold text-xs hover:underline"
+                      >
+                        Permissions
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -146,6 +152,7 @@ export const UsersView = ({ projectId }) => {
         isOpen={isModalOpen} 
         onClose={() => { setIsModalOpen(false); fetchUsers(); }} 
         defaultProjectId={projectId}
+        fixedRole={roleFilter}
       />
       <EditUserModal 
         isOpen={isEditModalOpen} 

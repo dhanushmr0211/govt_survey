@@ -182,10 +182,13 @@ async function updateAccess(req, res, next) {
     const { id } = req.params;
     const data = updateAccessSchema.parse(req.body);
     
+    // Authorization Check
     if (req.user.role !== ROLES.MASTER_ADMIN) {
-      // In a real app, an ADMIN of a project might also update access for their employees
-      // For now, restricting to MASTER_ADMIN for safety
-      return res.status(403).json({ message: 'Forbidden' });
+      // Check if logged in user has section_h (Edit Access) for this project
+      const membership = await projectUserModel.isMember(Number(req.user.sub), data.projectId);
+      if (!membership || !membership.section_h) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit user access for this project' });
+      }
     }
 
     const existingMember = await projectUserModel.isMember(Number(id), data.projectId);
