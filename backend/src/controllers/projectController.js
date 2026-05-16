@@ -35,6 +35,7 @@ async function listProjects(req, res, next) {
     }
     
     console.log(`[DEBUG] Final Response projects:`, Array.isArray(projects), projects.length);
+    console.log(`[listProjects DEBUG] User: ${userId}, Role: ${userRole}, Projects Found: ${projects.length}`);
     return res.json({
       projects,
       pagination: paginationMeta(page, limit, total),

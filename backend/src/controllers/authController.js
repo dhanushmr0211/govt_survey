@@ -23,6 +23,8 @@ const registerSchema = z.object({
   section_g: z.boolean().optional(),
   section_h: z.boolean().optional(),
   section_i: z.boolean().optional(),
+  district_scope: z.array(z.number().int()).nullable().optional(),
+  ulb_scope: z.array(z.number().int()).nullable().optional(),
 });
 
 const updateAccessSchema = z.object({
@@ -70,7 +72,9 @@ async function register(req, res, next) {
     const sections = {
       section_a: data.section_a, section_b: data.section_b, section_c: data.section_c,
       section_d: data.section_d, section_e: data.section_e, section_f: data.section_f,
-      section_g: data.section_g, section_h: data.section_h, section_i: data.section_i
+      section_g: data.section_g, section_h: data.section_h, section_i: data.section_i,
+      district_scope: data.district_scope,
+      ulb_scope: data.ulb_scope
     };
 
     if (data.projects) {

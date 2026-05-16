@@ -93,15 +93,17 @@ async function getPendingSubmissionsHandler(req, res, next) {
   try {
     const { projectId } = req.params;
     const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    const projectRole = req.projectRole || req.user.role;
+    const isMobileUser = projectRole === ROLES.MOBILE_USER;
     const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !permissions.section_c && req.user.role !== ROLES.MOBILE_USER) {
+    if (!isMasterAdmin && !permissions.section_c && !isMobileUser) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access the pending queue' });
     }
 
     const { page = 1, limit = 50, userId } = req.query;
     // For mobile users, force filtering by their own ID
-    const filterUserId = req.user.role === ROLES.MOBILE_USER ? req.user.sub : (userId ? Number(userId) : null);
+    const filterUserId = isMobileUser ? Number(req.user.sub) : (userId ? Number(userId) : null);
 
     if (isNaN(Number(projectId))) {
       return res.status(400).json({ message: 'Invalid project ID' });
@@ -128,15 +130,17 @@ async function getTodaySubmissionsHandler(req, res, next) {
     }
     
     const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    const projectRole = req.projectRole || req.user.role;
+    const isMobileUser = projectRole === ROLES.MOBILE_USER;
     const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !permissions.section_b && !permissions.section_c && req.user.role !== ROLES.MOBILE_USER) {
+    if (!isMasterAdmin && !permissions.section_b && !permissions.section_c && !isMobileUser) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access today\'s submissions' });
     }
 
     const { page = 1, limit = 50, userId } = req.query;
     // For mobile users, force filtering by their own ID
-    const filterUserId = req.user.role === ROLES.MOBILE_USER ? req.user.sub : (userId ? Number(userId) : null);
+    const filterUserId = isMobileUser ? Number(req.user.sub) : (userId ? Number(userId) : null);
 
     const { rows, total } = await getTodaySubmissions(
       Number(projectId), 
@@ -154,15 +158,17 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
   try {
     const { projectId } = req.params;
     const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    const projectRole = req.projectRole || req.user.role;
+    const isMobileUser = projectRole === ROLES.MOBILE_USER;
     const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !permissions.section_c && req.user.role !== ROLES.MOBILE_USER) {
+    if (!isMasterAdmin && !permissions.section_c && !isMobileUser) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access confirmed submissions' });
     }
 
     const { page = 1, limit = 50, userId, confirmedBy } = req.query;
     // For mobile users, force filtering by their own ID
-    const filterUserId = req.user.role === ROLES.MOBILE_USER ? req.user.sub : (userId ? Number(userId) : null);
+    const filterUserId = isMobileUser ? Number(req.user.sub) : (userId ? Number(userId) : null);
 
     const { rows, total } = await getConfirmedSubmissions(
       Number(projectId), 
