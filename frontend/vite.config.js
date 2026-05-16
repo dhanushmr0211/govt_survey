@@ -40,10 +40,11 @@ export default defineConfig({
         ]
       },
       workbox: {
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/govt-survey-backend-.*\.run\.app\/api\/v1\/.*/i,
+            urlPattern: /\/api\/v1\//i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
