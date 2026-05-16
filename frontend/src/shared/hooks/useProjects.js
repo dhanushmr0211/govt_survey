@@ -20,5 +20,7 @@ export const useProjects = () => {
       }
     },
     initialData: [],
+    staleTime: 1 * 60 * 1000, // 1 minute - balances cache benefit with freshness
+    gcTime: 0, // Don't keep data in cache after unmount (was cacheTime)
   });
 };

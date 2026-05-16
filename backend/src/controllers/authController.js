@@ -6,6 +6,7 @@ const { env } = require('../config/env');
 const userService = require('../services/userService');
 const projectUserModel = require('../models/projectUserModel');
 const { ROLES, normalizeRole, isKnownRole } = require('../constants/roles');
+const { invalidateProjectAccess } = require('../middleware/projectAccess');
 
 const registerSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -81,6 +82,8 @@ async function register(req, res, next) {
       for (const pid of data.projects) {
         await projectUserModel.addUserToProject(user.id, pid, projectRole, sections);
       }
+      // Invalidate cache since user's projects have changed
+      invalidateProjectAccess(user.id);
     }
 
     return res.status(201).json({ user });
@@ -222,6 +225,9 @@ async function updateAccess(req, res, next) {
         ulb_scope: data.ulb_scope !== undefined ? data.ulb_scope : existingMember.ulb_scope
       }
     );
+
+    // Invalidate cache since user's project access has changed
+    invalidateProjectAccess(Number(id));
 
     await userService.touch(Number(id));
 

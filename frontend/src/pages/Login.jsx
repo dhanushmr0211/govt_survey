@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
 
@@ -22,6 +23,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const setUser = useAuthStore((state) => state.setUser);
   const setToken = useAuthStore((state) => state.setToken);
 
@@ -34,6 +36,8 @@ export default function Login() {
       const data = await loginApi(email, password);
       setUser(data.user);
       setToken(data.token);
+      // Clear React Query cache to force fresh data from server
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
