@@ -1,9 +1,9 @@
-const { createApp } = require('./app');
-const { env } = require('./config/env');
-const { pool } = require('./config/db');
-const { startWorker } = require('./jobs/issueEscalator');
-
 try {
+  const { createApp } = require('./app');
+  const { env } = require('./config/env');
+  const { pool } = require('./config/db');
+  const { startWorker } = require('./jobs/issueEscalator');
+
   const app = createApp();
   const port = process.env.PORT || env.port || 3000;
 
@@ -16,7 +16,8 @@ try {
   process.on('SIGTERM', () => shutdown('SIGTERM', server));
   process.on('SIGINT', () => shutdown('SIGINT', server));
 } catch (error) {
-  console.error('❌ FATAL: Server failed to start:', error.message);
+  console.error('❌ FATAL: Server failed to start:');
+  console.error(error);
   process.exit(1);
 }
 
