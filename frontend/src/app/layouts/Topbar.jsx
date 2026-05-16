@@ -3,7 +3,11 @@ import { useAuthStore } from '../../store/authStore';
 export const Topbar = () => {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
-  const role = (user?.role || 'Role').replaceAll('_', ' ').toLowerCase();
+  const activeProject = useAuthStore((state) => state.activeProject);
+  
+  // Show project role if available, otherwise fallback to global role
+  const displayRole = activeProject?.project_role || user?.role || 'Role';
+  const role = displayRole.replaceAll('_', ' ').toLowerCase();
 
   return (
     <header className="h-16 border-b border-slate-800 bg-slate-950 px-6 flex items-center justify-between">

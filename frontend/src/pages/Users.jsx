@@ -14,6 +14,7 @@ export default function Users() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [project, setProject] = useState(null);
 
   const searchParams = new URLSearchParams(location.search);
   const queryProjectId = searchParams.get('projectId');
@@ -46,9 +47,37 @@ export default function Users() {
     }
   };
 
+  const fetchProject = async () => {
+    if (!effectiveProjectId) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/projects`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const found = data.projects?.find(p => p.id === Number(effectiveProjectId));
+        setProject(found || null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch project details:", err);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchProject();
   }, [effectiveProjectId]);
+
+  // Redirect to dashboard if project is cleared (only for non-master users)
+  useEffect(() => {
+    if (!activeProject && user?.role !== 'MASTER_ADMIN') {
+      // If we're not on dashboard, go there
+      if (window.location.pathname !== '/dashboard') {
+        window.location.href = '/dashboard';
+      }
+    }
+  }, [activeProject, user]);
 
   if (!isMasterAdmin && !hasSectionD) {
     return (
@@ -68,16 +97,18 @@ export default function Users() {
   const mobileUsersCount = users.filter(u => u.project_role === 'MOBILE_USER').length;
   const clientsCount = users.filter(u => u.project_role === 'CLIENT').length;
 
+  const displayProject = project || activeProject;
+
   const sectionItems = [
-    activeProject?.section_a && { key: 'pole_survey_summary', label: 'Summary', icon: BarChart3 },
-    activeProject?.section_b && { key: 'pole_survey_today', label: "Today's Summary", icon: CalendarDays },
-    activeProject?.section_c && { key: 'pole_survey_issues', label: 'Issues', icon: ClipboardList },
+    displayProject?.section_a && { key: 'pole_survey_summary', label: 'Summary', icon: BarChart3 },
+    displayProject?.section_b && { key: 'pole_survey_today', label: "Today's Summary", icon: CalendarDays },
+    displayProject?.section_c && { key: 'pole_survey_issues', label: 'Issues', icon: ClipboardList },
   ].filter(Boolean);
 
   const utilityItems = [
-    activeProject?.section_d && { key: 'users', label: 'Users', icon: UsersIcon },
-    activeProject?.section_e && { key: 'employee_tracking', label: 'Employee Tracking', icon: UserCheck },
-    activeProject?.section_f && { key: 'mobile_user_tracking', label: 'Mobile User Tracking', icon: Smartphone },
+    displayProject?.section_d && { key: 'users', label: 'Users', icon: UsersIcon },
+    displayProject?.section_e && { key: 'employee_tracking', label: 'Employee Tracking', icon: UserCheck },
+    displayProject?.section_f && { key: 'mobile_user_tracking', label: 'Mobile User Tracking', icon: Smartphone },
   ].filter(Boolean);
 
   return (
@@ -105,40 +136,47 @@ export default function Users() {
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto no-scrollbar">
             <button
               onClick={clearActiveProject}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
             >
-              <ArrowLeft size={18} /> Switch Project
+              <FolderKanban size={18} /> Switch Project
             </button>
 
             <div className="my-4 border-t border-white/10"></div>
 
-            {sectionItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.key}
-                  to="/dashboard"
-                  state={{ activeView: item.key }}
-                  className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white"
-                >
-                  <Icon size={16} /> {item.label}
-                </Link>
-              );
-            })}
+            {sectionItems.length > 0 && (
+              <div className="space-y-1 border-l border-white/10 pl-3">
+                {sectionItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.key}
+                      to={`/dashboard?projectId=${effectiveProjectId}&view=${item.key}`}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+                    >
+                      <Icon size={16} /> {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
 
-            {utilityItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.key}
-                  to={item.key === 'users' ? '#' : '/dashboard'}
-                  state={item.key === 'users' ? undefined : { activeView: item.key }}
-                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${item.key === 'users' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
-                >
-                  <Icon size={16} /> {item.label}
-                </Link>
-              );
-            })}
+            {utilityItems.length > 0 && (
+              <div className="space-y-1 border-l border-white/10 pl-3">
+                {utilityItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = item.key === 'users';
+                  return (
+                    <Link
+                      key={item.key}
+                      to={isActive ? '#' : `/dashboard?projectId=${effectiveProjectId}&view=${item.key}`}
+                      className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${isActive ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
+                    >
+                      <Icon size={16} /> {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </nav>
 
           <div className="p-4 border-t border-white/10">
@@ -154,17 +192,30 @@ export default function Users() {
 
         {/* Main Content */}
         <section className="min-w-0 flex-1 lg:ml-64">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div className="mb-5 flex flex-col justify-between gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
             <div>
-              <h1 className="text-2xl font-bold text-slate-950">Team Management</h1>
-              <p className="text-slate-500 text-sm">Managing users for {activeProject?.name || 'All Projects'}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Master Console</p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">
+                {displayProject?.name || 'Team Management'}
+              </h1>
+              <p className="text-slate-500 text-xs mt-1 font-medium">Managing users and permissions</p>
             </div>
-            <button 
-              className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <UserPlus size={18} /> Add Team Member
-            </button>
+            <div className="flex items-center gap-3">
+              {isMasterAdmin && (
+                <Link
+                  to="/global-users"
+                  className="inline-flex items-center gap-2 rounded-md bg-white border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+                >
+                  <UsersIcon size={16} /> Global Users
+                </Link>
+              )}
+              <button 
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all text-sm"
+                onClick={() => setIsModalOpen(true)}
+              >
+                <UserPlus size={18} /> Add Team Member
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
@@ -259,7 +310,11 @@ export default function Users() {
         </section>
       </div>
     </div>
-    <CreateAdminModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); fetchUsers(); }} />
+    <CreateAdminModal 
+      isOpen={isModalOpen} 
+      onClose={() => { setIsModalOpen(false); fetchUsers(); }} 
+      defaultProjectId={effectiveProjectId}
+    />
     <EditUserModal 
       isOpen={isEditModalOpen} 
       onClose={() => setIsEditModalOpen(false)} 

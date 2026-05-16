@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuthStore } from '../../store/authStore';
 import API_BASE_URL from '../../config/api';
 
-export const CreateAdminModal = ({ isOpen, onClose }) => {
+export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId }) => {
   const { user: loggedInUser, activeProject } = useAuthStore();
   
   const targetRole = loggedInUser?.role === 'MASTER_ADMIN' ? 'ADMIN' : loggedInUser?.role === 'ADMIN' ? 'EMPLOYEE' : 'MOBILE_USER';
@@ -16,7 +16,7 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
     phone: '',
     password: 'password123',
     project_role: targetRole,
-    projects: activeProject ? [activeProject.id] : [],
+    projects: defaultProjectId ? [Number(defaultProjectId)] : (activeProject ? [activeProject.id] : []),
     section_a: false,
     section_b: false,
     section_c: false,
@@ -29,7 +29,7 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
 
 
   // Fetch projects
-  const { data: projects = [] } = useQuery({
+  const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
       const token = localStorage.getItem('token');
@@ -131,7 +131,9 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
           <div>
             <label className="block text-slate-700 font-semibold mb-1">Assign Projects</label>
             <div className="space-y-1 max-h-32 overflow-y-auto border border-slate-100 p-3 rounded-lg bg-slate-50">
-              {projects.length === 0 ? (
+              {loadingProjects ? (
+                <p className="text-xs text-primary animate-pulse font-medium">Loading projects list...</p>
+              ) : (!projects || !Array.isArray(projects) || projects.length === 0) ? (
                 <p className="text-xs text-slate-500">No projects available.</p>
               ) : (
                 projects.map((p) => (

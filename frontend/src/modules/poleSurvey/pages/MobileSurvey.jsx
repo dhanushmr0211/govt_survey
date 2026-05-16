@@ -14,7 +14,7 @@ import { useEffect } from 'react';
 
 export default function MobileSurvey() {
   const [searchTerm, setSearchTerm] = useState('');
-  const { logout, activeProject } = useAuthStore();
+  const { logout, activeProject, clearActiveProject } = useAuthStore();
   const [selectedUlb, setSelectedUlb] = useState(null);
   const [view, setView] = useState(null); // 'switch_point' or 'pole'
   const [activeTab, setActiveTab] = useState('survey');
@@ -55,10 +55,12 @@ export default function MobileSurvey() {
       {/* Header */}
       <header className="bg-white p-4 border-b border-gray-100 shadow-sm flex justify-between items-center sticky top-0 z-10">
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Logo" className="h-8 w-8 rounded-lg object-cover" />
+          <button onClick={clearActiveProject} className="text-primary mr-1">
+            <ArrowLeft size={20} />
+          </button>
           <h1 className="text-lg font-bold text-gray-900">GovtSurvey</h1>
         </div>
-        <button onClick={logout} className="text-sm text-red-500 font-medium">Logout</button>
+        <button onClick={logout} className="text-sm text-red-500 font-medium px-2 py-1">Logout</button>
       </header>
 
       {/* Main Content */}

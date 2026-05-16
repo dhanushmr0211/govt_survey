@@ -5,7 +5,7 @@ const basePoolOptions = {
   max: 50,
   min: 5,
   idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 10_000,
+  connectionTimeoutMillis: 30_000, // increased from 10s to 30s
   statement_timeout: 30_000, // kill queries running longer than 30s
   allowExitOnIdle: false,
 };

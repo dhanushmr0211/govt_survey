@@ -5,9 +5,13 @@ import EmployeeDashboard from './EmployeeDashboard';
 import ClientDashboard from './ClientDashboard';
 import MobileSurvey from '../modules/poleSurvey/pages/MobileSurvey';
 import ProjectSelector from './ProjectSelector';
+import { ArrowLeft } from 'lucide-react';
 
 export default function Dashboard() {
-  const { user, activeProject } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
+  const activeProject = useAuthStore((state) => state.activeProject);
+  const clearActiveProject = useAuthStore((state) => state.clearActiveProject);
+  const logout = useAuthStore((state) => state.logout);
   
   if (!user) return null;
 
@@ -34,9 +38,18 @@ export default function Dashboard() {
     default:
       return (
         <div className="flex flex-col items-center justify-center h-full gap-4">
+          <header className="bg-white p-4 border-b border-gray-100 shadow-sm flex justify-between items-center sticky top-0 z-10 w-full">
+            <div className="flex items-center gap-2">
+              <button onClick={clearActiveProject} className="text-primary mr-1">
+                <ArrowLeft size={20} />
+              </button>
+              <h1 className="text-lg font-bold text-gray-900">GovtSurvey</h1>
+            </div>
+            <button onClick={logout} className="text-sm text-red-500 font-medium px-2 py-1">Logout</button>
+          </header>
           <div className="text-gray-500 text-lg font-semibold">Unknown Project Role: {activeProject.project_role}</div>
           <button 
-            onClick={() => useAuthStore.getState().clearActiveProject()}
+            onClick={clearActiveProject}
             className="text-primary font-bold underline"
           >
             Go Back to Project Selection

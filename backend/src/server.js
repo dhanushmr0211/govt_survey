@@ -32,8 +32,11 @@ async function shutdown(signal, server) {
     console.log('HTTP server closed');
 
     try {
-      await pool.end();
-      console.log('Database pool drained');
+      const db = require('./config/db');
+      if (db && db.pool) {
+        await db.pool.end();
+        console.log('Database pool drained');
+      }
     } catch (err) {
       console.error('Error draining database pool:', err);
     }
@@ -57,4 +60,3 @@ process.on('uncaughtException', (err) => {
   // Uncaught exceptions should generally lead to process termination
   process.exit(1);
 });
-

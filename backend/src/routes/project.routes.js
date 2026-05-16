@@ -9,6 +9,6 @@ const projectRouter = express.Router();
 
 projectRouter.use(authenticate);
 
-projectRouter.get('/', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.EMPLOYEE, ROLES.CLIENT), listProjects);
+projectRouter.get('/', requireRole(ROLES.MASTER_ADMIN, ROLES.MEMBER, ROLES.ADMIN, ROLES.EMPLOYEE, ROLES.CLIENT), listProjects);
 
 module.exports = { projectRouter };

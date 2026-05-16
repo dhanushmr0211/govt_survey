@@ -217,4 +217,17 @@ async function updateAccess(req, res, next) {
   }
 }
 
-module.exports = { register, login, me, listUsers, updateAccess };
+async function getUserProjects(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (req.user.role !== ROLES.MASTER_ADMIN) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    const assignments = await projectUserModel.getProjectsWithRoles(Number(id));
+    return res.json({ assignments });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+module.exports = { register, login, me, listUsers, getUserProjects, updateAccess };

@@ -14,25 +14,38 @@ function requireRole(...roles) {
       return next();
     }
 
-    const { projectId: rawProjectId } = req.params;
+    // Try to find projectId in params, query, or body
+    const { projectId: paramPid } = req.params;
+    const { projectId: queryPid } = req.query;
+    const { projectId: bodyPid } = req.body;
+    
+    const rawProjectId = paramPid || queryPid || bodyPid;
     let projectId = null;
 
     if (rawProjectId) {
       projectId = parseInt(rawProjectId, 10);
-      if (isNaN(projectId)) {
-        return res.status(400).json({ message: 'Invalid project ID format' });
-      }
     }
 
-    if (projectId) {
+    // [DEBUG LOG] Let's see what's happening
+    console.log(`[RoleGuard DEBUG] User: ${req.user.id}, Role: ${req.user.role}, ProjectID: ${projectId}, Params: ${JSON.stringify(req.params)}`);
+
+    if (projectId && !isNaN(projectId)) {
       // Check project-specific role
       const membership = await projectUserModel.isMember(req.user.id, projectId);
-      if (!membership || !allowedRoles.includes(normalizeRole(membership.project_role))) {
+      
+      if (!membership) {
+        console.warn(`[RoleGuard] Access denied: User ${req.user.id} is not a member of project ${projectId}`);
+        return res.status(403).json({ message: 'Forbidden: You are not a member of this project' });
+      }
+
+      const userProjectRole = normalizeRole(membership.project_role);
+      if (!allowedRoles.includes(userProjectRole)) {
+        console.warn(`[RoleGuard] Access denied: User ${req.user.id} has role ${userProjectRole} in project ${projectId}, but needs one of: ${allowedRoles.join(', ')}`);
         return res.status(403).json({ message: 'Forbidden: Insufficient project permissions' });
       }
       
       // Attach project-specific permissions to req for controller use if needed
-      req.projectRole = normalizeRole(membership.project_role);
+      req.projectRole = userProjectRole;
       req.projectSections = {
         section_a: membership.section_a,
         section_b: membership.section_b,
@@ -44,9 +57,10 @@ function requireRole(...roles) {
         section_h: membership.section_h
       };
     } else {
-      // Fallback to global role for non-project routes
+      // Fallback to global role for non-project routes or if ID missing
       if (!allowedRoles.includes(normalizeRole(req.user.role))) {
-        return res.status(403).json({ message: 'Forbidden: Insufficient global permissions' });
+        console.warn(`[RoleGuard] Global access denied: User ${req.user.id} with role ${req.user.role} tried to access a project route without a valid projectId, or global role is insufficient.`);
+        return res.status(403).json({ message: 'Forbidden: Project ID missing or insufficient permissions' });
       }
     }
 

@@ -84,7 +84,7 @@ function createApp() {
 
   // All domain routes under /api/v1
   const { requireProjectMember } = require('./middleware/roleGuard');
-  const apiRouter = express.Router();
+  const apiRouter = express.Router({ mergeParams: true });
   apiRouter.use('/auth', authRouter);
   apiRouter.use('/projects', projectRouter);
   apiRouter.use('/projects/:projectId/pole-survey', requireProjectMember(), poleSurveyRouter);

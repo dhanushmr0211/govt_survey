@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { CreateAdminModal } from '../shared/components/CreateAdminModal';
 import { SummaryView } from '../modules/poleSurvey/components/SummaryView';
 import { WardDetailsView } from '../modules/poleSurvey/components/WardDetailsView';
 import { SubmissionQueueView } from '../modules/poleSurvey/components/SubmissionQueueView';
+import { UsersView } from './UsersView';
 import { useEmployeeTracking } from '../shared/hooks/useEmployeeTracking';
 import { useMobileUserTracking } from '../shared/hooks/useMobileUserTracking';
 import { useQuery } from '@tanstack/react-query';
@@ -13,12 +14,15 @@ import { BarChart3, CalendarDays, ClipboardList, Download, FolderKanban, Smartph
 import API_BASE_URL from '../config/api';
 
 export default function MasterAdminDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const { user, logout } = useAuthStore();
+  
+  const activeView = searchParams.get('view') || 'projects';
+  const selectedProjectId = searchParams.get('projectId') ? Number(searchParams.get('projectId')) : null;
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeView, setActiveView] = useState(location.state?.activeView || 'projects');
   const [selectedProjectName, setSelectedProjectName] = useState(localStorage.getItem('master_selectedProjectName') || null);
-  const [selectedProjectId, setSelectedProjectId] = useState(localStorage.getItem('master_selectedProjectId') ? Number(localStorage.getItem('master_selectedProjectId')) : null);
   const [selectedUlb, setSelectedUlb] = useState(null);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
@@ -37,26 +41,30 @@ export default function MasterAdminDashboard() {
   });
   const projects = projectsData.projects || [];
 
+  const currentProject = projects.find(p => p.id === Number(selectedProjectId));
+  const activeProject = useAuthStore((state) => state.activeProject);
+  const effectiveProject = currentProject || activeProject;
+
   useEffect(() => {
     if (location.state?.activeView) {
-      setActiveView(location.state.activeView);
+      setSearchParams({ ...Object.fromEntries(searchParams), view: location.state.activeView });
     }
     if (location.state?.openDownload) {
       setIsDownloadModalOpen(true);
     }
   }, [location.state]);
 
-  const sectionItems = (selectedProjectId && activeView !== 'projects') ? [
-    { key: 'pole_survey_summary', label: 'Summary', icon: BarChart3 },
-    { key: 'pole_survey_today', label: "Today's Summary", icon: CalendarDays },
-    { key: 'pole_survey_issues', label: 'Issues', icon: ClipboardList },
-  ] : [];
+  const sectionItems = [
+    effectiveProject?.section_a && { key: 'pole_survey_summary', label: 'Summary', icon: BarChart3 },
+    effectiveProject?.section_b && { key: 'pole_survey_today', label: "Today's Summary", icon: CalendarDays },
+    effectiveProject?.section_c && { key: 'pole_survey_issues', label: 'Issues', icon: ClipboardList },
+  ].filter(Boolean);
 
-  const utilityItems = (selectedProjectId && activeView !== 'projects') ? [
-    { key: 'users', label: 'Users', icon: Users, path: `/users?projectId=${selectedProjectId}` },
-    { key: 'employee_tracking', label: 'Employee Tracking', icon: UserCheck },
-    { key: 'mobile_user_tracking', label: 'Mobile User Tracking', icon: Smartphone },
-  ] : [];
+  const utilityItems = [
+    effectiveProject?.section_d && { key: 'users', label: 'Team', icon: Users },
+    effectiveProject?.section_e && { key: 'employee_tracking', label: 'Employee Tracking', icon: UserCheck },
+    effectiveProject?.section_f && { key: 'mobile_user_tracking', label: 'Mobile User Tracking', icon: Smartphone },
+  ].filter(Boolean);
 
   const pageTitle = activeView === 'projects' ? 'All Projects' : selectedProjectName || 'Project Workspace';
 
@@ -84,16 +92,17 @@ export default function MasterAdminDashboard() {
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto no-scrollbar">
             <button
               onClick={() => { 
-                setActiveView('projects'); 
+                setSearchParams({ view: 'projects' });
                 setSelectedUlb(null); 
                 setSelectedProjectName(null);
-                setSelectedProjectId(null);
                 localStorage.removeItem('master_selectedProjectName');
                 localStorage.removeItem('master_selectedProjectId');
+                // Also clear the global active project for consistency
+                useAuthStore.getState().clearActiveProject();
               }}
               className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${activeView === 'projects' ? 'bg-primary text-white shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
             >
-              <FolderKanban size={18} /> Projects
+              <FolderKanban size={18} /> Switch Project
             </button>
 
             {sectionItems.length > 0 && (
@@ -103,7 +112,10 @@ export default function MasterAdminDashboard() {
                   return (
                     <button
                       key={item.key}
-                      onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
+                      onClick={() => { 
+                        setSearchParams({ projectId: String(selectedProjectId), view: item.key });
+                        setSelectedUlb(null); 
+                      }}
                       className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
                     >
                       <Icon size={16} /> {item.label}
@@ -131,7 +143,7 @@ export default function MasterAdminDashboard() {
                   return (
                     <button
                       key={item.key}
-                      onClick={() => setActiveView(item.key)}
+                      onClick={() => setSearchParams({ projectId: String(selectedProjectId), view: item.key })}
                       className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
                     >
                       <Icon size={16} /> {item.label}
@@ -141,14 +153,16 @@ export default function MasterAdminDashboard() {
               </div>
             )}
 
-            {selectedProjectId && (
+            {selectedProjectId && activeView !== 'projects' && (
               <div className="space-y-1 border-l border-white/10 pl-3 mt-1">
-                <button
-                  onClick={() => setIsDownloadModalOpen(true)}
-                  className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
-                >
-                  <Download size={16} /> Download Report
-                </button>
+                {effectiveProject?.section_g && (
+                  <button
+                    onClick={() => setIsDownloadModalOpen(true)}
+                    className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    <Download size={16} /> Download Report
+                  </button>
+                )}
               </div>
             )}
           </nav>
@@ -174,14 +188,14 @@ export default function MasterAdminDashboard() {
             </h1>
           </div>
           <Link
-            to="/users"
+            to="/global-users"
             className="inline-flex items-center gap-2 rounded-md bg-white border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
           >
             <Users size={16} /> Global Users
           </Link>
         </div>
 
-        {activeView === 'projects' && (
+        {(activeView === 'projects' || !selectedProjectId) && (
           <div className="premium-panel p-6">
             <div className="mb-5">
               <h2 className="text-lg font-bold text-slate-950">Select a Project</h2>
@@ -192,47 +206,51 @@ export default function MasterAdminDashboard() {
                 <div 
                   key={p.id}
                   onClick={() => {
+                    useAuthStore.getState().setActiveProject(p);
                     setSelectedProjectName(p.name);
-                    setSelectedProjectId(p.id);
                     localStorage.setItem('master_selectedProjectName', p.name);
                     localStorage.setItem('master_selectedProjectId', p.id);
-                    setActiveView('pole_survey_summary');
+                    setSearchParams({ projectId: String(p.id), view: 'pole_survey_summary' });
                   }}
                   className="group cursor-pointer rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
                 >
-                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-light text-primary-dark">
+                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600">
                     <FolderKanban size={22} />
                   </div>
                   <h3 className="font-bold text-slate-950">{p.name}</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-500">Manage {p.name} details, summaries, and tracking.</p>
-                  <p className="mt-5 text-sm font-semibold text-primary">Open workspace</p>
+                  <p className="mt-5 text-sm font-semibold text-orange-500">Open workspace</p>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {activeView === 'pole_survey_summary' && !selectedUlb && (
+        {selectedProjectId && activeView === 'pole_survey_summary' && !selectedUlb && (
           <SummaryView projectId={selectedProjectId} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
         )}
         
-        {activeView === 'pole_survey_summary' && selectedUlb && (
+        {selectedProjectId && activeView === 'pole_survey_summary' && selectedUlb && (
           <WardDetailsView projectId={selectedProjectId} ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
         )}
         
-        {activeView === 'pole_survey_today' && !selectedUlb && (
+        {selectedProjectId && activeView === 'pole_survey_today' && !selectedUlb && (
           <SummaryView projectId={selectedProjectId} date={new Date().toISOString().split('T')[0]} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
         )}
 
-        {activeView === 'pole_survey_today' && selectedUlb && (
+        {selectedProjectId && activeView === 'pole_survey_today' && selectedUlb && (
           <WardDetailsView projectId={selectedProjectId} ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
         )}
         
-        {activeView === 'pole_survey_issues' && (
+        {selectedProjectId && activeView === 'pole_survey_issues' && (
           <SubmissionQueueView projectId={selectedProjectId} />
         )}
         
-        {activeView === 'employee_tracking' && (
+        {selectedProjectId && activeView === 'users' && (
+          <UsersView projectId={selectedProjectId} />
+        )}
+        
+        {selectedProjectId && activeView === 'employee_tracking' && (
           <EmployeeTrackingView projectId={selectedProjectId} />
         )}
         

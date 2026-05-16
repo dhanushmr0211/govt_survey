@@ -85,14 +85,15 @@ async function touch(id) {
 async function findByProject(projectId) {
   const result = await query(
     `SELECT u.id, u.name, u.email, u.role, u.created_at,
-            COALESCE(asa.section_a, false) AS section_a,
-            COALESCE(asa.section_b, false) AS section_b,
-            COALESCE(asa.section_c, false) AS section_c,
-            COALESCE(asa.section_d, false) AS section_d,
-            COALESCE(asa.section_e, false) AS section_e,
-            COALESCE(asa.section_f, false) AS section_f,
-            COALESCE(asa.section_g, false) AS section_g,
-            COALESCE(asa.section_h, false) AS section_h
+            pu.project_role AS project_role,
+            COALESCE(pu.section_a, false) AS section_a,
+            COALESCE(pu.section_b, false) AS section_b,
+            COALESCE(pu.section_c, false) AS section_c,
+            COALESCE(pu.section_d, false) AS section_d,
+            COALESCE(pu.section_e, false) AS section_e,
+            COALESCE(pu.section_f, false) AS section_f,
+            COALESCE(pu.section_g, false) AS section_g,
+            COALESCE(pu.section_h, false) AS section_h
      FROM users u
      JOIN project_users pu ON u.id = pu.user_id
      LEFT JOIN admin_section_access asa ON u.id = asa.admin_id

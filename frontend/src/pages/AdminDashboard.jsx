@@ -3,6 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import { SummaryView } from '../modules/poleSurvey/components/SummaryView';
 import { WardDetailsView } from '../modules/poleSurvey/components/WardDetailsView';
 import { SubmissionQueueView } from '../modules/poleSurvey/components/SubmissionQueueView';
+import { UsersView } from './UsersView';
 import { useEmployeeTracking } from '../shared/hooks/useEmployeeTracking';
 import { useMobileUserTracking } from '../shared/hooks/useMobileUserTracking';
 import { useQuery } from '@tanstack/react-query';
@@ -39,7 +40,7 @@ export default function AdminDashboard() {
   ].filter(Boolean);
 
   const utilityItems = [
-    hasSectionD && { key: 'users', label: 'Team', icon: UsersIcon, path: '/users' },
+    hasSectionD && { key: 'users', label: 'Team', icon: UsersIcon },
     hasSectionE && { key: 'employee_tracking', label: 'Employee Tracking', icon: UserCheck },
     hasSectionF && { key: 'mobile_user_tracking', label: 'Mobile User Tracking', icon: Smartphone },
   ].filter(Boolean);
@@ -49,78 +50,96 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-full -m-4 bg-slate-100 sm:-m-6 xl:-m-8">
       <div className="mx-auto flex min-h-full w-full max-w-[1760px] gap-5 p-4 sm:p-6 xl:p-8">
-        <aside className="hidden w-72 shrink-0 flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:flex">
-          <div className="mb-4 rounded-lg bg-slate-950 p-4 text-white">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Admin workspace</p>
-            <p className="mt-1 text-lg font-bold">{user?.name || 'Admin'}</p>
-            <div className="mt-3 pt-3 border-t border-white/10">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Active Project</p>
-              <p className="text-sm font-semibold text-primary truncate">{activeProject.name}</p>
+        <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-950 text-white lg:flex fixed top-16 left-0 h-[calc(100vh-4rem)] z-30">
+          <div className="p-6 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-orange-500 shadow-lg shadow-orange-500/25">
+                <Landmark size={22} />
+              </div>
+              <div>
+                <p className="text-base font-bold tracking-tight">Govt Survey</p>
+                <p className="text-xs font-medium text-slate-400">Operations Console</p>
+              </div>
             </div>
           </div>
           
-          <nav className="space-y-2 flex-1">
+          <div className="p-4 border-b border-white/10">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Admin Workspace</p>
+            <p className="mt-1 text-lg font-bold">{user?.name || 'Admin'}</p>
+            <div className="mt-2 text-xs font-medium text-orange-500">
+              Active Project: {activeProject.name}
+            </div>
+          </div>
+
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto no-scrollbar">
             <button
               onClick={clearActiveProject}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-950 transition-colors"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
             >
               <ArrowLeft size={18} /> Switch Project
             </button>
 
-            <div className="my-4 border-t border-slate-100"></div>
+            <div className="my-4 border-t border-white/10"></div>
 
-            {sectionItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
-                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}
-                >
-                  <Icon size={18} /> {item.label}
-                </button>
-              );
-            })}
+            {sectionItems.length > 0 && (
+              <div className="space-y-1 border-l border-white/10 pl-3">
+                {sectionItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
+                      className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
+                    >
+                      <Icon size={16} /> {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-            <div className="my-2"></div>
-
-            {utilityItems.map((item) => {
-              const Icon = item.icon;
-              if (item.path) {
-                return (
-                  <Link
-                    key={item.key}
-                    to={item.path}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-950 transition-colors"
-                  >
-                    <Icon size={18} /> {item.label}
-                  </Link>
-                );
-              }
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
-                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}
-                >
-                  <Icon size={18} /> {item.label}
-                </button>
-              );
-            })}
+            {utilityItems.length > 0 && (
+              <div className="space-y-1 border-l border-white/10 pl-3 mt-4">
+                {utilityItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
+                      className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
+                    >
+                      <Icon size={16} /> {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {hasSectionG && (
-              <button
-                onClick={() => setIsDownloadModalOpen(true)}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950"
-              >
-                <Download size={18} /> Download Report
-              </button>
+              <div className="space-y-1 border-l border-white/10 pl-3 mt-4">
+                <button
+                  onClick={() => setIsDownloadModalOpen(true)}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <Download size={16} /> Download Report
+                </button>
+              </div>
             )}
           </nav>
+
+          <div className="p-4 border-t border-white/10">
+            <button
+              onClick={() => useAuthStore.getState().logout()}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <LogOut size={20} />
+              <span>Logout</span>
+            </button>
+          </div>
         </aside>
 
         {/* Main Content */}
-        <section className="min-w-0 flex-1">
+        <section className="min-w-0 flex-1 lg:ml-64">
           <div className="mb-5 flex flex-col justify-between gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
@@ -143,7 +162,7 @@ export default function AdminDashboard() {
                   <button
                     key={item.key}
                     onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
-                    className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold ${activeView === item.key ? 'bg-primary text-white' : 'bg-slate-100 text-slate-700'}`}
+                    className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold ${activeView === item.key ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-700'}`}
                   >
                     <Icon size={14} /> {item.label}
                   </button>
@@ -170,6 +189,10 @@ export default function AdminDashboard() {
           
           {activeView === 'pole_survey_issues' && (
             <SubmissionQueueView projectId={activeProject.id} />
+          )}
+
+          {activeView === 'users' && (
+            <UsersView projectId={activeProject.id} />
           )}
 
           {activeView === 'employee_tracking' && (

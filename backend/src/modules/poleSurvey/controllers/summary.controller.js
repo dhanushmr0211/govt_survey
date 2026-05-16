@@ -1,5 +1,6 @@
 const { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions, getMyStats, getEmployeeTracking, getMobileUserTracking, getReportData } = require('../models/summary.model');
 const { canAccessProject } = require('../../../middleware/projectAccess');
+const { ROLES } = require('../../../constants/roles');
 const ExcelJS = require('exceljs');
 
 async function getDistrictSummaryHandler(req, res, next) {
@@ -12,19 +13,17 @@ async function getDistrictSummaryHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this project' });
     }
     
-    const user = req.user;
-    const isMasterAdmin = user.role === 'MASTER_ADMIN';
-    const hasSectionA = user.section_a;
-    const hasSectionB = user.section_b;
+    const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
     
     const todayStr = new Date().toISOString().split('T')[0];
     const isRequestForToday = date === todayStr;
 
-    if (!isMasterAdmin && !hasSectionA) {
-      if (hasSectionB && isRequestForToday) {
+    if (!isMasterAdmin && !permissions.section_a) {
+      if (permissions.section_b && isRequestForToday) {
         // OK
       } else {
-        return res.status(403).json({ message: 'Forbidden: You do not have permission to access this section' });
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to access the Summary section' });
       }
     }
 
@@ -63,12 +62,11 @@ async function getWardDetailsHandler(req, res, next) {
   try {
     const { ulbId, wardNumber } = req.params;
     
-    const user = req.user;
-    const isMasterAdmin = user.role === 'MASTER_ADMIN';
-    const hasSectionA = user.section_a;
+    const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !hasSectionA) {
-      return res.status(403).json({ message: 'Forbidden: You do not have permission to access this section' });
+    if (!isMasterAdmin && !permissions.section_a) {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to access ward details' });
     }
 
     const details = await getWardDetails(Number(ulbId), wardNumber);
@@ -79,18 +77,11 @@ async function getWardDetailsHandler(req, res, next) {
 async function getPendingSubmissionsHandler(req, res, next) {
   try {
     const { projectId } = req.params;
-    
-    const allowedProject = await canAccessProject(Number(req.user.sub), req.user.role, Number(projectId));
-    if (!allowedProject) {
-      return res.status(403).json({ message: 'Forbidden: You do not have access to this project' });
-    }
-    
-    const user = req.user;
-    const isMasterAdmin = user.role === 'MASTER_ADMIN';
-    const hasSectionC = user.section_c;
+    const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !hasSectionC) {
-      return res.status(403).json({ message: 'Forbidden: You do not have permission to access this section' });
+    if (!isMasterAdmin && !permissions.section_c) {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to access the pending queue' });
     }
 
     const { page = 1, limit = 50, userId } = req.query;
@@ -111,13 +102,11 @@ async function getTodaySubmissionsHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this project' });
     }
     
-    const user = req.user;
-    const isMasterAdmin = user.role === 'MASTER_ADMIN';
-    const hasSectionB = user.section_b;
-    const hasSectionC = user.section_c;
+    const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !hasSectionB && !hasSectionC) {
-      return res.status(403).json({ message: 'Forbidden: You do not have permission to access this section' });
+    if (!isMasterAdmin && !permissions.section_b && !permissions.section_c) {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to access today\'s submissions' });
     }
 
     const { page = 1, limit = 50 } = req.query;
@@ -129,18 +118,11 @@ async function getTodaySubmissionsHandler(req, res, next) {
 async function getConfirmedSubmissionsHandler(req, res, next) {
   try {
     const { projectId } = req.params;
-    
-    const allowedProject = await canAccessProject(Number(req.user.sub), req.user.role, Number(projectId));
-    if (!allowedProject) {
-      return res.status(403).json({ message: 'Forbidden: You do not have access to this project' });
-    }
-    
-    const user = req.user;
-    const isMasterAdmin = user.role === 'MASTER_ADMIN';
-    const hasSectionC = user.section_c;
+    const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !hasSectionC) {
-      return res.status(403).json({ message: 'Forbidden: You do not have permission to access this section' });
+    if (!isMasterAdmin && !permissions.section_c) {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to access confirmed submissions' });
     }
 
     const { page = 1, limit = 50, userId, confirmedBy } = req.query;
@@ -168,10 +150,10 @@ async function getEmployeeTrackingHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this project' });
     }
     
-    const user = req.user;
-    const isMasterAdmin = user.role === 'MASTER_ADMIN';
+    const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
     
-    if (!isMasterAdmin && !user.section_e) {
+    if (!isMasterAdmin && !permissions.section_e) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to employee tracking' });
     }
 
@@ -189,10 +171,10 @@ async function getMobileUserTrackingHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this project' });
     }
     
-    const user = req.user;
-    const isMasterAdmin = user.role === 'MASTER_ADMIN';
+    const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
     
-    if (!isMasterAdmin && !user.section_f) {
+    if (!isMasterAdmin && !permissions.section_f) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to mobile user tracking' });
     }
 
