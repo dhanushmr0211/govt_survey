@@ -246,6 +246,11 @@ async function downloadReportHandler(req, res, next) {
     }
     
     const permissions = req.projectSections || {};
+    const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    if (!isMasterAdmin && !permissions.section_g) {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to download reports' });
+    }
+
     const data = await getReportData(
       Number(projectId), 
       district ? Number(district) : null, 

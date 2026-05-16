@@ -5,6 +5,7 @@ import { WardDetailsView } from '../modules/poleSurvey/components/WardDetailsVie
 import { SubmissionQueueView } from '../modules/poleSurvey/components/SubmissionQueueView';
 import { UsersView } from './UsersView';
 import { EmployeeTrackingView, MobileUserTrackingView } from './TrackingViews';
+import { DownloadReportModal } from '../shared/components/DownloadReportModal';
 import { BarChart3, CalendarDays, ClipboardList, ArrowLeft, Download, Landmark, LogOut, Users as UsersIcon, UserCheck, Smartphone } from 'lucide-react';
 
 export default function EmployeeDashboard() {
@@ -25,6 +26,7 @@ export default function EmployeeDashboard() {
   );
   
   const [selectedUlb, setSelectedUlb] = useState(null);
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
   const sectionItems = [
     hasSectionA && { key: 'pole_survey_summary', label: 'Summary', icon: BarChart3 },
@@ -111,6 +113,7 @@ export default function EmployeeDashboard() {
           {hasSectionG && (
             <div className="space-y-1 border-l border-white/10 pl-3 mt-4">
               <button
+                onClick={() => setIsDownloadModalOpen(true)}
                 className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <Download size={16} /> Download Report
@@ -179,6 +182,11 @@ export default function EmployeeDashboard() {
           </div>
         </div>
       </main>
+      <DownloadReportModal
+        isOpen={isDownloadModalOpen}
+        onClose={() => setIsDownloadModalOpen(false)}
+        projectId={activeProject.id}
+      />
     </div>
   );
 }
