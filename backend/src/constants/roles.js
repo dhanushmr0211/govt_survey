@@ -1,3 +1,4 @@
+const ROLES = {
   MASTER_ADMIN: 'MASTER_ADMIN',
   MEMBER: 'MEMBER',
   ADMIN: 'ADMIN',
