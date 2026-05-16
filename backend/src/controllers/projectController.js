@@ -10,7 +10,10 @@ async function listProjects(req, res, next) {
     const userId = Number(req.user.sub);
     const userRole = req.user.role;
 
+    console.log(`\n[listProjects] === START === UserId: ${userId}, Role: ${userRole}`);
+
     if (isNaN(userId)) {
+      console.error('[listProjects] Invalid userId');
       return res.status(401).json({ message: 'Invalid user session' });
     }
 
@@ -18,6 +21,7 @@ async function listProjects(req, res, next) {
     let total = 0;
 
     if (userRole === ROLES.MASTER_ADMIN) {
+      console.log('[listProjects] User is MASTER_ADMIN, fetching all projects');
       const result = await projectService.listProjects(limit, offset);
       projects = result.projects.map(p => ({
         ...p,
@@ -27,20 +31,24 @@ async function listProjects(req, res, next) {
         section_i: true
       }));
       total = result.total;
+      console.log(`[listProjects] MASTER_ADMIN found ${projects.length} projects`);
     } else {
-      // For MEMBER role, fetch only assigned projects with their roles
+      console.log(`[listProjects] User is ${userRole}, fetching assigned projects from project_users`);
       projects = await projectUserModel.getProjectsWithRoles(userId);
-      console.log(`[DEBUG] Projects for user ${userId}:`, JSON.stringify(projects));
-      total = projects.length; // Simplified for now since project list is usually small
+      console.log(`[listProjects] Query returned ${projects.length} projects for user ${userId}`);
+      if (projects.length > 0) {
+        console.log('[listProjects] Project data:', JSON.stringify(projects, null, 2));
+      }
+      total = projects.length;
     }
     
-    console.log(`[DEBUG] Final Response projects:`, Array.isArray(projects), projects.length);
-    console.log(`[listProjects DEBUG] User: ${userId}, Role: ${userRole}, Projects Found: ${projects.length}`);
+    console.log(`[listProjects] === END === Returning ${projects.length} projects, Role: ${userRole}`);
     return res.json({
       projects,
       pagination: paginationMeta(page, limit, total),
     });
   } catch (error) {
+    console.error('[listProjects] ERROR:', error);
     return next(error);
   }
 }

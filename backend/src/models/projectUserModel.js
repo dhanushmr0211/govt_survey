@@ -18,6 +18,7 @@ async function isMember(userId, projectId) {
  * Return all projects that a user belongs to, including their role and sections for each.
  */
 async function getProjectsWithRoles(userId) {
+  console.log(`[getProjectsWithRoles] Fetching projects for userId: ${userId}`);
   const result = await query(
     `SELECT p.id, p.name, p.project_type, pu.project_role, 
             pu.section_a, pu.section_b, pu.section_c, pu.section_d, 
@@ -28,6 +29,10 @@ async function getProjectsWithRoles(userId) {
      WHERE pu.user_id = $1 AND p.is_deleted IS NOT TRUE`,
     [userId]
   );
+  console.log(`[getProjectsWithRoles] Query returned ${result.rows.length} rows`);
+  if (result.rows.length > 0) {
+    console.log(`[getProjectsWithRoles] First row keys: ${Object.keys(result.rows[0]).join(', ')}`);
+  }
   return result.rows;
 }
 /**
