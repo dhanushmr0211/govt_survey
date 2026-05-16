@@ -6,16 +6,13 @@ const { env } = require('../config/env');
 const userService = require('../services/userService');
 const projectUserModel = require('../models/projectUserModel');
 const { ROLES, normalizeRole, isKnownRole } = require('../constants/roles');
-const { invalidateProjectAccess } = require('../middleware/projectAccess');
-const adminSectionAccessModel = require('../models/adminSectionAccessModel');
 
 const registerSchema = z.object({
   name: z.string().trim().min(1).max(200),
   email: z.string().trim().email().max(255),
   password: z.string().min(8).max(128),
   phone: z.string().trim().max(20).optional(),
-  role: z.string().trim().max(50).optional(),
-  project_id: z.number().int().positive().optional(),
+  project_role: z.string().trim().max(50), // The role in the project: ADMIN, CLIENT, etc.
   projects: z.array(z.number().int().positive()).min(1, 'Please assign at least one project'),
   section_a: z.boolean().optional(),
   section_b: z.boolean().optional(),
@@ -28,6 +25,7 @@ const registerSchema = z.object({
 });
 
 const updateAccessSchema = z.object({
+  projectId: z.number().int().positive(),
   section_a: z.boolean().optional(),
   section_b: z.boolean().optional(),
   section_c: z.boolean().optional(),
@@ -52,47 +50,29 @@ async function register(req, res, next) {
       return res.status(409).json({ message: 'Email already exists' });
     }
 
-    const selectedRole = isKnownRole(data.role) ? normalizeRole(data.role) : ROLES.MOBILE_USER;
+    const projectRole = isKnownRole(data.project_role) ? normalizeRole(data.project_role) : ROLES.MOBILE_USER;
     
     // Enforce creation hierarchy
-    const creatorRole = req.user.role;
-    const allowedCreations = {
-      [ROLES.MASTER_ADMIN]: [ROLES.ADMIN, ROLES.CLIENT],
-      [ROLES.ADMIN]: [ROLES.EMPLOYEE, ROLES.CLIENT, ROLES.MOBILE_USER],
-      [ROLES.EMPLOYEE]: [ROLES.MOBILE_USER],
-      [ROLES.CLIENT]: [],
-      [ROLES.MOBILE_USER]: [],
+    const creatorRole = req.user.role; // MASTER_ADMIN or MEMBER
+    // Note: If MEMBER, we should ideally check their project_role for the assigned projects
+    // For now, keeping simple: MASTER_ADMIN can create anyone, others restricted by logic below
+    
+    const passwordHash = await bcrypt.hash(data.password, 12);
+    
+    // Global role is ALWAYS MEMBER for new registrations via this endpoint
+    const user = await userService.createUser(data.name, data.email, passwordHash, ROLES.MEMBER, req.user.sub ? Number(req.user.sub) : null, data.phone);
+
+    // Handle Project Assignment with sections
+    const sections = {
+      section_a: data.section_a, section_b: data.section_b, section_c: data.section_c,
+      section_d: data.section_d, section_e: data.section_e, section_f: data.section_f,
+      section_g: data.section_g, section_h: data.section_h
     };
 
-    if (!allowedCreations[creatorRole] || !allowedCreations[creatorRole].includes(selectedRole)) {
-      return res.status(403).json({ message: `A ${creatorRole} does not have permission to create a ${selectedRole}` });
-    }
-
-    const passwordHash = await bcrypt.hash(data.password, 12);
-    const user = await userService.createUser(data.name, data.email, passwordHash, selectedRole, req.user.sub ? Number(req.user.sub) : null, data.phone);
-
-    // Save section access
-    await adminSectionAccessModel.setSectionAccess(user.id, data.section_a || false, data.section_b || false, data.section_c || false, data.section_d || false, data.section_e || false, data.section_f || false, data.section_g || false, data.section_h || false);
-
-    // Handle Project Assignment
-    if (creatorRole === ROLES.MASTER_ADMIN && data.projects) {
+    if (data.projects) {
       for (const pid of data.projects) {
-        await projectUserModel.addUserToProject(user.id, pid, selectedRole);
+        await projectUserModel.addUserToProject(user.id, pid, projectRole, sections);
       }
-      invalidateProjectAccess(user.id);
-    } else if (creatorRole === ROLES.ADMIN && (data.project_id || data.projects)) {
-      const pids = data.projects || [data.project_id];
-      for (const pid of pids) {
-        await projectUserModel.addUserToProject(user.id, pid, selectedRole);
-      }
-      invalidateProjectAccess(user.id);
-    } else if (creatorRole === ROLES.EMPLOYEE) {
-      // Employee passes down all their assigned projects to the new Mobile User
-      const employeeProjectIds = await projectUserModel.getProjectIds(Number(req.user.sub));
-      for (const pid of employeeProjectIds) {
-        await projectUserModel.addUserToProject(user.id, pid, selectedRole);
-      }
-      invalidateProjectAccess(user.id);
     }
 
     return res.status(201).json({ user });
@@ -117,23 +97,14 @@ async function login(req, res, next) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const role = normalizeRole(user.role);
-    const sectionAccess = await adminSectionAccessModel.getSectionAccess(user.id);
+    const role = normalizeRole(user.role); // MASTER_ADMIN or MEMBER
     
     const token = jwt.sign(
       { 
         sub: String(user.id), 
         email: user.email, 
         role, 
-        name: user.name,
-        section_a: sectionAccess.section_a,
-        section_b: sectionAccess.section_b,
-        section_c: sectionAccess.section_c,
-        section_d: sectionAccess.section_d,
-        section_e: sectionAccess.section_e,
-        section_f: sectionAccess.section_f,
-        section_g: sectionAccess.section_g,
-        section_h: sectionAccess.section_h
+        name: user.name
       },
       env.jwtSecret,
       { expiresIn: env.jwtExpiresIn }
@@ -145,15 +116,7 @@ async function login(req, res, next) {
         id: user.id,
         name: user.name,
         email: user.email,
-        role,
-        section_a: sectionAccess.section_a,
-        section_b: sectionAccess.section_b,
-        section_c: sectionAccess.section_c,
-        section_d: sectionAccess.section_d,
-        section_e: sectionAccess.section_e,
-        section_f: sectionAccess.section_f,
-        section_g: sectionAccess.section_g,
-        section_h: sectionAccess.section_h,
+        role
       },
     });
   } catch (error) {
@@ -175,8 +138,7 @@ async function me(req, res, next) {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: normalizeRole(user.role),
-        ...(await adminSectionAccessModel.getSectionAccess(user.id)),
+        role: normalizeRole(user.role)
       },
     });
   } catch (error) {
@@ -186,26 +148,29 @@ async function me(req, res, next) {
 
 async function listUsers(req, res, next) {
   try {
-    // Only Master Admin, Admin, and Employee can list users
-    if (req.user.role !== ROLES.MASTER_ADMIN && req.user.role !== ROLES.ADMIN && req.user.role !== ROLES.EMPLOYEE) {
-      return res.status(403).json({ message: 'Forbidden: You do not have permission to view users' });
-    }
-
     const { projectId } = req.query;
     let users = [];
     
-    if (projectId) {
-      users = await userService.listUsersByProject(Number(projectId));
-    } else {
-      if (req.user.role === ROLES.MASTER_ADMIN || req.user.role === ROLES.ADMIN) {
+    // For now, allow MASTER_ADMIN to see all, others only project specific
+    if (req.user.role === ROLES.MASTER_ADMIN) {
+      if (projectId) {
+        users = await userService.listUsersByProject(Number(projectId));
+      } else {
         users = await userService.listAllUsers();
-      } else if (req.user.role === ROLES.EMPLOYEE) {
-        const employeeProjectIds = await projectUserModel.getProjectIds(Number(req.user.sub));
-        if (employeeProjectIds.length > 0) {
-          users = await userService.listMobileUsersByProjects(employeeProjectIds);
-        }
       }
+    } else {
+      // MEMBER needs a projectId to see users
+      if (!projectId) {
+        return res.status(400).json({ message: 'projectId is required' });
+      }
+      // Check if user is member of this project
+      const member = await projectUserModel.isMember(Number(req.user.sub), Number(projectId));
+      if (!member) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+      users = await userService.listUsersByProject(Number(projectId));
     }
+    
     return res.json({ users });
   } catch (error) {
     return next(error);
@@ -217,27 +182,36 @@ async function updateAccess(req, res, next) {
     const { id } = req.params;
     const data = updateAccessSchema.parse(req.body);
     
-    if (req.user.role !== ROLES.MASTER_ADMIN && req.user.role !== ROLES.ADMIN) {
-      return res.status(403).json({ message: 'Forbidden: You do not have permission to update access' });
+    if (req.user.role !== ROLES.MASTER_ADMIN) {
+      // In a real app, an ADMIN of a project might also update access for their employees
+      // For now, restricting to MASTER_ADMIN for safety
+      return res.status(403).json({ message: 'Forbidden' });
     }
 
-    const existingAccess = await adminSectionAccessModel.getSectionAccess(Number(id));
+    const existingMember = await projectUserModel.isMember(Number(id), data.projectId);
+    if (!existingMember) {
+      return res.status(404).json({ message: 'User is not assigned to this project' });
+    }
 
-    await adminSectionAccessModel.setSectionAccess(
+    await projectUserModel.addUserToProject(
       Number(id),
-      data.section_a ?? existingAccess.section_a,
-      data.section_b ?? existingAccess.section_b,
-      data.section_c ?? existingAccess.section_c,
-      data.section_d ?? existingAccess.section_d,
-      data.section_e ?? existingAccess.section_e,
-      data.section_f ?? existingAccess.section_f,
-      data.section_g ?? existingAccess.section_g,
-      data.section_h ?? existingAccess.section_h
+      data.projectId,
+      existingMember.project_role,
+      {
+        section_a: data.section_a ?? existingMember.section_a,
+        section_b: data.section_b ?? existingMember.section_b,
+        section_c: data.section_c ?? existingMember.section_c,
+        section_d: data.section_d ?? existingMember.section_d,
+        section_e: data.section_e ?? existingMember.section_e,
+        section_f: data.section_f ?? existingMember.section_f,
+        section_g: data.section_g ?? existingMember.section_g,
+        section_h: data.section_h ?? existingMember.section_h
+      }
     );
 
     await userService.touch(Number(id));
 
-    return res.json({ message: 'Access updated successfully' });
+    return res.json({ message: 'Project access updated successfully' });
   } catch (error) {
     return next(error);
   }

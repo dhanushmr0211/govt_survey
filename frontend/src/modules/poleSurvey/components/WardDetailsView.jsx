@@ -6,7 +6,7 @@ import { useAuthStore } from '../../../store/authStore';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 
-export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
+export const WardDetailsView = ({ projectId, ulb, onBack }) => {
   const token = localStorage.getItem('token');
   const [selectedWard, setSelectedWard] = useState(null);
   const [selectedDetail, setSelectedDetail] = useState(null); // { type: 'switch_point' | 'pole', data: ... }

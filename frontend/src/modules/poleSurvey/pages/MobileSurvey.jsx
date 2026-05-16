@@ -14,13 +14,13 @@ import { useEffect } from 'react';
 
 export default function MobileSurvey() {
   const [searchTerm, setSearchTerm] = useState('');
-  const logout = useAuthStore((state) => state.logout);
+  const { logout, activeProject } = useAuthStore();
   const [selectedUlb, setSelectedUlb] = useState(null);
   const [view, setView] = useState(null); // 'switch_point' or 'pole'
   const [activeTab, setActiveTab] = useState('survey');
   const [pendingCount, setPendingCount] = useState(0);
 
-  const projectId = 2; // Updated to match database id
+  const projectId = activeProject?.id;
 
   useEffect(() => {
     offlineSyncService.start();
@@ -165,7 +165,7 @@ export default function MobileSurvey() {
         )}
 
         {activeTab === 'submissions' && (
-          <TodaySubmissionsView />
+          <TodaySubmissionsView projectId={projectId} />
         )}
 
         {activeTab === 'offline_queue' && (

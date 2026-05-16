@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { useProjects } from '../shared/hooks/useProjects';
 import { SummaryView } from '../modules/poleSurvey/components/SummaryView';
 import { WardDetailsView } from '../modules/poleSurvey/components/WardDetailsView';
 import { SubmissionQueueView } from '../modules/poleSurvey/components/SubmissionQueueView';
@@ -8,79 +7,74 @@ import { useEmployeeTracking } from '../shared/hooks/useEmployeeTracking';
 import { useMobileUserTracking } from '../shared/hooks/useMobileUserTracking';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { BarChart3, CalendarDays, ClipboardList, Download, FolderKanban, Smartphone, UserCheck } from 'lucide-react';
+import { BarChart3, CalendarDays, ClipboardList, Download, Smartphone, UserCheck, ArrowLeft, Users as UsersIcon } from 'lucide-react';
 import API_BASE_URL from '../config/api';
+import { Link } from 'react-router-dom';
 
 export default function AdminDashboard() {
-  const user = useAuthStore((state) => state.user);
-  const isMasterAdmin = user?.role === 'MASTER_ADMIN';
-  const hasSectionA = isMasterAdmin || user?.section_a;
-  const hasSectionB = isMasterAdmin || user?.section_b;
-  const hasSectionC = isMasterAdmin || user?.section_c;
-  const hasSectionE = isMasterAdmin || user?.section_e;
-  const hasSectionF = isMasterAdmin || user?.section_f;
+  const { user, activeProject, clearActiveProject } = useAuthStore();
   
-  const [activeView, setActiveView] = useState('projects');
-  const [selectedProject, setSelectedProject] = useState(null); // { id, name }
+  const hasSectionA = activeProject?.section_a;
+  const hasSectionB = activeProject?.section_b;
+  const hasSectionC = activeProject?.section_c;
+  const hasSectionD = activeProject?.section_d;
+  const hasSectionE = activeProject?.section_e;
+  const hasSectionF = activeProject?.section_f;
+  const hasSectionG = activeProject?.section_g;
+  
+  // Set default view based on sections
+  const [activeView, setActiveView] = useState(
+    hasSectionA ? 'pole_survey_summary' : 
+    hasSectionB ? 'pole_survey_today' : 
+    hasSectionC ? 'pole_survey_issues' : 'pole_survey_summary'
+  );
+  
   const [selectedUlb, setSelectedUlb] = useState(null);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
-  const { data: projects = [], isLoading } = useProjects();
-
-  if (isLoading) return <div className="premium-panel p-10 text-center text-slate-500">Loading projects...</div>;
-
-  const projectName = activeView === 'projects' ? 'My Projects' : selectedProject?.name || 'Project Workspace';
-  const sectionItems = (selectedProject && activeView !== 'projects') ? [
+  const sectionItems = [
     hasSectionA && { key: 'pole_survey_summary', label: 'Summary', icon: BarChart3 },
     hasSectionB && { key: 'pole_survey_today', label: "Today's Summary", icon: CalendarDays },
     hasSectionC && { key: 'pole_survey_issues', label: 'Issues', icon: ClipboardList },
-  ].filter(Boolean) : [];
+  ].filter(Boolean);
 
   const utilityItems = [
+    hasSectionD && { key: 'users', label: 'Team', icon: UsersIcon, path: '/users' },
     hasSectionE && { key: 'employee_tracking', label: 'Employee Tracking', icon: UserCheck },
     hasSectionF && { key: 'mobile_user_tracking', label: 'Mobile User Tracking', icon: Smartphone },
   ].filter(Boolean);
 
+  if (!activeProject) return null;
+
   return (
     <div className="min-h-full -m-4 bg-slate-100 sm:-m-6 xl:-m-8">
-      {/* Sidebar */}
       <div className="mx-auto flex min-h-full w-full max-w-[1760px] gap-5 p-4 sm:p-6 xl:p-8">
         <aside className="hidden w-72 shrink-0 flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:flex">
           <div className="mb-4 rounded-lg bg-slate-950 p-4 text-white">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Admin workspace</p>
             <p className="mt-1 text-lg font-bold">{user?.name || 'Admin'}</p>
+            <div className="mt-3 pt-3 border-t border-white/10">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Active Project</p>
+              <p className="text-sm font-semibold text-primary truncate">{activeProject.name}</p>
+            </div>
           </div>
-          <nav className="space-y-2">
+          
+          <nav className="space-y-2 flex-1">
             <button
-              onClick={() => { setActiveView('projects'); setSelectedUlb(null); }}
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${activeView === 'projects' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}
+              onClick={clearActiveProject}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-950 transition-colors"
             >
-              <FolderKanban size={18} /> Projects
+              <ArrowLeft size={18} /> Switch Project
             </button>
 
-            {sectionItems.length > 0 && (
-              <div className="space-y-1 border-l border-slate-200 pl-3">
-                {sectionItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.key}
-                      onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
-                      className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-primary-light text-primary-dark' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
-                    >
-                      <Icon size={16} /> {item.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            <div className="my-4 border-t border-slate-100"></div>
 
-            {utilityItems.map((item) => {
+            {sectionItems.map((item) => {
               const Icon = item.icon;
               return (
                 <button
                   key={item.key}
-                  onClick={() => setActiveView(item.key)}
+                  onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
                   className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}
                 >
                   <Icon size={18} /> {item.label}
@@ -88,111 +82,109 @@ export default function AdminDashboard() {
               );
             })}
 
-            <button
-              onClick={() => setIsDownloadModalOpen(true)}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950"
-              disabled={!selectedProject}
-              title={!selectedProject ? 'Please select a project first' : ''}
-            >
-              <Download size={18} /> Download Report
-            </button>
+            <div className="my-2"></div>
+
+            {utilityItems.map((item) => {
+              const Icon = item.icon;
+              if (item.path) {
+                return (
+                  <Link
+                    key={item.key}
+                    to={item.path}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-950 transition-colors"
+                  >
+                    <Icon size={18} /> {item.label}
+                  </Link>
+                );
+              }
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}
+                >
+                  <Icon size={18} /> {item.label}
+                </button>
+              );
+            })}
+
+            {hasSectionG && (
+              <button
+                onClick={() => setIsDownloadModalOpen(true)}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950"
+              >
+                <Download size={18} /> Download Report
+              </button>
+            )}
           </nav>
         </aside>
 
         {/* Main Content */}
         <section className="min-w-0 flex-1">
           <div className="mb-5 flex flex-col justify-between gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Dashboard</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">
-              {projectName}
-            </h1>
-            <p className="mt-1 text-sm text-slate-500">Welcome, {user?.name}. Manage survey activity from one wide operational view.</p>
-          </div>
-          <div className="flex flex-wrap gap-2 lg:hidden">
-            {[{ key: 'projects', label: 'Projects', icon: FolderKanban }, ...sectionItems, ...utilityItems].map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => { setActiveView(item.key); if (item.key !== 'projects') setSelectedUlb(null); }}
-                  className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold ${activeView === item.key ? 'bg-primary text-white' : 'bg-slate-100 text-slate-700'}`}
-                >
-                  <Icon size={14} /> {item.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {activeView === 'projects' && (
-          <div className="premium-panel p-6">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-slate-950">Assigned Projects</h2>
-                <p className="text-sm text-slate-500">Open a project to access summary, today, and issue workflows.</p>
-              </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {activeProject.name} Dashboard
+              </p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">
+                {sectionItems.find(i => i.key === activeView)?.label || utilityItems.find(i => i.key === activeView)?.label || 'Overview'}
+              </h1>
             </div>
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {projects.map((project) => (
-                <div 
-                  key={project.id}
-                  onClick={() => {
-                    setSelectedProject(project);
-                    if (hasSectionA) setActiveView('pole_survey_summary');
-                    else if (hasSectionB) setActiveView('pole_survey_today');
-                    else if (hasSectionC) setActiveView('pole_survey_issues');
-                  }}
-                  className="group cursor-pointer rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
-                >
-                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-light text-primary-dark">
-                    <FolderKanban size={22} />
-                  </div>
-                  <h3 className="font-bold text-slate-950">{project.name}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">Manage project details, summaries, approvals, and tracking.</p>
-                  <p className="mt-5 text-sm font-semibold text-primary">Open workspace</p>
-                </div>
-              ))}
-              {projects.length === 0 && (
-                <div className="col-span-full py-12 text-center text-slate-500">No projects assigned yet.</div>
-              )}
+            <div className="flex flex-wrap gap-2 lg:hidden">
+              <button 
+                onClick={clearActiveProject}
+                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-700"
+              >
+                <ArrowLeft size={14} /> Back
+              </button>
+              {[...sectionItems, ...utilityItems].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
+                    className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold ${activeView === item.key ? 'bg-primary text-white' : 'bg-slate-100 text-slate-700'}`}
+                  >
+                    <Icon size={14} /> {item.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
-        )}
 
-        {activeView === 'pole_survey_summary' && !selectedUlb && (
-          <SummaryView onViewDetails={(ulb) => setSelectedUlb(ulb)} />
-        )}
-        
-        {activeView === 'pole_survey_summary' && selectedUlb && (
-          <WardDetailsView ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
-        )}
-        
-        {activeView === 'pole_survey_today' && !selectedUlb && (
-          <SummaryView date={new Date().toISOString().split('T')[0]} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
-        )}
+          {activeView === 'pole_survey_summary' && !selectedUlb && (
+            <SummaryView projectId={activeProject.id} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
+          ) }
+          
+          {activeView === 'pole_survey_summary' && selectedUlb && (
+            <WardDetailsView projectId={activeProject.id} ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
+          )}
+          
+          {activeView === 'pole_survey_today' && !selectedUlb && (
+            <SummaryView projectId={activeProject.id} date={new Date().toISOString().split('T')[0]} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
+          )}
 
-        {activeView === 'pole_survey_today' && selectedUlb && (
-          <WardDetailsView ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
-        )}
-        
-        {activeView === 'pole_survey_issues' && (
-          <SubmissionQueueView />
-        )}
+          {activeView === 'pole_survey_today' && selectedUlb && (
+            <WardDetailsView projectId={activeProject.id} ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
+          )}
+          
+          {activeView === 'pole_survey_issues' && (
+            <SubmissionQueueView projectId={activeProject.id} />
+          )}
 
-        {activeView === 'employee_tracking' && (
-          <EmployeeTrackingView projectId={selectedProject?.id || 2} />
-        )}
+          {activeView === 'employee_tracking' && (
+            <EmployeeTrackingView projectId={activeProject.id} />
+          )}
 
-        {activeView === 'mobile_user_tracking' && (
-          <MobileUserTrackingView projectId={selectedProject?.id || 2} />
-        )}
+          {activeView === 'mobile_user_tracking' && (
+            <MobileUserTrackingView projectId={activeProject.id} />
+          )}
         </section>
 
         <DownloadReportModal 
           isOpen={isDownloadModalOpen} 
           onClose={() => setIsDownloadModalOpen(false)} 
-          projectId={selectedProject?.id || 2}
+          projectId={activeProject.id}
         />
       </div>
     </div>

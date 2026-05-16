@@ -6,7 +6,7 @@ import { useAuthStore } from '../../../store/authStore';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 
-export const SubmissionQueueView = ({ projectId = 2 }) => {
+export const SubmissionQueueView = ({ projectId }) => {
   const token = localStorage.getItem('token');
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');

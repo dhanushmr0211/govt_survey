@@ -83,11 +83,12 @@ function createApp() {
   });
 
   // All domain routes under /api/v1
+  const { requireProjectMember } = require('./middleware/roleGuard');
   const apiRouter = express.Router();
   apiRouter.use('/auth', authRouter);
   apiRouter.use('/projects', projectRouter);
-  apiRouter.use('/projects/:projectId/pole-survey', poleSurveyRouter);
-  apiRouter.use('/projects/:projectId/issues', issueRouter);
+  apiRouter.use('/projects/:projectId/pole-survey', requireProjectMember(), poleSurveyRouter);
+  apiRouter.use('/projects/:projectId/issues', requireProjectMember(), issueRouter);
   app.use('/api/v1', apiRouter);
 
   app.use(notFound);

@@ -1,14 +1,32 @@
 const { query } = require('../config/db');
 
 /**
- * Check if a user is a member of a specific project, and return their project_role.
+ * Check if a user is a member of a specific project, and return their project_role and sections.
  */
 async function isMember(userId, projectId) {
   const result = await query(
-    'SELECT project_role FROM project_users WHERE user_id = $1 AND project_id = $2 LIMIT 1',
+    `SELECT project_role, section_a, section_b, section_c, section_d, section_e, section_f, section_g, section_h 
+     FROM project_users 
+     WHERE user_id = $1 AND project_id = $2 LIMIT 1`,
     [userId, projectId]
   );
   return result.rows[0] || null;
+}
+
+/**
+ * Return all projects that a user belongs to, including their role and sections for each.
+ */
+async function getProjectsWithRoles(userId) {
+  const result = await query(
+    `SELECT p.id, p.name, p.project_type, pu.project_role, 
+            pu.section_a, pu.section_b, pu.section_c, pu.section_d, 
+            pu.section_e, pu.section_f, pu.section_g, pu.section_h
+     FROM project_users pu
+     JOIN projects p ON pu.project_id = p.id
+     WHERE pu.user_id = $1 AND p.is_deleted = FALSE`,
+    [userId]
+  );
+  return result.rows;
 }
 
 /**
@@ -23,16 +41,36 @@ async function getProjectIds(userId) {
 }
 
 /**
- * Add or update a user's role in a project.
+ * Add or update a user's role and sections in a project.
  */
-async function addUserToProject(userId, projectId, projectRole) {
+async function addUserToProject(userId, projectId, projectRole, sections = {}) {
   const result = await query(
-    `INSERT INTO project_users (user_id, project_id, project_role)
-     VALUES ($1, $2, $3)
+    `INSERT INTO project_users (
+       user_id, project_id, project_role, 
+       section_a, section_b, section_c, section_d, 
+       section_e, section_f, section_g, section_h
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      ON CONFLICT (project_id, user_id) 
-     DO UPDATE SET project_role = EXCLUDED.project_role, assigned_at = NOW()
-     RETURNING id, project_id, user_id, project_role`,
-    [userId, projectId, projectRole]
+     DO UPDATE SET 
+       project_role = EXCLUDED.project_role,
+       section_a = EXCLUDED.section_a,
+       section_b = EXCLUDED.section_b,
+       section_c = EXCLUDED.section_c,
+       section_d = EXCLUDED.section_d,
+       section_e = EXCLUDED.section_e,
+       section_f = EXCLUDED.section_f,
+       section_g = EXCLUDED.section_g,
+       section_h = EXCLUDED.section_h,
+       assigned_at = NOW()
+     RETURNING *`,
+    [
+      userId, projectId, projectRole,
+      sections.section_a || false, sections.section_b || false, 
+      sections.section_c || false, sections.section_d || false,
+      sections.section_e || false, sections.section_f || false, 
+      sections.section_g || false, sections.section_h || false
+    ]
   );
   return result.rows[0] || null;
 }
@@ -48,4 +86,4 @@ async function removeUserFromProject(userId, projectId) {
   return result.rowCount > 0;
 }
 
-module.exports = { isMember, getProjectIds, addUserToProject, removeUserFromProject };
+module.exports = { isMember, getProjectsWithRoles, getProjectIds, addUserToProject, removeUserFromProject };

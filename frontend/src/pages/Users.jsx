@@ -1,61 +1,33 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import TopNav from '../components/TopNav';
-import { Users as UsersIcon, UserPlus, Search, Shield, User, BarChart3, CalendarDays, ClipboardList, FolderKanban, Smartphone, UserCheck, Download, Landmark, LogOut } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Users as UsersIcon, UserPlus, Search, Shield, User, BarChart3, CalendarDays, ClipboardList, FolderKanban, Smartphone, UserCheck, Download, Landmark, LogOut, ArrowLeft } from 'lucide-react';
 import { CreateAdminModal } from '../shared/components/CreateAdminModal';
 import { EditUserModal } from '../shared/components/EditUserModal';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
 
 export default function Users() {
-  const user = useAuthStore((state) => state.user);
+  const location = useLocation();
+  const { user, activeProject, clearActiveProject, logout } = useAuthStore();
   const [users, setUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const searchParams = new URLSearchParams(location.search);
+  const queryProjectId = searchParams.get('projectId');
+  const effectiveProjectId = queryProjectId || activeProject?.id;
+
   const isMasterAdmin = user?.role === 'MASTER_ADMIN';
-  const hasSectionD = user?.section_d;
-
-  const selectedProject = localStorage.getItem('selectedProject');
-  const selectedProjectId = localStorage.getItem('selectedProjectId');
-
-  const sectionItems = selectedProject ? [
-    (user?.role === 'MASTER_ADMIN' || user?.section_a) && { key: 'pole_survey_summary', label: 'Summary', icon: BarChart3 },
-    (user?.role === 'MASTER_ADMIN' || user?.section_b) && { key: 'pole_survey_today', label: "Today's Summary", icon: CalendarDays },
-    (user?.role === 'MASTER_ADMIN' || user?.section_c) && { key: 'pole_survey_issues', label: 'Issues', icon: ClipboardList },
-  ].filter(Boolean) : [];
-
-  const utilityItems = selectedProject ? [
-    (user?.role === 'MASTER_ADMIN' || user?.section_d) && { key: 'users', label: 'Users', icon: UsersIcon, path: selectedProjectId ? `/users?projectId=${selectedProjectId}` : '/users' },
-    (user?.role === 'MASTER_ADMIN' || user?.section_e) && { key: 'employee_tracking', label: 'Employee Tracking', icon: UserCheck },
-    (user?.role === 'MASTER_ADMIN' || user?.section_f) && { key: 'mobile_user_tracking', label: 'Mobile User Tracking', icon: Smartphone },
-  ].filter(Boolean) : [];
-
-  if (!isMasterAdmin && !hasSectionD) {
-    return (
-      <div className="app-container">
-        <TopNav user={user} />
-        <main className="main-content">
-          <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-            <h1 style={{ color: '#ef4444', marginBottom: '1rem' }}>Unauthorized Access</h1>
-            <p style={{ color: 'var(--text-muted)' }}>You do not have permission to access the Team Management page.</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  const hasSectionD = activeProject?.section_d;
 
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const searchParams = new URLSearchParams(window.location.search);
-      const projectId = searchParams.get('projectId');
-      
       let url = `${API_BASE_URL}/auth/users`;
-      if (projectId) {
-        url += `?projectId=${projectId}`;
+      if (effectiveProjectId) {
+        url += `?projectId=${effectiveProjectId}`;
       }
       
       const res = await fetch(url, {
@@ -74,15 +46,39 @@ export default function Users() {
     }
   };
 
-  // Fetch users from real backend API
   useEffect(() => {
     fetchUsers();
-  }, [window.location.search]);
+  }, [effectiveProjectId]);
 
-  const adminsCount = users.filter(u => u.role === 'ADMIN').length;
-  const employeesCount = users.filter(u => u.role === 'EMPLOYEE').length;
-  const mobileUsersCount = users.filter(u => u.role === 'MOBILE_USER').length;
-  const clientsCount = users.filter(u => u.role === 'CLIENT').length;
+  if (!isMasterAdmin && !hasSectionD) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center p-8 bg-white rounded-xl shadow-sm border border-slate-200">
+          <Shield size={48} className="mx-auto text-red-500 mb-4 opacity-20" />
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Unauthorized Access</h1>
+          <p className="text-slate-500 max-w-xs mx-auto">You do not have permission to access the Team Management page for this project.</p>
+          <Link to="/dashboard" className="mt-6 inline-block text-primary font-semibold hover:underline">Return to Dashboard</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const adminsCount = users.filter(u => u.project_role === 'ADMIN').length;
+  const employeesCount = users.filter(u => u.project_role === 'EMPLOYEE').length;
+  const mobileUsersCount = users.filter(u => u.project_role === 'MOBILE_USER').length;
+  const clientsCount = users.filter(u => u.project_role === 'CLIENT').length;
+
+  const sectionItems = [
+    activeProject?.section_a && { key: 'pole_survey_summary', label: 'Summary', icon: BarChart3 },
+    activeProject?.section_b && { key: 'pole_survey_today', label: "Today's Summary", icon: CalendarDays },
+    activeProject?.section_c && { key: 'pole_survey_issues', label: 'Issues', icon: ClipboardList },
+  ].filter(Boolean);
+
+  const utilityItems = [
+    activeProject?.section_d && { key: 'users', label: 'Users', icon: UsersIcon },
+    activeProject?.section_e && { key: 'employee_tracking', label: 'Employee Tracking', icon: UserCheck },
+    activeProject?.section_f && { key: 'mobile_user_tracking', label: 'Mobile User Tracking', icon: Smartphone },
+  ].filter(Boolean);
 
   return (
     <>
@@ -102,81 +98,52 @@ export default function Users() {
           </div>
           
           <div className="p-4 border-b border-white/10">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{user?.role === 'MASTER_ADMIN' ? 'Master Workspace' : 'Client Workspace'}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Team Workspace</p>
             <p className="mt-1 text-lg font-bold">{user?.name || 'User'}</p>
           </div>
 
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto no-scrollbar">
-            <Link
-              to="/dashboard"
-              className="flex items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white"
+            <button
+              onClick={clearActiveProject}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white"
             >
-              <FolderKanban size={18} /> Projects
-            </Link>
+              <ArrowLeft size={18} /> Switch Project
+            </button>
 
-            {sectionItems.length > 0 && (
-              <div className="space-y-1 border-l border-white/10 pl-3">
-                {sectionItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.key}
-                      to="/dashboard"
-                      state={{ activeView: item.key }}
-                      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white"
-                    >
-                      <Icon size={16} /> {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
+            <div className="my-4 border-t border-white/10"></div>
 
-            {utilityItems.length > 0 && (
-              <div className="space-y-1 border-l border-white/10 pl-3">
-                {utilityItems.map((item) => {
-                  const Icon = item.icon;
-                  if (item.path) {
-                    return (
-                      <Link
-                        key={item.key}
-                        to={item.path}
-                        className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${item.key === 'users' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
-                      >
-                        <Icon size={16} /> {item.label}
-                      </Link>
-                    );
-                  }
-                  return (
-                    <Link
-                      key={item.key}
-                      to="/dashboard"
-                      state={{ activeView: item.key }}
-                      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors text-slate-300 hover:bg-white/10 hover:text-white"
-                    >
-                      <Icon size={16} /> {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-
-            {(user?.role === 'MASTER_ADMIN' || user?.section_g) && (
-              <div className="space-y-1 border-l border-white/10 pl-3 mt-1">
+            {sectionItems.map((item) => {
+              const Icon = item.icon;
+              return (
                 <Link
+                  key={item.key}
                   to="/dashboard"
-                  state={{ openDownload: true }}
-                  className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                  state={{ activeView: item.key }}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white"
                 >
-                  <Download size={16} /> Download Report
+                  <Icon size={16} /> {item.label}
                 </Link>
-              </div>
-            )}
+              );
+            })}
+
+            {utilityItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.key}
+                  to={item.key === 'users' ? '#' : '/dashboard'}
+                  state={item.key === 'users' ? undefined : { activeView: item.key }}
+                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${item.key === 'users' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
+                >
+                  <Icon size={16} /> {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="p-4 border-t border-white/10">
             <button
-              onClick={() => useAuthStore.getState().logout()}
+              onClick={logout}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
             >
               <LogOut size={20} />
@@ -187,124 +154,119 @@ export default function Users() {
 
         {/* Main Content */}
         <section className="min-w-0 flex-1 lg:ml-64">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <div>
-            <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Team Management</h1>
-            <p style={{ color: 'var(--text-muted)' }}>Manage administrators and field surveyors.</p>
-          </div>
-          {(user.role === 'MASTER_ADMIN' || user.role === 'ADMIN' || user.role === 'EMPLOYEE') && (
-            <button className="btn btn-primary" onClick={() => { setIsModalOpen(true); }}>
-              <UserPlus size={18} /> {user.role === 'MASTER_ADMIN' ? 'Create Admin' : user.role === 'ADMIN' ? 'Create Employee' : 'Create Mobile User'}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-950">Team Management</h1>
+              <p className="text-slate-500 text-sm">Managing users for {activeProject?.name || 'All Projects'}</p>
+            </div>
+            <button 
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all"
+              onClick={() => setIsModalOpen(true)}
+            >
+              <UserPlus size={18} /> Add Team Member
             </button>
-          )}
-        </div>
-
-        {/* Stats Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-          <div className="card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
-            <div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Admins</p>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{adminsCount}</p>
-            </div>
-            <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '0.75rem', borderRadius: '50%', display: 'flex' }}>
-              <Shield size={20} color="#3b82f6" />
-            </div>
-          </div>
-          <div className="card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
-            <div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Employees</p>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{employeesCount}</p>
-            </div>
-            <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '0.75rem', borderRadius: '50%', display: 'flex' }}>
-              <UserCheck size={20} color="#f59e1b" />
-            </div>
-          </div>
-          <div className="card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
-            <div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Mobile Users</p>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{mobileUsersCount}</p>
-            </div>
-            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '0.75rem', borderRadius: '50%', display: 'flex' }}>
-              <User size={20} color="#10b981" />
-            </div>
-          </div>
-          <div className="card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: 0 }}>
-            <div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Clients</p>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{clientsCount}</p>
-            </div>
-            <div style={{ background: 'rgba(139, 92, 246, 0.1)', padding: '0.75rem', borderRadius: '50%', display: 'flex' }}>
-              <UsersIcon size={20} color="var(--primary-purple)" />
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div className="input-group" style={{ flex: 1, margin: 0, flexDirection: 'row', alignItems: 'center', background: '#f9fafb', padding: '0 1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-              <Search size={20} color="var(--text-muted)" />
-              <input type="text" placeholder="Search users by name or email..." style={{ border: 'none', background: 'transparent', width: '100%', padding: '0.75rem', outline: 'none' }} />
-            </div>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                  <th style={{ padding: '1rem' }}>User</th>
-                  <th style={{ padding: '1rem' }}>Role</th>
-                  <th style={{ padding: '1rem' }}>Status</th>
-                  <th style={{ padding: '1rem' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading users from database...</td></tr>
-                ) : users.length === 0 ? (
-                  <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No users found.</td></tr>
-                ) : users.map(u => (
-                  <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {u.name ? u.name.charAt(0).toUpperCase() : <User size={16} />}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: '500' }}>{u.name}</div>
-                          <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{u.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '600', 
-                        background: u.role === 'MASTER_ADMIN' ? 'rgba(139, 92, 246, 0.1)' : u.role === 'ADMIN' ? 'rgba(59, 130, 246, 0.1)' : '#f3f4f6',
-                        color: u.role === 'MASTER_ADMIN' ? 'var(--primary-purple)' : u.role === 'ADMIN' ? '#3b82f6' : '#4b5563'
-                      }}>
-                        {u.role === 'MASTER_ADMIN' && <Shield size={12} />}
-                        {u.role}
-                      </span>
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.875rem', color: '#059669' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></span> Active
-                      </span>
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      {u.role !== 'MOBILE_USER' && (
-                        <button className="btn" style={{ background: 'transparent', color: '#3b82f6', padding: '0' }} onClick={() => { setUserToEdit(u); setIsEditModalOpen(true); }}>Edit</button>
-                      )}
-                    </td>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            {[
+              { label: 'Admins', count: adminsCount, icon: Shield, color: 'text-blue-600', bg: 'bg-blue-50' },
+              { label: 'Employees', count: employeesCount, icon: UserCheck, color: 'text-amber-600', bg: 'bg-amber-50' },
+              { label: 'Mobile Users', count: mobileUsersCount, icon: Smartphone, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { label: 'Clients', count: clientsCount, icon: UsersIcon, color: 'text-purple-600', bg: 'bg-purple-50' },
+            ].map((stat) => (
+              <div key={stat.label} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+                <div>
+                  <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{stat.label}</p>
+                  <p className="text-2xl font-bold text-slate-950">{stat.count}</p>
+                </div>
+                <div className={`${stat.bg} p-3 rounded-lg ${stat.color}`}>
+                  <stat.icon size={24} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Search by name or email..." 
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                    <th className="px-6 py-4">Team Member</th>
+                    <th className="px-6 py-4">Role</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {loading ? (
+                    <tr><td colSpan="4" className="px-6 py-12 text-center text-slate-500">Loading team members...</td></tr>
+                  ) : users.length === 0 ? (
+                    <tr><td colSpan="4" className="px-6 py-12 text-center text-slate-500">No members found for this project.</td></tr>
+                  ) : users.map(u => (
+                    <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500">
+                            {u.name?.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-900">{u.name}</div>
+                            <div className="text-xs text-slate-500">{u.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          u.project_role === 'ADMIN' ? 'bg-blue-100 text-blue-700' :
+                          u.project_role === 'EMPLOYEE' ? 'bg-amber-100 text-amber-700' :
+                          u.project_role === 'MOBILE_USER' ? 'bg-emerald-100 text-emerald-700' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {u.project_role || 'No Role'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          Active
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => { setUserToEdit(u); setIsEditModalOpen(true); }}
+                          className="text-primary font-bold text-xs hover:underline"
+                        >
+                          Permissions
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
         </section>
       </div>
     </div>
-    <CreateAdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-    <EditUserModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} user={userToEdit} onSave={fetchUsers} />
+    <CreateAdminModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); fetchUsers(); }} />
+    <EditUserModal 
+      isOpen={isEditModalOpen} 
+      onClose={() => setIsEditModalOpen(false)} 
+      user={userToEdit} 
+      projectId={effectiveProjectId}
+      onSave={fetchUsers} 
+    />
     </>
   )
 }

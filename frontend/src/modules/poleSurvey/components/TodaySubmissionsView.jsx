@@ -3,8 +3,7 @@ import axios from 'axios';
 import { useState, useEffect } from 'react';
 import API_BASE_URL from '../../../config/api';
 
-export const TodaySubmissionsView = ({ ulb }) => {
-  const projectId = 2; // Fixed to match database
+export const TodaySubmissionsView = ({ projectId, ulb }) => {
   const token = localStorage.getItem('token');
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSummary } from '../../../shared/hooks/useSummary';
 import { Zap, Lightbulb, ArrowUpRight } from 'lucide-react';
 
-export const SummaryView = ({ projectId = 2, date = null, onViewDetails, hideZeroCounts = false }) => {
+export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCounts = false }) => {
   const [selectedFilter, setSelectedFilter] = useState('today');
   const [customDate, setCustomDate] = useState(new Date().toISOString().split('T')[0]);
 
