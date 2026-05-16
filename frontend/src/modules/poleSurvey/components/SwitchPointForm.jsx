@@ -3,6 +3,7 @@ import { FileUploader } from '../../../shared/uploads/FileUploader';
 import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
+import { offlineDb } from '../../../db/offlineDb';
 
 export const SwitchPointForm = ({ ulb, onBack }) => {
   const [formData, setFormData] = useState({
@@ -29,48 +30,83 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
     const token = localStorage.getItem('token');
     const projectId = 2;
     setUploading(true);
+
+    const isMeterYes = formData.meter_exists === 'yes';
+    const payload = {
+      ...formData,
+      ulb_id: ulb.id,
+      meter_exists: isMeterYes,
+      meter_type: isMeterYes ? formData.meter_type : null,
+      meter_condition: isMeterYes ? formData.meter_condition : null,
+      meter_rr_number: isMeterYes ? formData.meter_rr_number : null,
+      meter_serial_number: isMeterYes ? formData.meter_serial_number : null,
+      latitude: 0,
+      longitude: 0,
+    };
+
+    const imageFiles = Object.values(photos)
+      .filter(Boolean)
+      .map(file => ({ file, type: 'switch_point' }));
+
     try {
-      const isMeterYes = formData.meter_exists === 'yes';
       // Step 1: Create the switch point record
-      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/switch-point`, {
-        ...formData,
-        ulb_id: ulb.id,
-        meter_exists: isMeterYes,
-        meter_type: isMeterYes ? formData.meter_type : null,
-        meter_condition: isMeterYes ? formData.meter_condition : null,
-        meter_rr_number: isMeterYes ? formData.meter_rr_number : null,
-        meter_serial_number: isMeterYes ? formData.meter_serial_number : null,
-        latitude: 0,
-        longitude: 0,
-      }, {
+      const startTotal = performance.now();
+      const startRecord = performance.now();
+      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/switch-point`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      // Backend returns the switch point directly
-      const switchPointId = res.data.id;
+      console.log(`⏱️ Switch Point record creation: ${(performance.now() - startRecord).toFixed(2)}ms`);
 
       // Step 2: Upload selected photos to Cloud Storage
-      const filesToUpload = Object.values(photos).filter(Boolean);
-      if (switchPointId && filesToUpload.length > 0) {
-        for (const file of filesToUpload) {
+      const switchPointId = res.data.id;
+      if (switchPointId && imageFiles.length > 0) {
+        const startAllImages = performance.now();
+        for (let i = 0; i < imageFiles.length; i++) {
+          const img = imageFiles[i];
+          const startSingleImage = performance.now();
           const formDataUpload = new FormData();
-          formDataUpload.append('file', file);
+          formDataUpload.append('file', img.file);
           formDataUpload.append('entity_type', 'switch_point');
           formDataUpload.append('entity_id', switchPointId);
           await axios.post(
             `${API_BASE_URL}/projects/${projectId}/pole-survey/files`,
             formDataUpload,
-            // Do NOT set Content-Type manually — browser auto-sets it with the multipart boundary
             { headers: { Authorization: `Bearer ${token}` } }
           );
+          console.log(`⏱️ Image ${i + 1} upload: ${(performance.now() - startSingleImage).toFixed(2)}ms`);
         }
+        console.log(`⏱️ Total images upload (${imageFiles.length}): ${(performance.now() - startAllImages).toFixed(2)}ms`);
       }
 
+      console.log(`🚀 Total submission time: ${(performance.now() - startTotal).toFixed(2)}ms`);
       alert('Switch Point submitted successfully!');
       onBack();
     } catch (error) {
       console.error('Error creating switch point:', error);
-      alert(error.response?.data?.message || 'Error creating switch point');
+      
+      // Handle Offline / Network Error
+      if (!navigator.onLine || error.code === 'ERR_NETWORK' || !error.response) {
+        try {
+          await offlineDb.submissions.add({
+            type: 'switch_point',
+            data: payload,
+            images: imageFiles,
+            status: 'pending',
+            createdAt: Date.now(),
+            projectId,
+            ulbId: ulb.id,
+            wardNumber: formData.ward_number
+          });
+          alert('No internet connection. Submission saved locally and will upload automatically when you have signal.');
+          onBack();
+          return;
+        } catch (dbErr) {
+          console.error('Failed to save offline:', dbErr);
+          alert('Failed to save submission locally. Please check your storage.');
+        }
+      } else {
+        alert(error.response?.data?.message || 'Error creating switch point');
+      }
     } finally {
       setUploading(false);
     }

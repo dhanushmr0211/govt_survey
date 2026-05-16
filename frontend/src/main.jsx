@@ -4,6 +4,10 @@ import './index.css'
 import App from './App.jsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import axios from 'axios'
+import { registerSW } from 'virtual:pwa-register'
+
+// Register service worker for PWA
+registerSW({ immediate: true })
 
 axios.interceptors.response.use(
   (response) => response,

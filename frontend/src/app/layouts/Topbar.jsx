@@ -7,9 +7,12 @@ export const Topbar = () => {
 
   return (
     <header className="h-16 border-b border-slate-800 bg-slate-950 px-6 flex items-center justify-between">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-500">Control center</p>
-        <p className="text-sm font-semibold text-slate-400">Live survey operations</p>
+      <div className="flex items-center gap-3">
+        <img src="/logo.png" alt="Logo" className="h-10 w-10 rounded-lg object-cover border border-slate-700" />
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-500">Control center</p>
+          <p className="text-sm font-semibold text-slate-400">Live survey operations</p>
+        </div>
       </div>
       <div className="flex items-center gap-4">
         <div className="flex flex-col text-right">

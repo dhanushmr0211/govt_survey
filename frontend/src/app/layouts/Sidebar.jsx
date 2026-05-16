@@ -22,12 +22,10 @@ export const Sidebar = () => {
     <aside className="w-72 shrink-0 border-r border-slate-200 bg-slate-950 text-white flex flex-col">
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/25">
-            <Landmark size={22} />
-          </div>
+          <img src="/logo.png" alt="Logo" className="h-10 w-10 rounded-lg object-cover border border-slate-700" />
           <div>
-            <p className="text-base font-bold tracking-tight">Govt Survey</p>
-            <p className="text-xs font-medium text-slate-400">Operations Console</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-500">Control center</p>
+            <p className="text-sm font-semibold text-slate-400">Live survey operations</p>
           </div>
         </div>
       </div>

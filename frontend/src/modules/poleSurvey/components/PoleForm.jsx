@@ -4,6 +4,7 @@ import axios from 'axios';
 import { FileUploader } from '../../../shared/uploads/FileUploader';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
+import { offlineDb } from '../../../db/offlineDb';
 
 export const PoleForm = ({ ulb, onBack }) => {
   const [formData, setFormData] = useState({
@@ -80,44 +81,82 @@ export const PoleForm = ({ ulb, onBack }) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     setUploading(true);
+    
+    const payload = {
+      ...formData,
+      pole_height_mtrs: Number(formData.pole_height),
+      pole_to_pole_distance_mtrs: Number(formData.distance_mtrs),
+      present_arm_length_mtrs: Number(formData.present_arm_length),
+      how_many_lights_in_pole: formData.how_many_lights,
+      road_width_mtrs: Number(formData.road_width),
+      latitude: 0,
+      longitude: 0,
+      ulb_id: ulb.id
+    };
+
+    const imageFiles = Object.values(photos)
+      .filter(Boolean)
+      .map(file => ({ file, type: 'pole' }));
+
     try {
       // Step 1: Create the pole record
-      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/pole`, {
-        ...formData,
-        pole_height_mtrs: Number(formData.pole_height),
-        pole_to_pole_distance_mtrs: Number(formData.distance_mtrs),
-        present_arm_length_mtrs: Number(formData.present_arm_length),
-        how_many_lights_in_pole: formData.how_many_lights,
-        road_width_mtrs: Number(formData.road_width),
-        latitude: 0,
-        longitude: 0,
-      }, {
+      const startTotal = performance.now();
+      const startRecord = performance.now();
+      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/pole`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log(`⏱️ Pole record creation: ${(performance.now() - startRecord).toFixed(2)}ms`);
 
       // Step 2: Upload selected photos to Cloud Storage
       const poleId = res.data.id;
-      const filesToUpload = Object.values(photos).filter(Boolean);
-      if (poleId && filesToUpload.length > 0) {
-        for (const file of filesToUpload) {
+      if (poleId && imageFiles.length > 0) {
+        const startAllImages = performance.now();
+        for (let i = 0; i < imageFiles.length; i++) {
+          const img = imageFiles[i];
+          const startSingleImage = performance.now();
           const formDataUpload = new FormData();
-          formDataUpload.append('file', file);
+          formDataUpload.append('file', img.file);
           formDataUpload.append('entity_type', 'pole');
           formDataUpload.append('entity_id', poleId);
           await axios.post(
             `${API_BASE_URL}/projects/${projectId}/pole-survey/files`,
             formDataUpload,
-            // Do NOT set Content-Type manually — browser auto-sets it with the multipart boundary
             { headers: { Authorization: `Bearer ${token}` } }
           );
+          console.log(`⏱️ Image ${i + 1} upload: ${(performance.now() - startSingleImage).toFixed(2)}ms`);
         }
+        console.log(`⏱️ Total images upload (${imageFiles.length}): ${(performance.now() - startAllImages).toFixed(2)}ms`);
       }
 
+      console.log(`🚀 Total submission time: ${(performance.now() - startTotal).toFixed(2)}ms`);
       alert('Pole submitted successfully!');
       onBack();
     } catch (error) {
       console.error('Error creating pole:', error);
-      alert(error.response?.data?.message || 'Error creating pole');
+      
+      // Handle Offline / Network Error
+      if (!navigator.onLine || error.code === 'ERR_NETWORK' || !error.response) {
+        try {
+          await offlineDb.submissions.add({
+            type: 'pole',
+            data: payload,
+            images: imageFiles,
+            status: 'pending',
+            createdAt: Date.now(),
+            projectId,
+            ulbId: ulb.id,
+            wardNumber: formData.ward_number
+          });
+          alert('No internet connection. Submission saved locally and will upload automatically when you have signal.');
+          onBack();
+          return;
+        } catch (dbErr) {
+          console.error('Failed to save offline:', dbErr);
+          alert('Failed to save submission locally. Please check your storage.');
+        }
+      } else {
+        alert(error.response?.data?.message || 'Error creating pole');
+      }
     } finally {
       setUploading(false);
     }

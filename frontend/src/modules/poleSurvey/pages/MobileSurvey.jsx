@@ -6,8 +6,11 @@ import { PoleForm } from '../components/PoleForm';
 import { TodaySubmissionsView } from '../components/TodaySubmissionsView';
 import { useAuthStore } from '../../../store/authStore';
 import { useUserStats } from '../../../shared/hooks/useUserStats';
-import { BarChart3, ClipboardList, FileCheck } from 'lucide-react';
+import { BarChart3, ClipboardList, FileCheck, WifiOff } from 'lucide-react';
 import API_BASE_URL from '../../../config/api';
+import { OfflineQueueView } from '../components/OfflineQueueView';
+import { offlineSyncService } from '../services/offlineSyncService';
+import { useEffect } from 'react';
 
 export default function MobileSurvey() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,8 +18,22 @@ export default function MobileSurvey() {
   const [selectedUlb, setSelectedUlb] = useState(null);
   const [view, setView] = useState(null); // 'switch_point' or 'pole'
   const [activeTab, setActiveTab] = useState('survey');
+  const [pendingCount, setPendingCount] = useState(0);
 
   const projectId = 2; // Updated to match database id
+
+  useEffect(() => {
+    offlineSyncService.start();
+    
+    const updateCount = async () => {
+      const count = await offlineSyncService.getPendingCount();
+      setPendingCount(count);
+    };
+
+    updateCount();
+    const interval = setInterval(updateCount, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const { data: ulbs = [] } = useQuery({
     queryKey: ['ulbs', searchTerm],
@@ -36,9 +53,11 @@ export default function MobileSurvey() {
   return (
     <div className="max-w-md mx-auto flex flex-col h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white p-4 border-b border-gray-100 shadow-sm flex justify-between items-center">
-        <div style={{ width: '40px' }}></div> {/* Spacer to center title */}
-        <h1 className="text-xl font-bold text-gray-900 text-center">Mobile Survey</h1>
+      <header className="bg-white p-4 border-b border-gray-100 shadow-sm flex justify-between items-center sticky top-0 z-10">
+        <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="Logo" className="h-8 w-8 rounded-lg object-cover" />
+          <h1 className="text-lg font-bold text-gray-900">GovtSurvey</h1>
+        </div>
         <button onClick={logout} className="text-sm text-red-500 font-medium">Logout</button>
       </header>
 
@@ -148,6 +167,10 @@ export default function MobileSurvey() {
         {activeTab === 'submissions' && (
           <TodaySubmissionsView />
         )}
+
+        {activeTab === 'offline_queue' && (
+          <OfflineQueueView />
+        )}
       </main>
 
       {/* Bottom Navigation */}
@@ -172,6 +195,18 @@ export default function MobileSurvey() {
         >
           <FileCheck size={20} className="mb-1" />
           <span>Submissions</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('offline_queue')}
+          className={`flex flex-col items-center p-2 text-xs font-medium transition-colors relative ${activeTab === 'offline_queue' ? 'text-primary' : 'text-gray-500'}`}
+        >
+          <WifiOff size={20} className="mb-1" />
+          <span>Pending</span>
+          {pendingCount > 0 && (
+            <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
+              {pendingCount}
+            </span>
+          )}
         </button>
       </nav>
     </div>
