@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from '../../store/authStore';
 import API_BASE_URL from '../../config/api';
 
 export const CreateAdminModal = ({ isOpen, onClose }) => {

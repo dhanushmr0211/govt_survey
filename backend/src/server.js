@@ -3,17 +3,27 @@ const { env } = require('./config/env');
 const { pool } = require('./config/db');
 const { startWorker } = require('./jobs/issueEscalator');
 
-const app = createApp();
+try {
+  const app = createApp();
+  const port = process.env.PORT || env.port || 3000;
 
-const server = app.listen(env.port, () => {
-  console.log(`Server running on port ${env.port} (${env.nodeEnv})`);
-  startWorker();
-});
+  const server = app.listen(port, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${port} (${env.nodeEnv})`);
+    startWorker();
+  });
+
+  // Attach shutdown handlers to the server instance
+  process.on('SIGTERM', () => shutdown('SIGTERM', server));
+  process.on('SIGINT', () => shutdown('SIGINT', server));
+} catch (error) {
+  console.error('❌ FATAL: Server failed to start:', error.message);
+  process.exit(1);
+}
 
 // ── Graceful shutdown ───────────────────────────────────────────────
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
-async function shutdown(signal) {
+async function shutdown(signal, server) {
   console.log(`\n${signal} received — starting graceful shutdown…`);
 
   // Stop accepting new connections
@@ -37,16 +47,13 @@ async function shutdown(signal) {
   }, SHUTDOWN_TIMEOUT_MS).unref();
 }
 
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
-
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled promise rejection:', reason);
-  // Let the process continue but log for debugging
 });
 
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught exception — shutting down:', err);
-  shutdown('uncaughtException');
+  console.error('Uncaught exception:', err);
+  // Uncaught exceptions should generally lead to process termination
+  process.exit(1);
 });
 

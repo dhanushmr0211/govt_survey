@@ -28,8 +28,8 @@ RUN chown -R appuser:appgroup /app
 
 USER appuser
 
-# Cloud Run provides the PORT env var (default 8080)
-ENV PORT=8080
-EXPOSE 8080
+# Cloud Run provides the PORT env var (default 3000 in your config)
+ENV PORT=3000
+EXPOSE 3000
 
 CMD ["node", "src/server.js"]
