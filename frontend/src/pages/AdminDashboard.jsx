@@ -230,10 +230,12 @@ function DownloadReportModal({ isOpen, onClose, projectId }) {
     enabled: isOpen && !!projectId
   });
 
-  const districts = Array.from(new Set(summary.map(s => s.district_id))).map(id => {
-    const row = summary.find(s => s.district_id === id);
-    return { id, name: row.district_name };
-  });
+  const districts = summary && Array.isArray(summary) 
+    ? Array.from(new Set(summary.map(s => s.district_id))).map(id => {
+        const row = summary.find(s => s.district_id === id);
+        return { id, name: row?.district_name || 'Unknown' };
+      })
+    : [];
 
   const handleDownload = async () => {
     setIsDownloading(true);

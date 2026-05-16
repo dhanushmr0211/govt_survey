@@ -5,6 +5,7 @@ import { FolderKanban, LogOut, ShieldCheck, User, Users } from 'lucide-react';
 export default function ProjectSelector() {
   const { user, setActiveProject, logout } = useAuthStore();
   const { data: projects = [], isLoading } = useProjects();
+  console.log('[DEBUG] ProjectSelector projects:', projects, typeof projects, Array.isArray(projects));
 
   const handleSelect = (project) => {
     setActiveProject(project);
@@ -50,7 +51,7 @@ export default function ProjectSelector() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {projects.map((project) => (
+            {Array.isArray(projects) && projects.map((project) => (
               <button
                 key={project.id}
                 onClick={() => handleSelect(project)}
@@ -63,10 +64,10 @@ export default function ProjectSelector() {
                 <div className="flex items-center gap-2 mb-2">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
                     {getRoleIcon(project.project_role)}
-                    {project.project_role.replace('_', ' ')}
+                    {(project.project_role || 'MEMBER').replace('_', ' ')}
                   </span>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    {project.project_type.replace('_', ' ')}
+                    {(project.project_type || 'POLE_SURVEY').replace('_', ' ')}
                   </span>
                 </div>
 

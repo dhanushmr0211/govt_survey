@@ -1,21 +1,36 @@
 const { query } = require('../../../config/db');
 
-async function getDistrictSummary(projectId, date = null, mode = 'exact') {
+async function getDistrictSummary(projectId, date = null, mode = 'exact', districtScope = null, ulbScope = null) {
   let dateFilter = '';
+  let scopeFilter = '';
   const params = [projectId];
   
+  let paramIdx = 2;
   if (date) {
     if (date === 'till_yesterday') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split('T')[0];
-      dateFilter = 'AND sp.created_at::date <= $2';
+      dateFilter = `AND sp.created_at::date <= $${paramIdx}`;
       params.push(yesterdayStr);
     } else {
       const operator = mode === 'cumulative' ? '<=' : '=';
-      dateFilter = `AND sp.created_at::date ${operator} $2`;
+      dateFilter = `AND sp.created_at::date ${operator} $${paramIdx}`;
       params.push(date);
     }
+    paramIdx++;
+  }
+
+  if (districtScope && Array.isArray(districtScope) && districtScope.length > 0) {
+    scopeFilter += ` AND d.id = ANY($${paramIdx})`;
+    params.push(districtScope);
+    paramIdx++;
+  }
+
+  if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
+    scopeFilter += ` AND u.id = ANY($${paramIdx})`;
+    params.push(ulbScope);
+    paramIdx++;
   }
 
   const sql = `
@@ -30,7 +45,7 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact') {
     JOIN ulbs u ON u.district_id = d.id
     LEFT JOIN switch_points sp ON sp.ulb_id = u.id AND sp.is_deleted = FALSE ${dateFilter}
     LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted = FALSE
-    WHERE d.project_id = $1
+    WHERE d.project_id = $1 ${scopeFilter}
     GROUP BY d.id, u.id
     ORDER BY d.name, u.name;
   `;
@@ -123,8 +138,24 @@ async function getWardDetails(ulbId, wardNumber) {
   return result.rows;
 }
 
-async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = null) {
+async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null) {
   const offset = (page - 1) * limit;
+  
+  let scopeFilter = '';
+  const params = [projectId, limit, offset, userId];
+  let pIdx = 5;
+
+  if (districtScope && Array.isArray(districtScope) && districtScope.length > 0) {
+    scopeFilter += ` AND ulb.district_id = ANY($${pIdx})`;
+    params.push(districtScope);
+    pIdx++;
+  }
+  if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
+    scopeFilter += ` AND sp.ulb_id = ANY($${pIdx})`;
+    params.push(ulbScope);
+    pIdx++;
+  }
+
   const sql = `
     SELECT *, COUNT(*) OVER() AS total_count FROM (
       SELECT 
@@ -166,6 +197,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
       WHERE sp.project_id = $1 AND sp.status = 'PENDING' AND sp.is_deleted = FALSE
       AND ($4::int IS NULL OR sp.created_by = $4)
+      ${scopeFilter}
       
       UNION ALL
       
@@ -209,18 +241,35 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
       WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted = FALSE
       AND ($4::int IS NULL OR p.created_by = $4)
+      ${scopeFilter}
     ) combined
     ORDER BY created_at DESC
     LIMIT $2 OFFSET $3
   `;
   
-  const result = await query(sql, [projectId, limit, offset, userId]);
+  const result = await query(sql, params);
   const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
   return { rows: result.rows, total };
 }
 
-async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null) {
+async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null, districtScope = null, ulbScope = null) {
   const offset = (page - 1) * limit;
+  
+  let scopeFilter = '';
+  const params = [projectId, limit, offset, userId, confirmedBy];
+  let pIdx = 6;
+
+  if (districtScope && Array.isArray(districtScope) && districtScope.length > 0) {
+    scopeFilter += ` AND ulb.district_id = ANY($${pIdx})`;
+    params.push(districtScope);
+    pIdx++;
+  }
+  if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
+    scopeFilter += ` AND sp.ulb_id = ANY($${pIdx})`;
+    params.push(ulbScope);
+    pIdx++;
+  }
+
   const sql = `
     SELECT *, COUNT(*) OVER() AS total_count FROM (
       SELECT 
@@ -267,6 +316,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted = FALSE
       AND ($4::int IS NULL OR sp.created_by = $4)
       AND ($5::int IS NULL OR sp.confirmed_by = $5)
+      ${scopeFilter}
       
       UNION ALL
       
@@ -315,19 +365,36 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
       AND ($4::int IS NULL OR p.created_by = $4)
       AND ($5::int IS NULL OR p.confirmed_by = $5)
+      ${scopeFilter}
     ) combined
     ORDER BY created_at DESC
     LIMIT $2 OFFSET $3
   `;
   
-  const result = await query(sql, [projectId, limit, offset, userId, confirmedBy]);
+  const result = await query(sql, params);
   const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
   return { rows: result.rows, total };
 }
 
-async function getTodaySubmissions(projectId, page = 1, limit = 50) {
+async function getTodaySubmissions(projectId, page = 1, limit = 50, districtScope = null, ulbScope = null) {
   const today = new Date().toISOString().split('T')[0];
   const offset = (page - 1) * limit;
+  
+  let scopeFilter = '';
+  const params = [projectId, today, limit, offset];
+  let pIdx = 5;
+
+  if (districtScope && Array.isArray(districtScope) && districtScope.length > 0) {
+    scopeFilter += ` AND ulb.district_id = ANY($${pIdx})`;
+    params.push(districtScope);
+    pIdx++;
+  }
+  if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
+    scopeFilter += ` AND sp.ulb_id = ANY($${pIdx})`;
+    params.push(ulbScope);
+    pIdx++;
+  }
+
   const sql = `
     SELECT *, COUNT(*) OVER() AS total_count FROM (
       SELECT 
@@ -338,6 +405,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50) {
         sp.created_at,
         sp.ward_number,
         sp.switch_point_number::text as identifier,
+        ulb.name as ulb_name,
         sp.switch_point_number::text as switch_point_number,
         sp.switch_point_type,
         sp.meter_exists,
@@ -365,7 +433,9 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50) {
         NULL as pole_earthing_exists
       FROM switch_points sp
       JOIN users u ON sp.created_by = u.id
+      LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
       WHERE sp.project_id = $1 AND sp.created_at::date = $2 AND sp.is_deleted = FALSE
+      ${scopeFilter}
       
       UNION ALL
       
@@ -377,6 +447,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50) {
         p.created_at,
         sp.ward_number,
         p.pole_number::text as identifier,
+        ulb.name as ulb_name,
         p.switch_point_number::text as switch_point_number,
         NULL as switch_point_type,
         NULL as meter_exists,
@@ -405,13 +476,15 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50) {
       FROM poles p
       JOIN switch_points sp ON p.switch_point_id = sp.id
       JOIN users u ON p.created_by = u.id
+      LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
       WHERE p.project_id = $1 AND p.created_at::date = $2 AND p.is_deleted = FALSE
+      ${scopeFilter}
     ) combined
     ORDER BY created_at DESC
     LIMIT $3 OFFSET $4
   `;
   
-  const result = await query(sql, [projectId, today, limit, offset]);
+  const result = await query(sql, params);
   const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
   return { rows: result.rows, total };
 }
@@ -487,9 +560,22 @@ async function getMobileUserTracking(projectId) {
   return result.rows;
 }
 
-async function getReportData(projectId, districtId, tillDate, ulbId) {
+async function getReportData(projectId, districtId, tillDate, ulbId, districtScope = null, ulbScope = null) {
   const params = [projectId, tillDate || null, districtId || null, ulbId || null];
-  
+  let pIdx = 5;
+  let scopeFilter = '';
+
+  if (districtScope && Array.isArray(districtScope) && districtScope.length > 0) {
+    scopeFilter += ` AND d.id = ANY($${pIdx})`;
+    params.push(districtScope);
+    pIdx++;
+  }
+  if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
+    scopeFilter += ` AND sp.ulb_id = ANY($${pIdx})`;
+    params.push(ulbScope);
+    pIdx++;
+  }
+
   const spSql = `
     SELECT 
       sp.*,
@@ -504,6 +590,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId) {
     AND ($2::date IS NULL OR sp.created_at::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
     AND ($4::int IS NULL OR sp.ulb_id = $4)
+    ${scopeFilter}
     ORDER BY sp.created_at DESC
   `;
   
@@ -525,6 +612,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId) {
     AND ($2::date IS NULL OR p.created_at::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
     AND ($4::int IS NULL OR sp.ulb_id = $4)
+    ${scopeFilter}
     ORDER BY p.created_at DESC
   `;
   

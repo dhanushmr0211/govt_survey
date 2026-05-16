@@ -27,7 +27,7 @@ async function getDistrictSummaryHandler(req, res, next) {
       }
     }
 
-    const summary = await getDistrictSummary(Number(projectId), date, mode);
+    const summary = await getDistrictSummary(Number(projectId), date, mode, permissions.district_scope, permissions.ulb_scope);
     res.json({ summary });
   } catch (error) { next(error); }
 }
@@ -53,6 +53,14 @@ async function getWardSummaryHandler(req, res, next) {
       }
     }
 
+    // Security Check: If user has ulb_scope, check if this ulbId is allowed
+    const permissions = req.projectSections || {};
+    if (!isMasterAdmin && permissions.ulb_scope && Array.isArray(permissions.ulb_scope) && permissions.ulb_scope.length > 0) {
+      if (!permissions.ulb_scope.includes(Number(ulbId))) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to access data for this ULB' });
+      }
+    }
+
     const summary = await getWardSummary(Number(ulbId), date, mode);
     res.json({ summary });
   } catch (error) { next(error); }
@@ -67,6 +75,13 @@ async function getWardDetailsHandler(req, res, next) {
 
     if (!isMasterAdmin && !permissions.section_a) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access ward details' });
+    }
+
+    // Security Check
+    if (!isMasterAdmin && permissions.ulb_scope && Array.isArray(permissions.ulb_scope) && permissions.ulb_scope.length > 0) {
+      if (!permissions.ulb_scope.includes(Number(ulbId))) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to access data for this ULB' });
+      }
     }
 
     const details = await getWardDetails(Number(ulbId), wardNumber);
@@ -88,7 +103,14 @@ async function getPendingSubmissionsHandler(req, res, next) {
     if (isNaN(Number(projectId))) {
       return res.status(400).json({ message: 'Invalid project ID' });
     }
-    const { rows, total } = await getPendingSubmissions(Number(projectId), Number(page), Number(limit), userId ? Number(userId) : null);
+    const { rows, total } = await getPendingSubmissions(
+      Number(projectId), 
+      Number(page), 
+      Number(limit), 
+      userId ? Number(userId) : null,
+      permissions.district_scope,
+      permissions.ulb_scope
+    );
     res.json({ queue: rows, total });
   } catch (error) { next(error); }
 }
@@ -110,7 +132,13 @@ async function getTodaySubmissionsHandler(req, res, next) {
     }
 
     const { page = 1, limit = 50 } = req.query;
-    const { rows, total } = await getTodaySubmissions(Number(projectId), Number(page), Number(limit));
+    const { rows, total } = await getTodaySubmissions(
+      Number(projectId), 
+      Number(page), 
+      Number(limit),
+      permissions.district_scope,
+      permissions.ulb_scope
+    );
     res.json({ queue: rows, total });
   } catch (error) { next(error); }
 }
@@ -126,7 +154,15 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
     }
 
     const { page = 1, limit = 50, userId, confirmedBy } = req.query;
-    const { rows, total } = await getConfirmedSubmissions(Number(projectId), Number(page), Number(limit), userId ? Number(userId) : null, confirmedBy ? Number(confirmedBy) : null);
+    const { rows, total } = await getConfirmedSubmissions(
+      Number(projectId), 
+      Number(page), 
+      Number(limit), 
+      userId ? Number(userId) : null, 
+      confirmedBy ? Number(confirmedBy) : null,
+      permissions.district_scope,
+      permissions.ulb_scope
+    );
     res.json({ queue: rows, total });
   } catch (error) { next(error); }
 }
@@ -193,7 +229,15 @@ async function downloadReportHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this project' });
     }
     
-    const data = await getReportData(Number(projectId), district ? Number(district) : null, tillDate, ulbId ? Number(ulbId) : null);
+    const permissions = req.projectSections || {};
+    const data = await getReportData(
+      Number(projectId), 
+      district ? Number(district) : null, 
+      tillDate, 
+      ulbId ? Number(ulbId) : null,
+      permissions.district_scope,
+      permissions.ulb_scope
+    );
     console.log(`[REPORT] Switch Points: ${data.switchPoints.length}, Poles: ${data.poles.length}`);
     
     const workbook = new ExcelJS.Workbook();

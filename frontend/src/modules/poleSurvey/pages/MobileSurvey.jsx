@@ -6,7 +6,7 @@ import { PoleForm } from '../components/PoleForm';
 import { TodaySubmissionsView } from '../components/TodaySubmissionsView';
 import { useAuthStore } from '../../../store/authStore';
 import { useUserStats } from '../../../shared/hooks/useUserStats';
-import { BarChart3, ClipboardList, FileCheck, WifiOff } from 'lucide-react';
+import { BarChart3, ClipboardList, FileCheck, WifiOff, ArrowLeft } from 'lucide-react';
 import API_BASE_URL from '../../../config/api';
 import { OfflineQueueView } from '../components/OfflineQueueView';
 import { offlineSyncService } from '../services/offlineSyncService';

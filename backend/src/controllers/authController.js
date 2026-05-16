@@ -34,6 +34,8 @@ const updateAccessSchema = z.object({
   section_f: z.boolean().optional(),
   section_g: z.boolean().optional(),
   section_h: z.boolean().optional(),
+  district_scope: z.array(z.number().int()).nullable().optional(),
+  ulb_scope: z.array(z.number().int()).nullable().optional(),
 });
 
 const loginSchema = z.object({
@@ -208,7 +210,9 @@ async function updateAccess(req, res, next) {
         section_e: data.section_e ?? existingMember.section_e,
         section_f: data.section_f ?? existingMember.section_f,
         section_g: data.section_g ?? existingMember.section_g,
-        section_h: data.section_h ?? existingMember.section_h
+        section_h: data.section_h ?? existingMember.section_h,
+        district_scope: data.district_scope !== undefined ? data.district_scope : existingMember.district_scope,
+        ulb_scope: data.ulb_scope !== undefined ? data.ulb_scope : existingMember.ulb_scope
       }
     );
 

@@ -13,4 +13,23 @@ async function searchUlbs(searchTerm) {
   return result.rows;
 }
 
-module.exports = { searchUlbs };
+async function getProjectStructure(projectId) {
+  const districts = await query(
+    'SELECT id, name FROM districts WHERE project_id = $1 ORDER BY name',
+    [projectId]
+  );
+  const ulbs = await query(
+    `SELECT u.id, u.name, u.district_id 
+     FROM ulbs u
+     JOIN districts d ON u.district_id = d.id
+     WHERE d.project_id = $1
+     ORDER BY u.name`,
+    [projectId]
+  );
+  return {
+    districts: districts.rows,
+    ulbs: ulbs.rows
+  };
+}
+
+module.exports = { searchUlbs, getProjectStructure };

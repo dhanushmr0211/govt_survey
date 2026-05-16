@@ -8,10 +8,17 @@ export const useProjects = () => {
   return useQuery({
     queryKey: ['projects'],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE_URL}/projects`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.data.projects || [];
+      try {
+        const res = await axios.get(`${API_BASE_URL}/projects`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = res.data?.projects;
+        return Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.error("useProjects hook error:", err);
+        return [];
+      }
     },
+    initialData: [],
   });
 };

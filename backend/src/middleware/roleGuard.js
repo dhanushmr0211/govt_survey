@@ -54,7 +54,9 @@ function requireRole(...roles) {
         section_e: membership.section_e,
         section_f: membership.section_f,
         section_g: membership.section_g,
-        section_h: membership.section_h
+        section_h: membership.section_h,
+        district_scope: membership.district_scope,
+        ulb_scope: membership.ulb_scope
       };
     } else {
       // Fallback to global role for non-project routes or if ID missing
