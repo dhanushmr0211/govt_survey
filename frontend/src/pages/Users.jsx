@@ -5,6 +5,7 @@ import { Users as UsersIcon, UserPlus, Search, Shield, User, BarChart3, Calendar
 import { CreateAdminModal } from '../shared/components/CreateAdminModal';
 import { EditUserModal } from '../shared/components/EditUserModal';
 import { useAuthStore } from '../store/authStore';
+import API_BASE_URL from '../config/api';
 
 export default function Users() {
   const user = useAuthStore((state) => state.user);
@@ -52,7 +53,7 @@ export default function Users() {
       const searchParams = new URLSearchParams(window.location.search);
       const projectId = searchParams.get('projectId');
       
-      let url = 'https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/auth/users';
+      let url = `${API_BASE_URL}/auth/users`;
       if (projectId) {
         url += `?projectId=${projectId}`;
       }

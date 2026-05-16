@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 export const useIssues = (projectId) => {
   const token = localStorage.getItem('token');
@@ -7,7 +8,7 @@ export const useIssues = (projectId) => {
   return useQuery({
     queryKey: ['issues', projectId],
     queryFn: async () => {
-      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/issues`, {
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/issues`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.issues || [];

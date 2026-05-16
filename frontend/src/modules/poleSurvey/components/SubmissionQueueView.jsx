@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { CheckCircle2, SearchCheck, Edit2, Save } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import imageCompression from 'browser-image-compression';
+import API_BASE_URL from '../../../config/api';
 
 export const SubmissionQueueView = ({ projectId = 2 }) => {
   const token = localStorage.getItem('token');
@@ -25,7 +26,7 @@ export const SubmissionQueueView = ({ projectId = 2 }) => {
     queryKey: ['submissions', activeTab, page],
     queryFn: async () => {
       const endpoint = activeTab === 'pending' ? 'queue/pending' : 'queue/confirmed';
-      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/${endpoint}?page=${page}&limit=${limit}`, {
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}?page=${page}&limit=${limit}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return { queue: res.data.queue || [], total: res.data.total || 0 };
@@ -38,8 +39,8 @@ export const SubmissionQueueView = ({ projectId = 2 }) => {
   const confirmMutation = useMutation({
     mutationFn: async ({ id, type }) => {
       const endpoint = type === 'switch_point' 
-        ? `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/switch-points/${id}/confirm`
-        : `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/poles/${id}/confirm`;
+        ? `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${id}/confirm`
+        : `${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${id}/confirm`;
       
       const res = await axios.post(endpoint, {}, {
         headers: { Authorization: `Bearer ${token}` },
@@ -59,8 +60,8 @@ export const SubmissionQueueView = ({ projectId = 2 }) => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const endpoint = selectedSubmission.type === 'switch_point'
-        ? `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/switch-points/${selectedSubmission.id}`
-        : `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/poles/${selectedSubmission.id}`;
+        ? `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${selectedSubmission.id}`
+        : `${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${selectedSubmission.id}`;
       
       const res = await axios.patch(endpoint, formData, {
         headers: { Authorization: `Bearer ${token}` },
@@ -83,7 +84,7 @@ export const SubmissionQueueView = ({ projectId = 2 }) => {
       if (!selectedSubmission) return;
       setLoadingImages(true);
       try {
-        const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files?entity_type=${selectedSubmission.type}&entity_id=${selectedSubmission.id}`, {
+        const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${selectedSubmission.type}&entity_id=${selectedSubmission.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setImages(res.data.files || []);
@@ -100,7 +101,7 @@ export const SubmissionQueueView = ({ projectId = 2 }) => {
   const handleDeleteImage = async (fileId) => {
     if (!window.confirm('Are you sure you want to delete this image?')) return;
     try {
-      await axios.delete(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files/${fileId}`, {
+      await axios.delete(`${API_BASE_URL}/projects/${projectId}/pole-survey/files/${fileId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setImages(prev => prev.filter(img => img.id !== fileId));
@@ -142,12 +143,12 @@ export const SubmissionQueueView = ({ projectId = 2 }) => {
       formData.append('entity_type', selectedSubmission.type);
       formData.append('entity_id', id);
 
-      await axios.post(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files`, formData, {
+      await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/files`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       // Refetch images
-      const refreshRes = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files?entity_type=${selectedSubmission.type}&entity_id=${id}`, {
+      const refreshRes = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${selectedSubmission.type}&entity_id=${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setImages(refreshRes.data.files || []);

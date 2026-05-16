@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FileUploader } from '../../../shared/uploads/FileUploader';
 import axios from 'axios';
 import imageCompression from 'browser-image-compression';
+import API_BASE_URL from '../../../config/api';
 
 export const SwitchPointForm = ({ ulb, onBack }) => {
   const [formData, setFormData] = useState({
@@ -31,7 +32,7 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
     try {
       const isMeterYes = formData.meter_exists === 'yes';
       // Step 1: Create the switch point record
-      const res = await axios.post(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/switch-point`, {
+      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/switch-point`, {
         ...formData,
         ulb_id: ulb.id,
         meter_exists: isMeterYes,
@@ -57,7 +58,7 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
           formDataUpload.append('entity_type', 'switch_point');
           formDataUpload.append('entity_id', switchPointId);
           await axios.post(
-            `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files`,
+            `${API_BASE_URL}/projects/${projectId}/pole-survey/files`,
             formDataUpload,
             // Do NOT set Content-Type manually — browser auto-sets it with the multipart boundary
             { headers: { Authorization: `Bearer ${token}` } }

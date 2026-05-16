@@ -487,8 +487,8 @@ async function getMobileUserTracking(projectId) {
   return result.rows;
 }
 
-async function getReportData(projectId, districtId, tillDate) {
-  const params = [projectId, tillDate || null, districtId || null];
+async function getReportData(projectId, districtId, tillDate, ulbId) {
+  const params = [projectId, tillDate || null, districtId || null, ulbId || null];
   
   const spSql = `
     SELECT 
@@ -503,6 +503,7 @@ async function getReportData(projectId, districtId, tillDate) {
     WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted = FALSE
     AND ($2::date IS NULL OR sp.created_at::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
+    AND ($4::int IS NULL OR sp.ulb_id = $4)
     ORDER BY sp.created_at DESC
   `;
   
@@ -523,6 +524,7 @@ async function getReportData(projectId, districtId, tillDate) {
     WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
     AND ($2::date IS NULL OR p.created_at::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
+    AND ($4::int IS NULL OR sp.ulb_id = $4)
     ORDER BY p.created_at DESC
   `;
   

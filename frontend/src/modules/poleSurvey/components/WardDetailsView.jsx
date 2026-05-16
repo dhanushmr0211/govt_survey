@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Lightbulb, Zap, Edit2, Save } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import imageCompression from 'browser-image-compression';
+import API_BASE_URL from '../../../config/api';
 
 export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
   const token = localStorage.getItem('token');
@@ -21,7 +22,7 @@ export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
   const { data: wards = [], isLoading: isLoadingWards } = useQuery({
     queryKey: ['wardSummary', ulb.ulb_id],
     queryFn: async () => {
-      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/summary/ulbs/${ulb.ulb_id}/wards`, {
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/summary/ulbs/${ulb.ulb_id}/wards`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.summary || [];
@@ -32,7 +33,7 @@ export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
     queryKey: ['wardDetails', ulb.ulb_id, selectedWard],
     queryFn: async () => {
       if (!selectedWard) return [];
-      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/summary/ulbs/${ulb.ulb_id}/wards/${selectedWard}/details`, {
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/summary/ulbs/${ulb.ulb_id}/wards/${selectedWard}/details`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.details || [];
@@ -43,8 +44,8 @@ export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const endpoint = selectedDetail.type === 'switch_point'
-        ? `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/switch-points/${selectedDetail.data.id}`
-        : `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/poles/${selectedDetail.data.pole_id}`;
+        ? `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${selectedDetail.data.id}`
+        : `${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${selectedDetail.data.pole_id}`;
       
       const res = await axios.patch(endpoint, formData, {
         headers: { Authorization: `Bearer ${token}` },
@@ -76,7 +77,7 @@ export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
       setLoadingImages(true);
       try {
         const id = selectedDetail.type === 'switch_point' ? selectedDetail.data.id : selectedDetail.data.pole_id;
-        const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files?entity_type=${selectedDetail.type}&entity_id=${id}`, {
+        const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${selectedDetail.type}&entity_id=${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setImages(res.data.files || []);
@@ -93,7 +94,7 @@ export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
   const handleDeleteImage = async (fileId) => {
     if (!window.confirm('Are you sure you want to delete this image?')) return;
     try {
-      await axios.delete(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files/${fileId}`, {
+      await axios.delete(`${API_BASE_URL}/projects/${projectId}/pole-survey/files/${fileId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setImages(prev => prev.filter(img => img.id !== fileId));
@@ -135,12 +136,12 @@ export const WardDetailsView = ({ projectId = 2, ulb, onBack }) => {
       formData.append('entity_type', selectedDetail.type);
       formData.append('entity_id', id);
 
-      await axios.post(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files`, formData, {
+      await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/files`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       // Refetch images to get the signed URL correctly
-      const refreshRes = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files?entity_type=${selectedDetail.type}&entity_id=${id}`, {
+      const refreshRes = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${selectedDetail.type}&entity_id=${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setImages(refreshRes.data.files || []);

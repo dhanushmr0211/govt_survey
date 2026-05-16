@@ -10,6 +10,7 @@ import { useMobileUserTracking } from '../shared/hooks/useMobileUserTracking';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { BarChart3, CalendarDays, ClipboardList, Download, FolderKanban, Smartphone, UserCheck, Users, Landmark, LogOut } from 'lucide-react';
+import API_BASE_URL from '../config/api';
 
 export default function MasterAdminDashboard() {
   const location = useLocation();
@@ -25,7 +26,7 @@ export default function MasterAdminDashboard() {
     queryKey: ['projects'],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects', {
+      const res = await axios.get(`${API_BASE_URL}/projects`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data;
@@ -430,11 +431,32 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
   const token = localStorage.getItem('token');
   const endpoint = status === 'PENDING' ? 'queue/pending' : 'queue/confirmed';
   const [selectedSub, setSelectedSub] = useState(null);
+  const [images, setImages] = useState([]);
+  const [loadingImages, setLoadingImages] = useState(false);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      if (!selectedSub) return;
+      setLoadingImages(true);
+      try {
+        const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${selectedSub.type}&entity_id=${selectedSub.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setImages(res.data.files || []);
+      } catch (err) {
+        console.error('Error fetching images:', err);
+        setImages([]);
+      } finally {
+        setLoadingImages(false);
+      }
+    };
+    fetchImages();
+  }, [selectedSub, projectId, token]);
   
   const { data, isLoading } = useQuery({
     queryKey: ['user-submissions', projectId, userId, confirmedBy, status],
     queryFn: async () => {
-      let url = `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/${endpoint}`;
+      let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}`;
       let params = [];
       if (userId) params.push(`userId=${userId}`);
       if (confirmedBy) params.push(`confirmedBy=${confirmedBy}`);
@@ -579,14 +601,37 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
 
               <div className="space-y-2">
                 <p className="font-semibold text-gray-700">Images</p>
-                <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">
-                  <div className="text-center">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4-4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    <p className="mt-1">Image Placeholder</p>
+                {loadingImages ? (
+                  <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">
+                    <p>Loading images...</p>
                   </div>
-                </div>
+                ) : images.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
+                    {images.map((img) => (
+                      <div key={img.id} className="border border-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={img.signed_url}
+                          alt="Survey"
+                          className="w-full h-auto object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                          }}
+                        />
+                        <p className="text-xs text-gray-400 p-1 text-center">{new Date(img.uploaded_at).toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">
+                    <div className="text-center">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4-4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <p className="mt-1">No images found for this submission.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -608,13 +653,14 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
 function DownloadReportModal({ isOpen, onClose, projectId }) {
   const token = localStorage.getItem('token');
   const [district, setDistrict] = useState('');
+  const [ulbId, setUlbId] = useState('');
   const [tillDate, setTillDate] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
 
   const { data: summary = [] } = useQuery({
     queryKey: ['districts', projectId],
     queryFn: async () => {
-      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/summary/districts`, {
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/summary/districts`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return res.data.summary;
@@ -627,12 +673,17 @@ function DownloadReportModal({ isOpen, onClose, projectId }) {
     return { id, name: row.district_name };
   });
 
+  const ulbs = summary
+    .filter(s => !district || s.district_id === Number(district))
+    .map(s => ({ id: s.ulb_id, name: s.ulb_name }));
+
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      let url = `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/report/download`;
+      let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/report/download`;
       let params = [];
       if (district) params.push(`district=${district}`);
+      if (ulbId) params.push(`ulbId=${ulbId}`);
       if (tillDate) params.push(`tillDate=${tillDate}`);
       if (params.length > 0) url += `?${params.join('&')}`;
 
@@ -644,7 +695,20 @@ function DownloadReportModal({ isOpen, onClose, projectId }) {
       const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const link = document.createElement('a');
       link.href = window.URL.createObjectURL(blob);
-      link.download = `report_${projectId}_${district || 'all'}_${tillDate || 'all'}.xlsx`;
+      
+      let filename = `report_${projectId}`;
+      if (district) {
+        const dName = districts.find(d => d.id === Number(district))?.name;
+        filename += `_${dName || district}`;
+      }
+      if (ulbId) {
+        const uName = ulbs.find(u => u.id === Number(ulbId))?.name;
+        filename += `_${uName || ulbId}`;
+      }
+      if (tillDate) filename += `_${tillDate}`;
+      filename += '.xlsx';
+
+      link.download = filename;
       link.click();
       onClose();
     } catch (error) {
@@ -670,12 +734,30 @@ function DownloadReportModal({ isOpen, onClose, projectId }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">Select District</label>
             <select
               value={district}
-              onChange={(e) => setDistrict(e.target.value)}
+              onChange={(e) => {
+                setDistrict(e.target.value);
+                setUlbId(''); // Reset ULB when district changes
+              }}
               className="w-full border border-gray-300 rounded-lg p-2 text-sm"
             >
               <option value="">All Districts</option>
               {districts.map(d => (
                 <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Select ULB</label>
+            <select
+              value={ulbId}
+              onChange={(e) => setUlbId(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+              disabled={!district && districts.length > 0} // Optional: disable if no district selected, or allow searching all ULBs
+            >
+              <option value="">All ULBs</option>
+              {ulbs.map(u => (
+                <option key={u.id} value={u.id}>{u.name}</option>
               ))}
             </select>
           </div>

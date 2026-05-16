@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 export const CreateAdminModal = ({ isOpen, onClose }) => {
   let loggedInUser = {};
@@ -35,7 +35,7 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
     queryKey: ['projects'],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects', {
+      const res = await axios.get(`${API_BASE_URL}/projects`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.projects || [];
@@ -72,7 +72,7 @@ export const CreateAdminModal = ({ isOpen, onClose }) => {
     const token = localStorage.getItem('token');
     try {
       // 1. Create User
-      const res = await axios.post('https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/auth/register', formData, {
+      const res = await axios.post(`${API_BASE_URL}/auth/register`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       onClose();

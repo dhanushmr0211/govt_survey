@@ -204,14 +204,14 @@ async function getMobileUserTrackingHandler(req, res, next) {
 async function downloadReportHandler(req, res, next) {
   try {
     const { projectId } = req.params;
-    const { district, tillDate } = req.query;
+    const { district, tillDate, ulbId } = req.query;
     
     const allowedProject = await canAccessProject(Number(req.user.sub), req.user.role, Number(projectId));
     if (!allowedProject) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to this project' });
     }
     
-    const data = await getReportData(Number(projectId), district ? Number(district) : null, tillDate);
+    const data = await getReportData(Number(projectId), district ? Number(district) : null, tillDate, ulbId ? Number(ulbId) : null);
     console.log(`[REPORT] Switch Points: ${data.switchPoints.length}, Poles: ${data.poles.length}`);
     
     const workbook = new ExcelJS.Workbook();

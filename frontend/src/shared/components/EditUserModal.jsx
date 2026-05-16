@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 export const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
   const [formData, setFormData] = useState({
@@ -37,7 +38,7 @@ export const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      await axios.put(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/auth/users/${user.id}/access`, formData, {
+      await axios.put(`${API_BASE_URL}/auth/users/${user.id}/access`, formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       onSave();

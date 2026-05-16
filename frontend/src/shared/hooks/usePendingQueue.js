@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import API_BASE_URL from '../../config/api';
 
 export const usePendingQueue = (projectId) => {
   const token = localStorage.getItem('token');
@@ -7,7 +8,7 @@ export const usePendingQueue = (projectId) => {
   return useQuery({
     queryKey: ['pendingQueue', projectId],
     queryFn: async () => {
-      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/queue/pending`, {
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/queue/pending`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.queue || [];

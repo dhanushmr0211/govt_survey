@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { FileUploader } from '../../../shared/uploads/FileUploader';
 import imageCompression from 'browser-image-compression';
+import API_BASE_URL from '../../../config/api';
 
 export const PoleForm = ({ ulb, onBack }) => {
   const [formData, setFormData] = useState({
@@ -41,7 +42,7 @@ export const PoleForm = ({ ulb, onBack }) => {
     queryFn: async () => {
       if (!formData.ward_number) return [];
       const token = localStorage.getItem('token');
-      const res = await axios.get(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/switch-points?ward_number=${formData.ward_number}&ulb_id=${ulb.id}`, {
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points?ward_number=${formData.ward_number}&ulb_id=${ulb.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.switchPoints || [];
@@ -81,7 +82,7 @@ export const PoleForm = ({ ulb, onBack }) => {
     setUploading(true);
     try {
       // Step 1: Create the pole record
-      const res = await axios.post(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/pole`, {
+      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/pole`, {
         ...formData,
         pole_height_mtrs: Number(formData.pole_height),
         pole_to_pole_distance_mtrs: Number(formData.distance_mtrs),
@@ -95,6 +96,7 @@ export const PoleForm = ({ ulb, onBack }) => {
       });
 
       // Step 2: Upload selected photos to Cloud Storage
+      const poleId = res.data.id;
       const filesToUpload = Object.values(photos).filter(Boolean);
       if (poleId && filesToUpload.length > 0) {
         for (const file of filesToUpload) {
@@ -103,7 +105,7 @@ export const PoleForm = ({ ulb, onBack }) => {
           formDataUpload.append('entity_type', 'pole');
           formDataUpload.append('entity_id', poleId);
           await axios.post(
-            `https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files`,
+            `${API_BASE_URL}/projects/${projectId}/pole-survey/files`,
             formDataUpload,
             // Do NOT set Content-Type manually — browser auto-sets it with the multipart boundary
             { headers: { Authorization: `Bearer ${token}` } }

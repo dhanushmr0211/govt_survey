@@ -3,6 +3,7 @@ import { X, Check, AlertTriangle, Edit2, Save } from 'lucide-react';
 import { confirmPole } from '../services/poleSurveyService';
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '../../../store/authStore';
+import API_BASE_URL from '../../../config/api';
 
 export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
   const projectId = 2; // Must match projectId used in PoleForm
@@ -18,7 +19,7 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
     const fetchImages = async () => {
       setLoadingImages(true);
       try {
-        const response = await fetch(`https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1/projects/${projectId}/pole-survey/files?entity_type=pole&entity_id=${pole.id}`, {
+        const response = await fetch(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=pole&entity_id=${pole.id}`, {
           headers: {
             'Authorization': `Bearer ${useAuthStore.getState().token}`
           }
@@ -48,7 +49,7 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       // Call API to update pole (and switch point if needed)
-      const response = await fetch(`/api/projects/${projectId}/poles/${pole.id}`, {
+      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/poles/${pole.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
