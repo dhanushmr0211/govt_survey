@@ -5,18 +5,20 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GovtSurvey Portal</title>
+    <script>
+      (async function() {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+          if (regs.length > 0 || keys.length > 0) {
+            window.location.reload(true);
+          }
+        }
+      })();
+    </script>
   </head>
-  <head>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations()
-        .then(regs => regs.forEach(r => r.unregister()));
-      caches.keys()
-        .then(keys => keys.forEach(k => caches.delete(k)));
-    }
-  </script>
-  <!-- rest of head -->
-</head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
