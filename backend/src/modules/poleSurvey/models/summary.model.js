@@ -43,8 +43,8 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', distri
       COUNT(DISTINCT p.id) as total_poles
     FROM districts d
     JOIN ulbs u ON u.district_id = d.id
-    LEFT JOIN switch_points sp ON sp.ulb_id = u.id AND sp.is_deleted = FALSE ${dateFilter}
-    LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted = FALSE
+    LEFT JOIN switch_points sp ON sp.ulb_id = u.id AND sp.is_deleted IS NOT TRUE ${dateFilter}
+    LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted IS NOT TRUE
     WHERE d.project_id = $1 ${scopeFilter}
     GROUP BY d.id, u.id
     ORDER BY d.name, u.name;
@@ -78,8 +78,8 @@ async function getWardSummary(ulbId, date = null, mode = 'exact') {
       COUNT(DISTINCT sp.id) as total_switch_points,
       COUNT(DISTINCT p.id) as total_poles
     FROM switch_points sp
-    LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted = FALSE
-    WHERE sp.ulb_id = $1 AND sp.is_deleted = FALSE ${dateFilter}
+    LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted IS NOT TRUE
+    WHERE sp.ulb_id = $1 AND sp.is_deleted IS NOT TRUE ${dateFilter}
     GROUP BY sp.ward_number
     ORDER BY sp.ward_number;
   `;
@@ -127,10 +127,10 @@ async function getWardDetails(ulbId, wardNumber) {
       p.confirmed_at as pole_confirmed_at,
       u2.name as pole_confirmed_by_name
     FROM switch_points sp
-    LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted = FALSE
+    LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted IS NOT TRUE
     LEFT JOIN users u1 ON sp.confirmed_by = u1.id
     LEFT JOIN users u2 ON p.confirmed_by = u2.id
-    WHERE sp.ulb_id = $1 AND sp.ward_number = $2 AND sp.is_deleted = FALSE
+    WHERE sp.ulb_id = $1 AND sp.ward_number = $2 AND sp.is_deleted IS NOT TRUE
     ORDER BY sp.switch_point_number, p.pole_number;
   `;
   
@@ -195,7 +195,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       FROM switch_points sp
       JOIN users u ON sp.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
-      WHERE sp.project_id = $1 AND sp.status = 'PENDING' AND sp.is_deleted = FALSE
+      WHERE sp.project_id = $1 AND sp.status = 'PENDING' AND sp.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR sp.created_by = $4)
       ${scopeFilter}
       
@@ -239,7 +239,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       JOIN switch_points sp ON p.switch_point_id = sp.id
       JOIN users u ON p.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
-      WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted = FALSE
+      WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR p.created_by = $4)
       ${scopeFilter}
     ) combined
@@ -313,7 +313,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       JOIN users u ON sp.created_by = u.id
       LEFT JOIN users u2 ON sp.confirmed_by = u2.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
-      WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted = FALSE
+      WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR sp.created_by = $4)
       AND ($5::int IS NULL OR sp.confirmed_by = $5)
       ${scopeFilter}
@@ -362,7 +362,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       JOIN users u ON p.created_by = u.id
       LEFT JOIN users u3 ON p.confirmed_by = u3.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
-      WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
+      WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR p.created_by = $4)
       AND ($5::int IS NULL OR p.confirmed_by = $5)
       ${scopeFilter}
@@ -434,7 +434,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
       FROM switch_points sp
       JOIN users u ON sp.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
-      WHERE sp.project_id = $1 AND sp.created_at::date = $2 AND sp.is_deleted = FALSE
+      WHERE sp.project_id = $1 AND sp.created_at::date = $2 AND sp.is_deleted IS NOT TRUE
       AND ($5::int IS NULL OR sp.created_by = $5)
       ${scopeFilter}
       
@@ -478,7 +478,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
       JOIN switch_points sp ON p.switch_point_id = sp.id
       JOIN users u ON p.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
-      WHERE p.project_id = $1 AND p.created_at::date = $2 AND p.is_deleted = FALSE
+      WHERE p.project_id = $1 AND p.created_at::date = $2 AND p.is_deleted IS NOT TRUE
       AND ($5::int IS NULL OR p.created_by = $5)
       ${scopeFilter}
     ) combined
@@ -493,11 +493,11 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
 
 async function getMyStats(projectId, userId) {
   const spResult = await query(
-    'SELECT COUNT(*) as total FROM switch_points WHERE project_id = $1 AND created_by = $2 AND is_deleted = FALSE',
+    'SELECT COUNT(*) as total FROM switch_points WHERE project_id = $1 AND created_by = $2 AND is_deleted IS NOT TRUE',
     [projectId, userId]
   );
   const poleResult = await query(
-    'SELECT COUNT(*) as total FROM poles WHERE project_id = $1 AND created_by = $2 AND is_deleted = FALSE',
+    'SELECT COUNT(*) as total FROM poles WHERE project_id = $1 AND created_by = $2 AND is_deleted IS NOT TRUE',
     [projectId, userId]
   );
   return {
@@ -514,22 +514,25 @@ async function getEmployeeTracking(projectId) {
       u.name,
       (
         SELECT COUNT(*) FROM poles p 
-        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.is_deleted = FALSE
+        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.is_deleted IS NOT TRUE
       ) + 
       (
         SELECT COUNT(*) FROM switch_points sp 
-        WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND sp.is_deleted = FALSE
+        WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND sp.is_deleted IS NOT TRUE
       ) as total_resolved,
       (
         SELECT COUNT(*) FROM poles p 
-        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.confirmed_at::date = CURRENT_DATE AND p.is_deleted = FALSE
+        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.confirmed_at::date = CURRENT_DATE AND p.is_deleted IS NOT TRUE
       ) + 
       (
         SELECT COUNT(*) FROM switch_points sp 
-        WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND sp.confirmed_at::date = CURRENT_DATE AND sp.is_deleted = FALSE
+        WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND sp.confirmed_at::date = CURRENT_DATE AND sp.is_deleted IS NOT TRUE
       ) as today_resolved
-    FROM users u
-    WHERE u.role = 'EMPLOYEE'
+    FROM project_users pu
+    JOIN users u ON u.id = pu.user_id
+    WHERE pu.project_id = $1
+      AND pu.project_role = 'EMPLOYEE'
+      AND u.is_deleted = FALSE
     ORDER BY total_resolved DESC;
   `;
   const result = await query(sql, [projectId]);
@@ -544,17 +547,20 @@ async function getMobileUserTracking(projectId) {
       u.name,
       COALESCE(SUM(stats.total_count), 0) as total,
       COALESCE(SUM(stats.today_count), 0) as today_total
-    FROM users u
+    FROM project_users pu
+    JOIN users u ON u.id = pu.user_id
     LEFT JOIN (
       SELECT created_by, COUNT(*) as total_count, COUNT(*) FILTER (WHERE created_at::date = CURRENT_DATE) as today_count
       FROM (
-        SELECT created_by, created_at FROM switch_points WHERE project_id = $1 AND is_deleted = FALSE
+        SELECT created_by, created_at FROM switch_points WHERE project_id = $1 AND is_deleted IS NOT TRUE
         UNION ALL
-        SELECT created_by, created_at FROM poles WHERE project_id = $1 AND is_deleted = FALSE
+        SELECT created_by, created_at FROM poles WHERE project_id = $1 AND is_deleted IS NOT TRUE
       ) combined
       GROUP BY created_by
     ) stats ON u.id = stats.created_by
-    WHERE u.role = 'MOBILE_USER'
+    WHERE pu.project_id = $1
+      AND pu.project_role = 'MOBILE_USER'
+      AND u.is_deleted = FALSE
     GROUP BY u.id, u.email, u.name
     ORDER BY total DESC;
   `;
@@ -588,7 +594,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     JOIN users u ON sp.created_by = u.id
     JOIN ulbs ulb ON sp.ulb_id = ulb.id
     JOIN districts d ON ulb.district_id = d.id
-    WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted = FALSE
+    WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted IS NOT TRUE
     AND ($2::date IS NULL OR sp.created_at::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
     AND ($4::int IS NULL OR sp.ulb_id = $4)
@@ -610,7 +616,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     JOIN users u ON p.created_by = u.id
     JOIN ulbs ulb ON sp.ulb_id = ulb.id
     JOIN districts d ON ulb.district_id = d.id
-    WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
+    WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
     AND ($2::date IS NULL OR p.created_at::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
     AND ($4::int IS NULL OR sp.ulb_id = $4)

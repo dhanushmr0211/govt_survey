@@ -1,12 +1,12 @@
 const { query } = require('../config/db');
 
 async function findById(id) {
-  const result = await query('SELECT id, name, email, role, phone, created_at, is_deleted FROM users WHERE id = $1 AND is_deleted = FALSE', [id]);
+  const result = await query('SELECT id, name, email, role, phone, created_at, is_deleted FROM users WHERE id = $1 AND is_deleted IS NOT TRUE', [id]);
   return result.rows[0] || null;
 }
 
 async function findByEmail(email) {
-  const result = await query('SELECT id, name, email, password, role, phone FROM users WHERE email = $1 AND is_deleted = FALSE', [email]);
+  const result = await query('SELECT id, name, email, password, role, phone FROM users WHERE email = $1 AND is_deleted IS NOT TRUE', [email]);
   return result.rows[0] || null;
 }
 
@@ -19,7 +19,7 @@ async function create(name, email, passwordHash, role, createdBy = null, phone =
 }
 
 async function countAll() {
-  const result = await query('SELECT COUNT(*)::int AS total FROM users WHERE is_deleted = FALSE');
+  const result = await query('SELECT COUNT(*)::int AS total FROM users WHERE is_deleted IS NOT TRUE');
   return result.rows[0].total;
 }
 
@@ -37,7 +37,7 @@ async function findAll(limit, offset) {
            COALESCE(asa.section_i, false) AS section_i
     FROM users u
     LEFT JOIN admin_section_access asa ON u.id = asa.admin_id
-    WHERE u.is_deleted = FALSE
+    WHERE u.is_deleted IS NOT TRUE
     ORDER BY u.id DESC
   `;
   
@@ -68,7 +68,7 @@ async function findMobileUsersByProjects(projectIds) {
     `SELECT DISTINCT u.id, u.name, u.email, u.role, u.created_at 
      FROM users u
      JOIN project_users pu ON pu.user_id = u.id
-     WHERE u.role = 'MOBILE_USER' AND pu.project_id = ANY($1) AND u.is_deleted = FALSE
+     WHERE u.role = 'MOBILE_USER' AND pu.project_id = ANY($1) AND u.is_deleted IS NOT TRUE
      ORDER BY u.id DESC`,
     [projectIds]
   );
@@ -101,7 +101,7 @@ async function findByProject(projectId) {
      FROM users u
      JOIN project_users pu ON u.id = pu.user_id
      LEFT JOIN admin_section_access asa ON u.id = asa.admin_id
-     WHERE pu.project_id = $1 AND u.is_deleted = FALSE
+     WHERE pu.project_id = $1 AND u.is_deleted IS NOT TRUE
      ORDER BY u.id DESC`,
     [projectId]
   );

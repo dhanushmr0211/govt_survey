@@ -25,12 +25,11 @@ async function getProjectsWithRoles(userId) {
             pu.district_scope, pu.ulb_scope
      FROM project_users pu
      JOIN projects p ON pu.project_id = p.id
-     WHERE pu.user_id = $1 AND p.is_deleted = FALSE`,
+     WHERE pu.user_id = $1 AND p.is_deleted IS NOT TRUE`,
     [userId]
   );
   return result.rows;
 }
-
 /**
  * Return all project IDs that a user belongs to.
  */

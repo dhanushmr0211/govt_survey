@@ -1,14 +1,14 @@
 const { query } = require('../config/db');
 
 async function countAll() {
-  const result = await query('SELECT COUNT(*)::int AS total FROM projects WHERE is_deleted = FALSE');
+  const result = await query('SELECT COUNT(*)::int AS total FROM projects WHERE is_deleted IS NOT TRUE');
   return result.rows[0].total;
 }
 
 async function countByIds(projectIds) {
   if (!projectIds || projectIds.length === 0) return 0;
   const result = await query(
-    'SELECT COUNT(*)::int AS total FROM projects WHERE id = ANY($1) AND is_deleted = FALSE',
+    'SELECT COUNT(*)::int AS total FROM projects WHERE id = ANY($1) AND is_deleted IS NOT TRUE',
     [projectIds]
   );
   return result.rows[0].total;
@@ -16,7 +16,7 @@ async function countByIds(projectIds) {
 
 async function findAll(limit, offset) {
   const result = await query(
-    'SELECT id, name, project_type, created_at, updated_at FROM projects WHERE is_deleted = FALSE ORDER BY id DESC LIMIT $1 OFFSET $2',
+    'SELECT id, name, project_type, created_at, updated_at FROM projects WHERE is_deleted IS NOT TRUE ORDER BY id DESC LIMIT $1 OFFSET $2',
     [limit, offset]
   );
   return result.rows;
@@ -27,14 +27,14 @@ async function findByIds(projectIds, limit, offset) {
     return [];
   }
   const result = await query(
-    'SELECT id, name, project_type, created_at, updated_at FROM projects WHERE id = ANY($1) AND is_deleted = FALSE ORDER BY id DESC LIMIT $2 OFFSET $3',
+    'SELECT id, name, project_type, created_at, updated_at FROM projects WHERE id = ANY($1) AND is_deleted IS NOT TRUE ORDER BY id DESC LIMIT $2 OFFSET $3',
     [projectIds, limit, offset]
   );
   return result.rows;
 }
 
 async function findById(id) {
-  const result = await query('SELECT id, name, project_type, created_at, updated_at FROM projects WHERE id = $1 AND is_deleted = FALSE', [id]);
+  const result = await query('SELECT id, name, project_type, created_at, updated_at FROM projects WHERE id = $1 AND is_deleted IS NOT TRUE', [id]);
   return result.rows[0] || null;
 }
 

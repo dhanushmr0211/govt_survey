@@ -24,7 +24,7 @@ async function getPoles(projectId, status, limit, offset) {
      FROM poles p
      JOIN switch_points sp ON p.switch_point_id = sp.id
      JOIN ulbs u ON sp.ulb_id = u.id
-     WHERE p.project_id = $1 AND p.status = $2 AND p.is_deleted = FALSE 
+     WHERE p.project_id = $1 AND p.status = $2 AND p.is_deleted IS NOT TRUE 
      ORDER BY p.created_at DESC LIMIT $3 OFFSET $4`,
     [projectId, status, limit, offset]
   );
@@ -56,7 +56,7 @@ async function updatePole(id, projectId, data) {
          road_width_mtrs = COALESCE($22, road_width_mtrs),
          pole_earthing_exists = COALESCE($23, pole_earthing_exists),
          updated_at = NOW()
-     WHERE id = $1 AND project_id = $2 AND is_deleted = FALSE
+     WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE
      RETURNING *`,
     [id, projectId, data.ward_number, data.switch_point_number, data.conductor_type, data.pole_number, data.pole_type, data.pole_height_mtrs, data.pole_condition, data.pole_to_pole_distance_mtrs, data.arm_type, data.arm_status, data.present_arm_no, data.present_arm_length_mtrs, data.how_many_lights_in_pole, data.light_mounting_height, data.light_type, data.light_capacity, data.light_working_status, data.road_category, data.road_type, data.road_width_mtrs, data.pole_earthing_exists]
   );
@@ -67,7 +67,7 @@ async function confirmPole(id, projectId, userId) {
   const result = await query(
     `UPDATE poles 
      SET status = 'CONFIRMED', confirmed_by = $3, confirmed_at = NOW(), updated_at = NOW()
-     WHERE id = $1 AND project_id = $2 AND is_deleted = FALSE
+     WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE
      RETURNING *`,
     [id, projectId, userId]
   );
