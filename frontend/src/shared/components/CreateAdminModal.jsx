@@ -25,6 +25,7 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
     section_f: false,
     section_g: false,
     section_h: false,
+    section_i: false
   });
 
 
@@ -169,8 +170,9 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
                   { id: 'section_d', label: 'Users' },
                   { id: 'section_e', label: 'Emp Tracking' },
                   { id: 'section_f', label: 'User Tracking' },
-                  { id: 'section_g', label: 'Report DL' },
-                  { id: 'section_h', label: 'Edit Access' },
+                  { id: 'section_g', label: 'Download Reports' },
+                  { id: 'section_h', label: 'Edit User Permissions' },
+                  { id: 'section_i', label: 'Edit Survey Data (Images/Records)' },
                 ].map(sec => (
                   <label key={sec.id} className="flex items-center gap-2 cursor-pointer py-1">
                     <input type="checkbox" name={sec.id} checked={formData[sec.id]} onChange={handleChange} className="rounded text-primary focus:ring-primary" />

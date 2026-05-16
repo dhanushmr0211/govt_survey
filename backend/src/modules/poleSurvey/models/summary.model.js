@@ -376,13 +376,13 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
   return { rows: result.rows, total };
 }
 
-async function getTodaySubmissions(projectId, page = 1, limit = 50, districtScope = null, ulbScope = null) {
+async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null) {
   const today = new Date().toISOString().split('T')[0];
   const offset = (page - 1) * limit;
   
   let scopeFilter = '';
-  const params = [projectId, today, limit, offset];
-  let pIdx = 5;
+  const params = [projectId, today, limit, offset, userId];
+  let pIdx = 6;
 
   if (districtScope && Array.isArray(districtScope) && districtScope.length > 0) {
     scopeFilter += ` AND ulb.district_id = ANY($${pIdx})`;
@@ -435,6 +435,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, districtScop
       JOIN users u ON sp.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
       WHERE sp.project_id = $1 AND sp.created_at::date = $2 AND sp.is_deleted = FALSE
+      AND ($5::int IS NULL OR sp.created_by = $5)
       ${scopeFilter}
       
       UNION ALL
@@ -478,6 +479,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, districtScop
       JOIN users u ON p.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
       WHERE p.project_id = $1 AND p.created_at::date = $2 AND p.is_deleted = FALSE
+      AND ($5::int IS NULL OR p.created_by = $5)
       ${scopeFilter}
     ) combined
     ORDER BY created_at DESC

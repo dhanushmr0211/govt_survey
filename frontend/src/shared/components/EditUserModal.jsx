@@ -5,7 +5,7 @@ import API_BASE_URL from '../../config/api';
 export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
   const [formData, setFormData] = useState({
     section_a: false, section_b: false, section_c: false, section_d: false,
-    section_e: false, section_f: false, section_g: false, section_h: false,
+    section_e: false, section_f: false, section_g: false, section_h: false, section_i: false,
     district_scope: [],
     ulb_scope: []
   });
@@ -15,8 +15,8 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
 
   useEffect(() => {
     if (user) {
-      const dScope = user.district_scope || [];
-      const uScope = user.ulb_scope || [];
+      const dScope = Array.isArray(user.district_scope) ? user.district_scope.map(Number) : [];
+      const uScope = Array.isArray(user.ulb_scope) ? user.ulb_scope.map(Number) : [];
       
       let initialScopeType = 'all';
       if (uScope.length > 0) initialScopeType = 'ulbs';
@@ -31,6 +31,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
         section_f: user.section_f || false,
         section_g: user.section_g || false,
         section_h: user.section_h || false,
+        section_i: user.section_i || false,
         district_scope: dScope,
         ulb_scope: uScope
       });
@@ -133,6 +134,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
                 { id: 'section_f', label: 'Mobile User Tracking' },
                 { id: 'section_g', label: 'Download Reports' },
                 { id: 'section_h', label: 'Edit User Permissions' },
+                { id: 'section_i', label: 'Edit Survey Data (Images/Records)' },
               ].map(sec => (
                 <label key={sec.id} className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-all ${formData[sec.id] ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-100 hover:bg-white hover:border-slate-200'}`}>
                   <input type="checkbox" name={sec.id} checked={formData[sec.id]} onChange={handleChange} className="rounded text-orange-500 focus:ring-orange-500 w-4 h-4" />

@@ -6,9 +6,10 @@ import { useAuthStore } from '../../../store/authStore';
 import API_BASE_URL from '../../../config/api';
 
 export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
-  const projectId = 2; // Must match projectId used in PoleForm
   const user = useAuthStore((state) => state.user);
-  const canEdit = user?.role === 'MASTER_ADMIN' || user?.section_h;
+  const activeProject = useAuthStore((state) => state.activeProject);
+  const projectId = activeProject?.id;
+  const canEdit = user?.role === 'MASTER_ADMIN' || activeProject?.section_i;
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ ...pole });
@@ -16,6 +17,7 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
   const [loadingImages, setLoadingImages] = useState(false);
 
   useEffect(() => {
+    if (!projectId || !pole.id) return;
     const fetchImages = async () => {
       setLoadingImages(true);
       try {
@@ -26,7 +28,6 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
         });
         if (!response.ok) throw new Error('Failed to fetch images');
         const data = await response.json();
-        // Backend returns { files: [...] } not a plain array
         setImages(data.files || []);
       } catch (err) {
         console.error('Error fetching images:', err);
@@ -34,9 +35,7 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
         setLoadingImages(false);
       }
     };
-    if (pole.id) {
-      fetchImages();
-    }
+    fetchImages();
   }, [pole.id, projectId]);
 
   const confirmMutation = useMutation({
@@ -48,8 +47,7 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      // Call API to update pole (and switch point if needed)
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/poles/${pole.id}`, {
+      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${pole.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -62,7 +60,7 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
     },
     onSuccess: () => {
       setIsEditing(false);
-      onSuccess(); // Refresh list or show success
+      onSuccess();
     },
   });
 

@@ -25,6 +25,7 @@ const schema = z.object({
   GCP_PROJECT_ID: z.string().min(1),
   GCS_BUCKET_NAME: z.string().min(1),
   GCS_SIGNED_URL_EXPIRATION_SECONDS: z.coerce.number().int().positive().default(900),
+  GCP_KEY_FILE: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -68,6 +69,7 @@ const env = {
   gcpProjectId: parsed.data.GCP_PROJECT_ID,
   gcsBucketName: parsed.data.GCS_BUCKET_NAME,
   gcsSignedUrlExpirationSeconds: parsed.data.GCS_SIGNED_URL_EXPIRATION_SECONDS,
+  gcpKeyFile: parsed.data.GCP_KEY_FILE,
 };
 
 module.exports = { env };

@@ -5,6 +5,7 @@ const { env } = require('./env');
 
 const storage = new Storage({
   projectId: env.gcpProjectId,
+  ...(env.gcpKeyFile ? { keyFilename: env.gcpKeyFile } : {}),
 });
 
 const bucket = storage.bucket(env.gcsBucketName);

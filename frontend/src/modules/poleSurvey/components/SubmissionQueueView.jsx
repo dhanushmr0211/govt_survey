@@ -16,7 +16,8 @@ export const SubmissionQueueView = ({ projectId }) => {
   const limit = 50;
 
   const user = useAuthStore((state) => state.user);
-  const canEdit = user?.role === 'MASTER_ADMIN' || user?.section_h;
+  const activeProject = useAuthStore((state) => state.activeProject);
+  const canEdit = user?.role === 'MASTER_ADMIN' || activeProject?.section_i;
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);

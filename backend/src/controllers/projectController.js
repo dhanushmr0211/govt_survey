@@ -23,7 +23,8 @@ async function listProjects(req, res, next) {
         ...p,
         project_role: ROLES.MASTER_ADMIN,
         section_a: true, section_b: true, section_c: true, section_d: true,
-        section_e: true, section_f: true, section_g: true, section_h: true
+        section_e: true, section_f: true, section_g: true, section_h: true,
+        section_i: true
       }));
       total = result.total;
     } else {
