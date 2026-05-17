@@ -182,6 +182,10 @@ async function listUsers(req, res, next) {
       if (!member) {
         return res.status(403).json({ message: 'Forbidden' });
       }
+      // Check if user has section_d (Team Management) access
+      if (!member.section_d) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to access team management' });
+      }
       users = await userService.listUsersByProject(Number(projectId));
     }
     
