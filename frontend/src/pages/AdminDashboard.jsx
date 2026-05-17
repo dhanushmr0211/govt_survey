@@ -1,7 +1,4 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import API_BASE_URL from '../config/api';
 import { useAuthStore } from '../store/authStore';
 import { SummaryView } from '../modules/poleSurvey/components/SummaryView';
 import { WardDetailsView } from '../modules/poleSurvey/components/WardDetailsView';
@@ -201,120 +198,11 @@ export default function AdminDashboard() {
           )}
         </section>
 
-        <DownloadReportModal 
+        <SharedDownloadReportModal 
           isOpen={isDownloadModalOpen} 
           onClose={() => setIsDownloadModalOpen(false)} 
           projectId={activeProject.id}
         />
-      </div>
-    </div>
-  );
-}
-
-
-function DownloadReportModal({ isOpen, onClose, projectId }) {
-  const token = localStorage.getItem('token');
-  const [district, setDistrict] = useState('');
-  const [tillDate, setTillDate] = useState('');
-  const [isDownloading, setIsDownloading] = useState(false);
-
-  const { data: summary = [] } = useQuery({
-    queryKey: ['districts', projectId],
-    queryFn: async () => {
-      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/summary/districts`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return res.data.summary;
-    },
-    enabled: isOpen && !!projectId
-  });
-
-  const districts = summary && Array.isArray(summary) 
-    ? Array.from(new Set(summary.map(s => s.district_id))).map(id => {
-        const row = summary.find(s => s.district_id === id);
-        return { id, name: row?.district_name || 'Unknown' };
-      })
-    : [];
-
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    try {
-      let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/report/download`;
-      let params = [];
-      if (district) params.push(`district=${district}`);
-      if (tillDate) params.push(`tillDate=${tillDate}`);
-      if (params.length > 0) url += `?${params.join('&')}`;
-
-      const res = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: 'blob'
-      });
-
-      const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = `report_${projectId}_${district || 'all'}_${tillDate || 'all'}.xlsx`;
-      link.click();
-      onClose();
-    } catch (error) {
-      console.error(error);
-      alert('Failed to download report');
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Download Report</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">Close</button>
-        </div>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select District</label>
-            <select
-              value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-            >
-              <option value="">All Districts</option>
-              {districts.map(d => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Till Date</label>
-            <input
-              type="date"
-              value={tillDate}
-              onChange={(e) => setTillDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleDownload}
-            disabled={isDownloading}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
-          >
-            {isDownloading ? 'Downloading...' : 'Download'}
-          </button>
-        </div>
       </div>
     </div>
   );
