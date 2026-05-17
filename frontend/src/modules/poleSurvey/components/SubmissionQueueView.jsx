@@ -269,7 +269,8 @@ export const SubmissionQueueView = ({ projectId }) => {
           </thead>
           <tbody>
             {queue.map((item) => {
-              const date = new Date(item.created_at);
+              const displayDate = activeTab === 'confirmed' ? item.confirmed_at : item.created_at;
+              const date = displayDate ? new Date(displayDate) : null;
               return (
                 <tr key={`${item.type}-${item.id}`}>
                   <td>
@@ -279,8 +280,8 @@ export const SubmissionQueueView = ({ projectId }) => {
                   </td>
                   <td>{item.user_id}</td>
                   <td className="font-semibold text-slate-950">{item.user_name}</td>
-                  <td>{date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
-                  <td>{date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
+                  <td>{date ? date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>
+                  <td>{date ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>
                   <td>{item.ward_number}</td>
                   <td>{item.ulb_name || 'N/A'}</td>
                   <td>

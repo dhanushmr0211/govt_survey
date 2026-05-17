@@ -262,7 +262,8 @@ export const TodaySubmissionsView = ({ projectId, ulb }) => {
           </thead>
           <tbody>
             {queue.map((item) => {
-              const date = new Date(item.created_at);
+              const displayDate = activeTab === 'confirmed' ? item.confirmed_at : item.created_at;
+              const date = displayDate ? new Date(displayDate) : null;
               return (
                 <tr key={`${item.type}-${item.id}`} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-2">
@@ -272,7 +273,7 @@ export const TodaySubmissionsView = ({ projectId, ulb }) => {
                   </td>
                   <td className="px-4 py-2">{item.ward_number}</td>
                   <td className="px-4 py-2">{item.ulb_name || 'N/A'}</td>
-                   <td className="px-4 py-2">{date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
+                   <td className="px-4 py-2">{date ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>
                   <td className="px-4 py-2">
                     <button
                       onClick={() => {
@@ -347,7 +348,7 @@ export const TodaySubmissionsView = ({ projectId, ulb }) => {
                   <div><p className="text-gray-500 text-xs">ULB</p><p className="font-medium">{selectedSubmission.ulb_name || 'N/A'}</p></div>
                   <div><p className="text-gray-500 text-xs">Ward Number</p><p className="font-medium">{selectedSubmission.ward_number}</p></div>
                   <div><p className="text-gray-500 text-xs">Identifier</p><p className="font-medium">{selectedSubmission.identifier}</p></div>
-                  <div><p className="text-gray-500 text-xs">Time</p><p className="font-medium">{new Date(selectedSubmission.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</p></div>
+                  <div><p className="text-gray-500 text-xs">{activeTab === 'confirmed' ? 'Confirmed Time' : 'Time'}</p><p className="font-medium">{new Date(activeTab === 'confirmed' ? (selectedSubmission.confirmed_at || selectedSubmission.created_at) : selectedSubmission.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</p></div>
                 </div>
 
                 <div className="border-t pt-2">
