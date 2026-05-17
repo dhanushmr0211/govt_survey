@@ -38,9 +38,10 @@ async function getWardSummaryHandler(req, res, next) {
     const { date, mode } = req.query;
     
     const user = req.user;
+    const permissions = req.projectSections || {};
     const isMasterAdmin = user.role === 'MASTER_ADMIN';
-    const hasSectionA = user.section_a;
-    const hasSectionB = user.section_b;
+    const hasSectionA = permissions.section_a;
+    const hasSectionB = permissions.section_b;
     
     const todayStr = new Date().toISOString().split('T')[0];
     const isRequestForToday = date === todayStr;
@@ -54,7 +55,6 @@ async function getWardSummaryHandler(req, res, next) {
     }
 
     // Security Check: If user has ulb_scope, check if this ulbId is allowed
-    const permissions = req.projectSections || {};
     if (!isMasterAdmin && permissions.ulb_scope && Array.isArray(permissions.ulb_scope) && permissions.ulb_scope.length > 0) {
       if (!permissions.ulb_scope.includes(Number(ulbId))) {
         return res.status(403).json({ message: 'Forbidden: You do not have permission to access data for this ULB' });
