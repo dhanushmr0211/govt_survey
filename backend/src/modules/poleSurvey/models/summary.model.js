@@ -167,10 +167,12 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
   }
 
   const submissionDateColumn = dateField === 'confirmed_at' ? 'confirmed_at' : 'created_at';
-  let dateFilter = '';
+  let spDateFilter = '';
+  let pDateFilter = '';
   if (fromDate && toDate) {
     const startIdx = params.length + 1;
-    dateFilter = ` AND ${submissionDateColumn}::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    spDateFilter = ` AND sp.${submissionDateColumn}::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    pDateFilter = ` AND p.${submissionDateColumn}::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
     params.push(fromDate, toDate);
   }
 
@@ -217,7 +219,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
       WHERE sp.project_id = $1 AND sp.status = 'PENDING' AND sp.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR sp.created_by = $4)
-      ${dateFilter}
+      ${spDateFilter}
       ${scopeFilter}
       
       UNION ALL
@@ -264,7 +266,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
       WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR p.created_by = $4)
-      ${dateFilter}
+      ${pDateFilter}
       ${scopeFilter}
     ) combined
     ORDER BY created_at DESC
@@ -295,10 +297,12 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
   }
 
   const submissionDateColumn = dateField === 'confirmed_at' ? 'confirmed_at' : 'created_at';
-  let dateFilter = '';
+  let spDateFilter = '';
+  let pDateFilter = '';
   if (fromDate && toDate) {
     const startIdx = params.length + 1;
-    dateFilter = ` AND ${submissionDateColumn}::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    spDateFilter = ` AND sp.${submissionDateColumn}::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    pDateFilter = ` AND p.${submissionDateColumn}::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
     params.push(fromDate, toDate);
   }
 
@@ -350,7 +354,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR sp.created_by = $4)
       AND ($5::int IS NULL OR sp.confirmed_by = $5)
-      ${dateFilter}
+      ${spDateFilter}
       ${scopeFilter}
       
       UNION ALL
@@ -402,7 +406,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR p.created_by = $4)
       AND ($5::int IS NULL OR p.confirmed_by = $5)
-      ${dateFilter}
+      ${pDateFilter}
       ${scopeFilter}
     ) combined
     ORDER BY created_at DESC
