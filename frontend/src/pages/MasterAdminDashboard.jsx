@@ -474,7 +474,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ward</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identifier</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ULB</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
             </tr>
           </thead>
@@ -491,7 +491,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(sub.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(sub.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sub.ward_number}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{sub.identifier}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{sub.ulb_name || 'N/A'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   {status === 'PENDING' ? (
                     <span onClick={() => setSelectedSub(sub)} className="text-red-600 cursor-pointer hover:text-red-800">INSPECT</span>
@@ -543,8 +543,8 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
                     <p className="font-medium">{selectedSub.ward_number}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs">Identifier</p>
-                    <p className="font-medium">{selectedSub.identifier}</p>
+                    <p className="text-gray-500 text-xs">ULB</p>
+                    <p className="font-medium">{selectedSub.ulb_name || 'N/A'}</p>
                   </div>
                 </div>
 

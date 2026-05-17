@@ -9,7 +9,7 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
   const user = useAuthStore((state) => state.user);
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = activeProject?.id;
-  const canEdit = user?.role === 'MASTER_ADMIN' || activeProject?.section_i;
+  const canEdit = user?.role === 'MASTER_ADMIN' || (activeProject?.section_i && pole?.status === 'pending');
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ ...pole });

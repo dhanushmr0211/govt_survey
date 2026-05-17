@@ -18,6 +18,7 @@ export const SubmissionQueueView = ({ projectId }) => {
   const user = useAuthStore((state) => state.user);
   const activeProject = useAuthStore((state) => state.activeProject);
   const canEdit = user?.role === 'MASTER_ADMIN' || activeProject?.section_i;
+  const canShowEdit = user?.role === 'MASTER_ADMIN' || (activeProject?.section_i && activeTab === 'pending');
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);
@@ -350,7 +351,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                 Inspect {selectedSubmission.type === 'switch_point' ? 'Switch Point' : 'Pole'}
               </h3>
               <div className="flex items-center gap-4">
-                {canEdit && !isEditing && (
+                {canShowEdit && !isEditing && (
                   <button
                     onClick={() => setIsEditing(true)}
                     className="flex items-center gap-2 text-primary hover:text-primary-dark font-medium text-sm"
@@ -392,12 +393,12 @@ export const SubmissionQueueView = ({ projectId }) => {
                     <p className="font-medium">{selectedSubmission.ward_number}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs">Identifier</p>
-                    <p className="font-medium">{selectedSubmission.identifier}</p>
+                    <p className="text-gray-500 text-xs">ULB</p>
+                    <p className="font-medium">{selectedSubmission.ulb_name || 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs">ULB Name</p>
-                    <p className="font-medium">{selectedSubmission.ulb_name || 'N/A'}</p>
+                    <p className="text-gray-500 text-xs">Identifier</p>
+                    <p className="font-medium">{selectedSubmission.identifier}</p>
                   </div>
                 </div>
 

@@ -1,18 +1,76 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import { useAuthStore } from '../../store/authStore';
 import API_BASE_URL from '../../config/api';
 
 export function DownloadReportModal({ isOpen, onClose, projectId }) {
-  const token = localStorage.getItem('token');
+  const token = useAuthStore((state) => state.token);
+  const user = useAuthStore((state) => state.user);
+  const isMasterAdmin = user?.role === 'MASTER_ADMIN';
   const [tillDate, setTillDate] = useState('');
+  const [districtId, setDistrictId] = useState('');
+  const [ulbId, setUlbId] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
+
+  const { data: summary = [] } = useQuery({
+    queryKey: ['report-districts', projectId, token],
+    queryFn: async () => {
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/summary/districts`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.summary || [];
+    },
+    enabled: isOpen && !!projectId && !!token,
+  });
+
+  const districtOptions = useMemo(() => {
+    const map = new Map();
+    summary.forEach((row) => {
+      if (!map.has(row.district_id)) {
+        map.set(row.district_id, row.district_name);
+      }
+    });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [summary]);
+
+  const ulbOptions = useMemo(() => {
+    const rows = districtId ? summary.filter((row) => row.district_id === Number(districtId)) : summary;
+    const map = new Map();
+    rows.forEach((row) => {
+      if (!map.has(row.ulb_id)) {
+        map.set(row.ulb_id, row.ulb_name);
+      }
+    });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [summary, districtId]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setDistrictId('');
+      setUlbId('');
+      setTillDate('');
+      setIsDownloading(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!ulbId) return;
+    if (!ulbOptions.some((option) => String(option.id) === String(ulbId))) {
+      setUlbId('');
+    }
+  }, [ulbId, ulbOptions]);
 
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
       let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/report/download`;
-      if (tillDate) {
-        url += `?tillDate=${encodeURIComponent(tillDate)}`;
+      const params = [];
+      if (districtId && isMasterAdmin) params.push(`district=${encodeURIComponent(districtId)}`);
+      if (ulbId) params.push(`ulbId=${encodeURIComponent(ulbId)}`);
+      if (tillDate) params.push(`tillDate=${encodeURIComponent(tillDate)}`);
+      if (params.length > 0) {
+        url += `?${params.join('&')}`;
       }
 
       const res = await axios.get(url, {
@@ -52,14 +110,49 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
           </button>
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Till Date</label>
-          <input
-            type="date"
-            value={tillDate}
-            onChange={(e) => setTillDate(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 p-2 text-sm"
-          />
+        <div className="space-y-4">
+          {isMasterAdmin && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Select District</label>
+              <select
+                value={districtId}
+                onChange={(e) => {
+                  setDistrictId(e.target.value);
+                  setUlbId('');
+                }}
+                className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+              >
+                <option value="">All Districts</option>
+                {districtOptions.map((district) => (
+                  <option key={district.id} value={district.id}>{district.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Select ULB</label>
+            <select
+              value={ulbId}
+              onChange={(e) => setUlbId(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+            >
+              <option value="">All Accessible ULBs</option>
+              {ulbOptions.map((ulb) => (
+                <option key={ulb.id} value={ulb.id}>{ulb.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Till Date</label>
+            <input
+              type="date"
+              value={tillDate}
+              onChange={(e) => setTillDate(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+            />
+          </div>
         </div>
 
         <div className="mt-6 flex justify-end gap-2">

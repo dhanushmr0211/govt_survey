@@ -187,7 +187,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Time</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ward</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Identifier</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">ULB Name</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
             </tr>
           </thead>
@@ -202,7 +202,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(sub.created_at).toLocaleDateString()}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(sub.created_at).toLocaleTimeString()}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sub.ward_number}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{sub.identifier}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{sub.ulb_name || 'N/A'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold">
                   <button onClick={() => setSelectedSub(sub)} className="text-primary hover:text-primary/80">INSPECT</button>
                 </td>
@@ -217,7 +217,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
           <div className="bg-white p-8 rounded-2xl max-w-4xl w-full mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-slate-900">
-                Inspection: {selectedSub.identifier}
+                Inspection: {selectedSub.ulb_name || 'N/A'}
               </h3>
               <button onClick={() => setSelectedSub(null)} className="text-slate-400 hover:text-slate-600">✕</button>
             </div>
@@ -232,6 +232,18 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
                   <div>
                     <p className="text-slate-400 text-[10px] font-bold uppercase">Ward</p>
                     <p className="font-bold text-slate-900">{selectedSub.ward_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase">ULB</p>
+                    <p className="font-bold text-slate-900">{selectedSub.ulb_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase">Coordinates</p>
+                    <p className="font-bold text-slate-900">
+                      {selectedSub.latitude && selectedSub.longitude
+                        ? `${selectedSub.latitude}, ${selectedSub.longitude}`
+                        : 'N/A'}
+                    </p>
                   </div>
                 </div>
 
@@ -252,6 +264,16 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
                         </>
                       )}
                    </div>
+                </div>
+
+                <div>
+                  <p className="font-bold text-slate-900 mb-3 border-b border-slate-100 pb-2">Location</p>
+                  <div className="grid grid-cols-2 gap-y-2 text-sm">
+                    <span className="text-slate-500">Latitude</span>
+                    <span className="font-semibold text-right">{selectedSub.latitude || 'N/A'}</span>
+                    <span className="text-slate-500">Longitude</span>
+                    <span className="font-semibold text-right">{selectedSub.longitude || 'N/A'}</span>
+                  </div>
                 </div>
               </div>
 

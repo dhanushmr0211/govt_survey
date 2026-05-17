@@ -5,10 +5,8 @@ import { WardDetailsView } from '../modules/poleSurvey/components/WardDetailsVie
 import { SubmissionQueueView } from '../modules/poleSurvey/components/SubmissionQueueView';
 import { UsersView } from './UsersView';
 import { EmployeeTrackingView, MobileUserTrackingView } from './TrackingViews';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { DownloadReportModal as SharedDownloadReportModal } from '../shared/components/DownloadReportModal';
 import { BarChart3, CalendarDays, ClipboardList, Download, Smartphone, UserCheck, ArrowLeft, Users as UsersIcon, Landmark, LogOut } from 'lucide-react';
-import API_BASE_URL from '../config/api';
 
 export default function AdminDashboard() {
   const { user, activeProject, clearActiveProject } = useAuthStore();
@@ -20,14 +18,13 @@ export default function AdminDashboard() {
   const hasSectionE = activeProject?.section_e;
   const hasSectionF = activeProject?.section_f;
   const hasSectionG = activeProject?.section_g;
-  
-  // Set default view based on sections
+
   const [activeView, setActiveView] = useState(
     hasSectionA ? 'pole_survey_summary' : 
     hasSectionB ? 'pole_survey_today' : 
     hasSectionC ? 'pole_survey_issues' : 'pole_survey_summary'
   );
-  
+
   const [selectedUlb, setSelectedUlb] = useState(null);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
@@ -97,7 +94,7 @@ export default function AdminDashboard() {
             )}
 
             {utilityItems.length > 0 && (
-              <div className="space-y-1 border-l border-white/10 pl-3 mt-4">
+              <div className="space-y-1 border-l border-white/10 pl-3">
                 {utilityItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -114,7 +111,7 @@ export default function AdminDashboard() {
             )}
 
             {hasSectionG && (
-              <div className="space-y-1 border-l border-white/10 pl-3 mt-4">
+              <div className="space-y-1 border-l border-white/10 pl-3 mt-1">
                 <button
                   onClick={() => setIsDownloadModalOpen(true)}
                   className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
@@ -127,7 +124,7 @@ export default function AdminDashboard() {
 
           <div className="p-4 border-t border-white/10">
             <button
-              onClick={() => useAuthStore.getState().logout()}
+              onClick={clearActiveProject}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
             >
               <LogOut size={20} />
@@ -136,7 +133,6 @@ export default function AdminDashboard() {
           </div>
         </aside>
 
-        {/* Main Content */}
         <section className="min-w-0 flex-1 lg:ml-64">
           <div className="mb-5 flex flex-col justify-between gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
             <div>
@@ -171,7 +167,7 @@ export default function AdminDashboard() {
 
           {activeView === 'pole_survey_summary' && !selectedUlb && (
             <SummaryView projectId={activeProject.id} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
-          ) }
+          )}
           
           {activeView === 'pole_survey_summary' && selectedUlb && (
             <WardDetailsView projectId={activeProject.id} ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />

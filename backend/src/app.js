@@ -5,6 +5,7 @@ const hpp = require('hpp');
 const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 
 const { env } = require('./config/env');
 const { pool } = require('./config/db');
@@ -73,9 +74,18 @@ function createApp() {
   );
 
   // Serve frontend static files (React app)
-  const path = require('path');
   const frontendDistPath = path.join(__dirname, '../../frontend/dist');
-  app.use(express.static(frontendDistPath));
+  app.use(
+    express.static(frontendDistPath, {
+      maxAge: '1y',
+      immutable: true,
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        }
+      },
+    })
+  );
 
   // Health check at root level (for load-balancer probes)
   app.get('/health', async (req, res, next) => {
@@ -98,6 +108,7 @@ function createApp() {
 
   // Fallback to index.html for React Router (SPA)
   app.get('*', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.sendFile(path.join(frontendDistPath, 'index.html'));
   });
 

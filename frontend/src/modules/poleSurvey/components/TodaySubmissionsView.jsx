@@ -17,7 +17,7 @@ export const TodaySubmissionsView = ({ projectId, ulb }) => {
 
   const user = useAuthStore((state) => state.user);
   const activeProject = useAuthStore((state) => state.activeProject);
-  const canEdit = user?.role === 'MASTER_ADMIN' || activeProject?.section_i;
+  const canShowEdit = user?.role === 'MASTER_ADMIN' || (activeProject?.section_i && activeTab === 'pending');
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);
@@ -327,7 +327,7 @@ export const TodaySubmissionsView = ({ projectId, ulb }) => {
                 Inspect {selectedSubmission.type === 'switch_point' ? 'Switch Point' : 'Pole'}
               </h3>
               <div className="flex items-center gap-4">
-                {canEdit && !isEditing && (
+                {canShowEdit && !isEditing && (
                   <button
                     onClick={() => setIsEditing(true)}
                     className="flex items-center gap-2 text-primary hover:text-primary-dark font-medium text-sm"
@@ -476,7 +476,7 @@ export const TodaySubmissionsView = ({ projectId, ulb }) => {
                   <span>{saveMutation.isLoading ? 'Saving...' : 'Save Changes'}</span>
                 </button>
               ) : (
-                activeTab === 'pending' && canEdit && (
+                canShowEdit && (
                   <button
                     onClick={() => {
                       if (window.confirm('Are you sure you want to confirm this submission?')) {
