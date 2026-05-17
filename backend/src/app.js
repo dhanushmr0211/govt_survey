@@ -72,6 +72,11 @@ function createApp() {
     })
   );
 
+  // Serve frontend static files (React app)
+  const path = require('path');
+  const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+  app.use(express.static(frontendDistPath));
+
   // Health check at root level (for load-balancer probes)
   app.get('/health', async (req, res, next) => {
     try {
@@ -90,6 +95,11 @@ function createApp() {
   apiRouter.use('/projects/:projectId/pole-survey', requireProjectMember(), poleSurveyRouter);
   apiRouter.use('/projects/:projectId/issues', requireProjectMember(), issueRouter);
   app.use('/api/v1', apiRouter);
+
+  // Fallback to index.html for React Router (SPA)
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
+  });
 
   app.use(notFound);
   app.use(errorHandler);

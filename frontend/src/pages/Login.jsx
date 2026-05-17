@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -6,14 +6,22 @@ import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
 
 const loginApi = async (email, password) => {
-  const res = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Login failed');
-  return data;
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || `Login failed: ${res.status}`);
+    return data;
+  } catch (err) {
+    console.error('[Login API] Error:', err);
+    if (err instanceof TypeError && err.message === 'Failed to fetch') {
+      throw new Error(`Network error - cannot reach ${API_BASE_URL}. Check your connection and API URL.`);
+    }
+    throw err;
+  }
 }
 
 export default function Login() {
@@ -27,19 +35,35 @@ export default function Login() {
   const setUser = useAuthStore((state) => state.setUser);
   const setToken = useAuthStore((state) => state.setToken);
 
+  useEffect(() => {
+    // Unregister any cached service workers that might be causing issues
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(reg => {
+          console.log('[Login] Unregistering old service worker:', reg);
+          reg.unregister();
+        });
+      });
+    }
+  }, []);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
     try {
+      console.log('[Login] Attempting login with:', email);
       const data = await loginApi(email, password);
+      console.log('[Login] Login successful, setting user:', data.user);
       setUser(data.user);
       setToken(data.token);
       // Clear React Query cache to force fresh data from server
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      console.log('[Login] Navigating to dashboard');
       navigate('/dashboard');
     } catch (err) {
+      console.error('[Login] Error:', err.message);
       setError(err.message);
     } finally {
       setLoading(false);

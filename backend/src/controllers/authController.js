@@ -121,6 +121,9 @@ async function login(req, res, next) {
       { expiresIn: env.jwtExpiresIn }
     );
 
+    // Invalidate cached project access on login to ensure fresh data
+    invalidateProjectAccess(user.id);
+
     return res.json({
       token,
       user: {
