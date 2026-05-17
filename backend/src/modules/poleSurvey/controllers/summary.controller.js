@@ -6,7 +6,7 @@ const ExcelJS = require('exceljs');
 async function getDistrictSummaryHandler(req, res, next) {
   try {
     const { projectId } = req.params;
-    const { date, mode } = req.query;
+    const { date, mode, fromDate, toDate } = req.query;
     
     const allowedProject = await canAccessProject(Number(req.user.sub), req.user.role, Number(projectId));
     if (!allowedProject) {
@@ -27,7 +27,7 @@ async function getDistrictSummaryHandler(req, res, next) {
       }
     }
 
-    const summary = await getDistrictSummary(Number(projectId), date, mode, permissions.district_scope, permissions.ulb_scope);
+    const summary = await getDistrictSummary(Number(projectId), date, mode, permissions.district_scope, permissions.ulb_scope, fromDate || null, toDate || null);
     res.json({ summary });
   } catch (error) { next(error); }
 }
@@ -35,7 +35,7 @@ async function getDistrictSummaryHandler(req, res, next) {
 async function getWardSummaryHandler(req, res, next) {
   try {
     const { ulbId } = req.params;
-    const { date, mode } = req.query;
+    const { date, mode, fromDate, toDate } = req.query;
     
     const user = req.user;
     const permissions = req.projectSections || {};
@@ -61,7 +61,7 @@ async function getWardSummaryHandler(req, res, next) {
       }
     }
 
-    const summary = await getWardSummary(Number(ulbId), date, mode);
+    const summary = await getWardSummary(Number(ulbId), date, mode, fromDate || null, toDate || null);
     res.json({ summary });
   } catch (error) { next(error); }
 }
@@ -101,7 +101,7 @@ async function getPendingSubmissionsHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access the pending queue' });
     }
 
-    const { page = 1, limit = 50, userId } = req.query;
+    const { page = 1, limit = 50, userId, fromDate, toDate, dateField } = req.query;
     // For mobile users, force filtering by their own ID
     const filterUserId = isMobileUser ? Number(req.user.sub) : (userId ? Number(userId) : null);
 
@@ -114,7 +114,10 @@ async function getPendingSubmissionsHandler(req, res, next) {
       Number(limit), 
       filterUserId,
       permissions.district_scope,
-      permissions.ulb_scope
+      permissions.ulb_scope,
+      fromDate || null,
+      toDate || null,
+      dateField || 'created_at'
     );
     res.json({ queue: rows, total });
   } catch (error) { next(error); }
@@ -166,7 +169,7 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access confirmed submissions' });
     }
 
-    const { page = 1, limit = 50, userId, confirmedBy } = req.query;
+    const { page = 1, limit = 50, userId, confirmedBy, fromDate, toDate, dateField } = req.query;
     // For mobile users, force filtering by their own ID
     const filterUserId = isMobileUser ? Number(req.user.sub) : (userId ? Number(userId) : null);
 
@@ -177,7 +180,10 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
       filterUserId, 
       confirmedBy ? Number(confirmedBy) : null,
       permissions.district_scope,
-      permissions.ulb_scope
+      permissions.ulb_scope,
+      fromDate || null,
+      toDate || null,
+      dateField || 'created_at'
     );
     res.json({ queue: rows, total });
   } catch (error) { next(error); }
@@ -238,7 +244,7 @@ async function getMobileUserTrackingHandler(req, res, next) {
 async function downloadReportHandler(req, res, next) {
   try {
     const { projectId } = req.params;
-    const { district, tillDate, ulbId } = req.query;
+    const { district, tillDate, ulbId, fromDate, toDate } = req.query;
     
     const allowedProject = await canAccessProject(Number(req.user.sub), req.user.role, Number(projectId));
     if (!allowedProject) {
@@ -253,11 +259,13 @@ async function downloadReportHandler(req, res, next) {
 
     const data = await getReportData(
       Number(projectId), 
-      district ? Number(district) : null, 
-      tillDate, 
+      district ? Number(district) : null,
+      tillDate,
       ulbId ? Number(ulbId) : null,
       permissions.district_scope,
-      permissions.ulb_scope
+      permissions.ulb_scope,
+      fromDate || null,
+      toDate || null
     );
     console.log(`[REPORT] Switch Points: ${data.switchPoints.length}, Poles: ${data.poles.length}`);
     

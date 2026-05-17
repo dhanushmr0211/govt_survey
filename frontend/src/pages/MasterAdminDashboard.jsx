@@ -10,7 +10,7 @@ import { useEmployeeTracking } from '../shared/hooks/useEmployeeTracking';
 import { useMobileUserTracking } from '../shared/hooks/useMobileUserTracking';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { BarChart3, CalendarDays, ClipboardList, Download, FolderKanban, Smartphone, UserCheck, Users, Landmark, LogOut } from 'lucide-react';
+import { BarChart3, CalendarDays, ClipboardList, Download, FolderKanban, Smartphone, UserCheck, Users, LogOut } from 'lucide-react';
 import API_BASE_URL from '../config/api';
 
 export default function MasterAdminDashboard() {
@@ -25,9 +25,6 @@ export default function MasterAdminDashboard() {
   const [selectedProjectName, setSelectedProjectName] = useState(localStorage.getItem('master_selectedProjectName') || null);
   const [selectedUlb, setSelectedUlb] = useState(null);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
-
-  // Master Admin always has full access
-  const hasFullAccess = user?.role === 'MASTER_ADMIN';
 
   const { data: projectsData = { projects: [] } } = useQuery({
     queryKey: ['projects'],
@@ -638,9 +635,11 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
 
 function DownloadReportModal({ isOpen, onClose, projectId }) {
   const token = localStorage.getItem('token');
+  const today = new Date().toISOString().split('T')[0];
   const [district, setDistrict] = useState('');
   const [ulbId, setUlbId] = useState('');
-  const [tillDate, setTillDate] = useState('');
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const { data: summary = [] } = useQuery({
@@ -670,7 +669,8 @@ function DownloadReportModal({ isOpen, onClose, projectId }) {
       let params = [];
       if (district) params.push(`district=${district}`);
       if (ulbId) params.push(`ulbId=${ulbId}`);
-      if (tillDate) params.push(`tillDate=${tillDate}`);
+      if (fromDate) params.push(`fromDate=${fromDate}`);
+      if (toDate) params.push(`toDate=${toDate}`);
       if (params.length > 0) url += `?${params.join('&')}`;
 
       const res = await axios.get(url, {
@@ -691,7 +691,8 @@ function DownloadReportModal({ isOpen, onClose, projectId }) {
         const uName = ulbs.find(u => u.id === Number(ulbId))?.name;
         filename += `_${uName || ulbId}`;
       }
-      if (tillDate) filename += `_${tillDate}`;
+      if (fromDate) filename += `_${fromDate}`;
+      if (toDate) filename += `_${toDate}`;
       filename += '.xlsx';
 
       link.download = filename;
@@ -748,14 +749,25 @@ function DownloadReportModal({ isOpen, onClose, projectId }) {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Till Date</label>
-            <input
-              type="date"
-              value={tillDate}
-              onChange={(e) => setTillDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2 text-sm"
-            />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+              />
+            </div>
           </div>
         </div>
 

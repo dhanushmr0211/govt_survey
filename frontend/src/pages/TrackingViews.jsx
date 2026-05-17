@@ -9,6 +9,9 @@ export function EmployeeTrackingView({ projectId }) {
   const { data: tracking = [], isLoading } = useEmployeeTracking(projectId);
   const [selectedEmp, setSelectedEmp] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
+  const today = new Date().toISOString().split('T')[0];
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
 
   if (isLoading) return <div className="p-8 text-center text-slate-500">Loading tracking data...</div>;
 
@@ -22,24 +25,53 @@ export function EmployeeTrackingView({ projectId }) {
         
         <div className="flex space-x-4 mb-4 border-b border-gray-100">
           <button
-            onClick={() => setActiveTab('pending')}
+            onClick={() => {
+              setActiveTab('pending');
+              setFromDate(today);
+              setToDate(today);
+            }}
             className={`pb-2 text-sm font-medium ${activeTab === 'pending' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Pending (Open)
           </button>
           <button
-            onClick={() => setActiveTab('confirmed')}
+            onClick={() => {
+              setActiveTab('confirmed');
+              setFromDate(today);
+              setToDate(today);
+            }}
             className={`pb-2 text-sm font-medium ${activeTab === 'confirmed' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Confirmed (Resolved)
           </button>
         </div>
 
+        <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
+          <div className="flex flex-col">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">From</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">To</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
+            />
+          </div>
+        </div>
+
         {activeTab === 'pending' && (
-          <UserSubmissionsList projectId={projectId} userId={selectedEmp.id} status="PENDING" />
+          <UserSubmissionsList projectId={projectId} userId={selectedEmp.id} status="PENDING" fromDate={fromDate} toDate={toDate} dateField="created_at" />
         )}
         {activeTab === 'confirmed' && (
-          <UserSubmissionsList projectId={projectId} confirmedBy={selectedEmp.id} status="CONFIRMED" />
+          <UserSubmissionsList projectId={projectId} confirmedBy={selectedEmp.id} status="CONFIRMED" fromDate={fromDate} toDate={toDate} dateField="confirmed_at" />
         )}
       </div>
     );
@@ -67,7 +99,17 @@ export function EmployeeTrackingView({ projectId }) {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_resolved}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_resolved}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <button onClick={() => setSelectedEmp(emp)} className="text-primary hover:text-primary/80 font-bold underline">View Submissions</button>
+                  <button
+                    onClick={() => {
+                      setSelectedEmp(emp);
+                      setActiveTab('pending');
+                      setFromDate(today);
+                      setToDate(today);
+                    }}
+                    className="text-primary hover:text-primary/80 font-bold underline"
+                  >
+                    View Submissions
+                  </button>
                 </td>
               </tr>
             ))}
@@ -82,6 +124,9 @@ export function MobileUserTrackingView({ projectId }) {
   const { data: tracking = [], isLoading } = useMobileUserTracking(projectId);
   const [selectedUser, setSelectedUser] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
+  const today = new Date().toISOString().split('T')[0];
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
 
   if (isLoading) return <div className="p-8 text-center text-slate-500">Loading tracking data...</div>;
 
@@ -95,24 +140,53 @@ export function MobileUserTrackingView({ projectId }) {
         
         <div className="flex space-x-4 mb-4 border-b border-gray-100">
           <button
-            onClick={() => setActiveTab('pending')}
+            onClick={() => {
+              setActiveTab('pending');
+              setFromDate(today);
+              setToDate(today);
+            }}
             className={`pb-2 text-sm font-medium ${activeTab === 'pending' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Pending
           </button>
           <button
-            onClick={() => setActiveTab('confirmed')}
+            onClick={() => {
+              setActiveTab('confirmed');
+              setFromDate(today);
+              setToDate(today);
+            }}
             className={`pb-2 text-sm font-medium ${activeTab === 'confirmed' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Confirmed
           </button>
         </div>
 
+        <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
+          <div className="flex flex-col">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">From</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">To</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
+            />
+          </div>
+        </div>
+
         {activeTab === 'pending' && (
-          <UserSubmissionsList projectId={projectId} userId={selectedUser.id} status="PENDING" />
+          <UserSubmissionsList projectId={projectId} userId={selectedUser.id} status="PENDING" fromDate={fromDate} toDate={toDate} dateField="created_at" />
         )}
         {activeTab === 'confirmed' && (
-          <UserSubmissionsList projectId={projectId} userId={selectedUser.id} status="CONFIRMED" />
+          <UserSubmissionsList projectId={projectId} userId={selectedUser.id} status="CONFIRMED" fromDate={fromDate} toDate={toDate} dateField="created_at" />
         )}
       </div>
     );
@@ -140,7 +214,17 @@ export function MobileUserTrackingView({ projectId }) {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_total}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <button onClick={() => setSelectedUser(user)} className="text-primary hover:text-primary/80 font-bold underline">View Submissions</button>
+                  <button
+                    onClick={() => {
+                      setSelectedUser(user);
+                      setActiveTab('pending');
+                      setFromDate(today);
+                      setToDate(today);
+                    }}
+                    className="text-primary hover:text-primary/80 font-bold underline"
+                  >
+                    View Submissions
+                  </button>
                 </td>
               </tr>
             ))}
@@ -151,7 +235,7 @@ export function MobileUserTrackingView({ projectId }) {
   );
 }
 
-function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
+function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate = null, toDate = null, dateField = 'created_at' }) {
   const token = localStorage.getItem('token');
   const endpoint = status === 'PENDING' ? 'queue/pending' : 'queue/confirmed';
   const [selectedSub, setSelectedSub] = useState(null);
@@ -159,12 +243,15 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status }) {
   const [loadingImages, setLoadingImages] = useState(false);
   
   const { data, isLoading } = useQuery({
-    queryKey: ['user-submissions', projectId, userId, confirmedBy, status],
+    queryKey: ['user-submissions', projectId, userId, confirmedBy, status, fromDate, toDate, dateField],
     queryFn: async () => {
       let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}`;
       let params = [];
       if (userId) params.push(`userId=${userId}`);
       if (confirmedBy) params.push(`confirmedBy=${confirmedBy}`);
+      if (fromDate) params.push(`fromDate=${fromDate}`);
+      if (toDate) params.push(`toDate=${toDate}`);
+      if (dateField) params.push(`dateField=${dateField}`);
       if (params.length > 0) url += `?${params.join('&')}`;
       
       const res = await axios.get(url, {

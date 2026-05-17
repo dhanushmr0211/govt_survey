@@ -4,21 +4,25 @@ import { Zap, Lightbulb, ArrowUpRight } from 'lucide-react';
 
 export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCounts = false }) => {
   const [selectedFilter, setSelectedFilter] = useState('today');
-  const [customDate, setCustomDate] = useState(new Date().toISOString().split('T')[0]);
+  const today = new Date().toISOString().split('T')[0];
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
 
   let effectiveDate = null;
   let mode = 'exact';
+  let effectiveFromDate = null;
+  let effectiveToDate = null;
   
   if (selectedFilter === 'today') {
     effectiveDate = date;
   } else if (selectedFilter === 'till_yesterday') {
     effectiveDate = 'till_yesterday';
   } else if (selectedFilter === 'till_date') {
-    effectiveDate = customDate;
-    mode = 'cumulative';
+    effectiveFromDate = fromDate;
+    effectiveToDate = toDate;
   }
 
-  const { data: summary = [], isLoading } = useSummary(projectId, effectiveDate, mode);
+  const { data: summary = [], isLoading } = useSummary(projectId, effectiveDate, mode, effectiveFromDate, effectiveToDate);
 
   if (isLoading) return <div className="premium-panel p-8 text-slate-500">Loading summary...</div>;
 
@@ -64,12 +68,26 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
           </select>
           
           {selectedFilter === 'till_date' && (
-            <input 
-              type="date" 
-              value={customDate} 
-              onChange={(e) => setCustomDate(e.target.value)}
-              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-col">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">From</label>
+                <input 
+                  type="date" 
+                  value={fromDate} 
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">To</label>
+                <input 
+                  type="date" 
+                  value={toDate} 
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
+                />
+              </div>
+            </div>
           )}
         </div>
       )}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useAuthStore } from '../../store/authStore';
@@ -8,7 +8,9 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const isMasterAdmin = user?.role === 'MASTER_ADMIN';
-  const [tillDate, setTillDate] = useState('');
+  const today = new Date().toISOString().split('T')[0];
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
   const [districtId, setDistrictId] = useState('');
   const [ulbId, setUlbId] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
@@ -45,21 +47,14 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [summary, districtId]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setDistrictId('');
-      setUlbId('');
-      setTillDate('');
-      setIsDownloading(false);
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!ulbId) return;
-    if (!ulbOptions.some((option) => String(option.id) === String(ulbId))) {
-      setUlbId('');
-    }
-  }, [ulbId, ulbOptions]);
+  const handleClose = () => {
+    setDistrictId('');
+    setUlbId('');
+    setFromDate(today);
+    setToDate(today);
+    setIsDownloading(false);
+    onClose();
+  };
 
   const handleDownload = async () => {
     setIsDownloading(true);
@@ -68,7 +63,8 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
       const params = [];
       if (districtId && isMasterAdmin) params.push(`district=${encodeURIComponent(districtId)}`);
       if (ulbId) params.push(`ulbId=${encodeURIComponent(ulbId)}`);
-      if (tillDate) params.push(`tillDate=${encodeURIComponent(tillDate)}`);
+      if (fromDate) params.push(`fromDate=${encodeURIComponent(fromDate)}`);
+      if (toDate) params.push(`toDate=${encodeURIComponent(toDate)}`);
       if (params.length > 0) {
         url += `?${params.join('&')}`;
       }
@@ -84,12 +80,12 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
       const objectUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = objectUrl;
-      link.download = `report_${projectId}_all_${tillDate || 'all'}.xlsx`;
+      link.download = `report_${projectId}_${fromDate || 'from'}_${toDate || 'to'}.xlsx`;
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(objectUrl);
-      onClose();
+      handleClose();
     } catch (error) {
       console.error('Failed to download report:', error);
       alert(error.response?.data?.message || 'Failed to download report');
@@ -105,7 +101,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">Download Report</h3>
-          <button onClick={onClose} className="text-sm font-medium text-gray-500 hover:text-gray-700">
+          <button onClick={handleClose} className="text-sm font-medium text-gray-500 hover:text-gray-700">
             Close
           </button>
         </div>
@@ -144,20 +140,31 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
             </select>
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Till Date</label>
-            <input
-              type="date"
-              value={tillDate}
-              onChange={(e) => setTillDate(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2 text-sm"
-            />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">From Date</label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">To Date</label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+              />
+            </div>
           </div>
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-lg border border-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-50"
           >
             Cancel

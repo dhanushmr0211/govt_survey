@@ -1,12 +1,16 @@
 const { query } = require('../../../config/db');
 
-async function getDistrictSummary(projectId, date = null, mode = 'exact', districtScope = null, ulbScope = null) {
+async function getDistrictSummary(projectId, date = null, mode = 'exact', districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
   let dateFilter = '';
   let scopeFilter = '';
   const params = [projectId];
   
   let paramIdx = 2;
-  if (date) {
+  if (fromDate && toDate) {
+    dateFilter = `AND sp.created_at::date BETWEEN $${paramIdx} AND $${paramIdx + 1}`;
+    params.push(fromDate, toDate);
+    paramIdx += 2;
+  } else if (date) {
     if (date === 'till_yesterday') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
@@ -54,11 +58,14 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', distri
   return result.rows;
 }
 
-async function getWardSummary(ulbId, date = null, mode = 'exact') {
+async function getWardSummary(ulbId, date = null, mode = 'exact', fromDate = null, toDate = null) {
   let dateFilter = '';
   const params = [ulbId];
   
-  if (date) {
+  if (fromDate && toDate) {
+    dateFilter = 'AND sp.created_at::date BETWEEN $2 AND $3';
+    params.push(fromDate, toDate);
+  } else if (date) {
     if (date === 'till_yesterday') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
@@ -141,7 +148,7 @@ async function getWardDetails(ulbId, wardNumber) {
   return result.rows;
 }
 
-async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null) {
+async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at') {
   const offset = (page - 1) * limit;
   
   let scopeFilter = '';
@@ -157,6 +164,14 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
     scopeFilter += ` AND sp.ulb_id = ANY($${pIdx})`;
     params.push(ulbScope);
     pIdx++;
+  }
+
+  const submissionDateColumn = dateField === 'confirmed_at' ? 'confirmed_at' : 'created_at';
+  let dateFilter = '';
+  if (fromDate && toDate) {
+    const startIdx = params.length + 1;
+    dateFilter = ` AND ${submissionDateColumn}::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    params.push(fromDate, toDate);
   }
 
   const sql = `
@@ -202,6 +217,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
       WHERE sp.project_id = $1 AND sp.status = 'PENDING' AND sp.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR sp.created_by = $4)
+      ${dateFilter}
       ${scopeFilter}
       
       UNION ALL
@@ -248,6 +264,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
       WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR p.created_by = $4)
+      ${dateFilter}
       ${scopeFilter}
     ) combined
     ORDER BY created_at DESC
@@ -259,7 +276,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
     return { rows: result.rows, total };
 }
 
-async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null, districtScope = null, ulbScope = null) {
+async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at') {
   const offset = (page - 1) * limit;
   
   let scopeFilter = '';
@@ -275,6 +292,14 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
     scopeFilter += ` AND sp.ulb_id = ANY($${pIdx})`;
     params.push(ulbScope);
     pIdx++;
+  }
+
+  const submissionDateColumn = dateField === 'confirmed_at' ? 'confirmed_at' : 'created_at';
+  let dateFilter = '';
+  if (fromDate && toDate) {
+    const startIdx = params.length + 1;
+    dateFilter = ` AND ${submissionDateColumn}::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    params.push(fromDate, toDate);
   }
 
   const sql = `
@@ -325,6 +350,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR sp.created_by = $4)
       AND ($5::int IS NULL OR sp.confirmed_by = $5)
+      ${dateFilter}
       ${scopeFilter}
       
       UNION ALL
@@ -376,6 +402,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR p.created_by = $4)
       AND ($5::int IS NULL OR p.confirmed_by = $5)
+      ${dateFilter}
       ${scopeFilter}
     ) combined
     ORDER BY created_at DESC
@@ -583,10 +610,16 @@ async function getMobileUserTracking(projectId) {
   return result.rows;
 }
 
-async function getReportData(projectId, districtId, tillDate, ulbId, districtScope = null, ulbScope = null) {
+async function getReportData(projectId, districtId, tillDate, ulbId, districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
   const params = [projectId, tillDate || null, districtId || null, ulbId || null];
   let pIdx = 5;
   let scopeFilter = '';
+
+  let rangeFilter = '';
+  if (fromDate && toDate) {
+    params.push(fromDate, toDate);
+    rangeFilter = `\n    AND (($${params.length - 1}::date IS NULL OR sp.created_at::date >= $${params.length - 1}) AND ($${params.length}::date IS NULL OR sp.created_at::date <= $${params.length}))`;
+  }
 
   if (districtScope && Array.isArray(districtScope) && districtScope.length > 0) {
     scopeFilter += ` AND d.id = ANY($${pIdx})`;
@@ -613,6 +646,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     AND ($2::date IS NULL OR sp.created_at::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
     AND ($4::int IS NULL OR sp.ulb_id = $4)
+    ${rangeFilter}
     ${scopeFilter}
     ORDER BY sp.created_at DESC
   `;
@@ -635,6 +669,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     AND ($2::date IS NULL OR p.created_at::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
     AND ($4::int IS NULL OR sp.ulb_id = $4)
+    ${rangeFilter}
     ${scopeFilter}
     ORDER BY p.created_at DESC
   `;
