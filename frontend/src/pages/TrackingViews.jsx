@@ -186,7 +186,7 @@ export function MobileUserTrackingView({ projectId }) {
           <UserSubmissionsList projectId={projectId} userId={selectedUser.id} status="PENDING" fromDate={fromDate} toDate={toDate} dateField="created_at" />
         )}
         {activeTab === 'confirmed' && (
-          <UserSubmissionsList projectId={projectId} userId={selectedUser.id} status="CONFIRMED" fromDate={fromDate} toDate={toDate} dateField="created_at" />
+          <UserSubmissionsList projectId={projectId} userId={selectedUser.id} status="CONFIRMED" fromDate={fromDate} toDate={toDate} dateField="confirmed_at" />
         )}
       </div>
     );
