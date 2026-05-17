@@ -308,22 +308,29 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {submissions.map((sub, i) => (
-              <tr key={i} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${sub.type === 'switch_point' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-                    {sub.type === 'switch_point' ? 'Switch' : 'Pole'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(sub.created_at).toLocaleDateString()}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(sub.created_at).toLocaleTimeString()}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sub.ward_number}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{sub.ulb_name || 'N/A'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold">
-                  <button onClick={() => setSelectedSub(sub)} className="text-primary hover:text-primary/80">INSPECT</button>
-                </td>
-              </tr>
-            ))}
+            {submissions.map((sub, i) => {
+              const displayDate = status === 'CONFIRMED' ? sub.confirmed_at : sub.created_at;
+              return (
+                <tr key={i} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${sub.type === 'switch_point' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                      {sub.type === 'switch_point' ? 'Switch' : 'Pole'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {displayDate ? new Date(displayDate).toLocaleDateString() : 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {displayDate ? new Date(displayDate).toLocaleTimeString() : 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sub.ward_number}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{sub.ulb_name || 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold">
+                    <button onClick={() => setSelectedSub(sub)} className="text-primary hover:text-primary/80">INSPECT</button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
