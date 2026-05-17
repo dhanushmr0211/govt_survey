@@ -71,19 +71,19 @@ export default function Login() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-slate-900">
+    <div className="relative min-h-screen flex items-center justify-center bg-slate-950">
       {/* Background Image with Overlay */}
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{ 
           backgroundImage: 'url("/login_bg.png")',
-          filter: 'brightness(0.4)'
+          filter: 'brightness(0.6)'
         }}
       />
 
       {/* Login Card */}
       <div className="relative z-10 w-full max-w-[400px] p-4">
-        <div className="bg-white/5 backdrop-blur-2xl p-10 rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] border border-white/20 ring-1 ring-white/10">
+        <div className="bg-black/10 backdrop-blur-xl p-10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.1)] border border-white/10">
           <div className="flex flex-col items-center mb-10">
             <div className="w-24 h-24 mb-5 rounded-full overflow-hidden shadow-2xl border border-white/20">
               <img src="/logo.png" alt="PR ELECTRICALS Logo" className="w-full h-full object-cover" />
@@ -104,7 +104,7 @@ export default function Login() {
               <label className="text-[11px] font-black text-white/50 uppercase tracking-widest ml-1">Email Address</label>
               <input 
                 type="email" 
-                className="w-full px-5 py-4 rounded-2xl border border-white/10 focus:border-white/40 focus:ring-4 focus:ring-white/5 transition-all text-sm outline-none bg-transparent text-white placeholder:text-white/20 shadow-sm" 
+                className="w-full px-5 py-4 rounded-2xl border border-white/15 focus:border-white/40 focus:ring-4 focus:ring-white/5 transition-all text-sm outline-none bg-transparent text-white placeholder:text-white/20 shadow-sm" 
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="admin@prelectricals.com"
@@ -117,7 +117,7 @@ export default function Login() {
               <div className="relative">
                 <input 
                   type={showPassword ? "text" : "password"} 
-                  className="w-full px-5 py-4 rounded-2xl border border-white/10 focus:border-white/40 focus:ring-4 focus:ring-white/5 transition-all text-sm outline-none bg-transparent text-white placeholder:text-white/20 shadow-sm" 
+                  className="w-full px-5 py-4 rounded-2xl border border-white/15 focus:border-white/40 focus:ring-4 focus:ring-white/5 transition-all text-sm outline-none bg-transparent text-white placeholder:text-white/20 shadow-sm" 
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -135,7 +135,7 @@ export default function Login() {
 
             <button 
               type="submit" 
-              className="w-full bg-white text-slate-900 font-black py-4.5 rounded-2xl shadow-2xl hover:bg-white/90 transition-all active:scale-[0.96] flex items-center justify-center gap-3 mt-6 text-sm uppercase tracking-widest disabled:opacity-50"
+              className="w-full bg-white/[0.04] border border-white/20 text-white font-black py-4.5 rounded-2xl shadow-xl hover:bg-white/10 hover:border-white/40 transition-all active:scale-[0.96] flex items-center justify-center gap-3 mt-6 text-sm uppercase tracking-widest disabled:opacity-50"
               disabled={loading}
             >
               {loading ? (
