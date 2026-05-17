@@ -29,6 +29,24 @@ export default function GlobalUsers() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
+
+      // If server returned 500 (internal) try a fallback using active project
+      if (res.status >= 500 && useAuthStore.getState().activeProject) {
+        try {
+          const pid = useAuthStore.getState().activeProject.id;
+          const r2 = await fetch(`${API_BASE_URL}/auth/users?projectId=${pid}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const d2 = await r2.json();
+          if (r2.ok) {
+            setUsers(d2.users || []);
+            return;
+          }
+        } catch (fallbackErr) {
+          console.warn('Fallback fetch by project failed', fallbackErr);
+        }
+      }
+
       if (res.ok) {
         setUsers(data.users || []);
       } else {
