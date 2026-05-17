@@ -22,6 +22,7 @@ export default function Users() {
 
   const isMasterAdmin = user?.role === 'MASTER_ADMIN';
   const hasSectionD = activeProject?.section_d;
+  const visibleUsers = users.filter((member) => member.id !== user?.id);
 
   const fetchUsers = async () => {
     try {
@@ -92,10 +93,10 @@ export default function Users() {
     );
   }
 
-  const adminsCount = users.filter(u => u.project_role === 'ADMIN').length;
-  const employeesCount = users.filter(u => u.project_role === 'EMPLOYEE').length;
-  const mobileUsersCount = users.filter(u => u.project_role === 'MOBILE_USER').length;
-  const clientsCount = users.filter(u => u.project_role === 'CLIENT').length;
+  const adminsCount = visibleUsers.filter(u => u.project_role === 'ADMIN').length;
+  const employeesCount = visibleUsers.filter(u => u.project_role === 'EMPLOYEE').length;
+  const mobileUsersCount = visibleUsers.filter(u => u.project_role === 'MOBILE_USER').length;
+  const clientsCount = visibleUsers.filter(u => u.project_role === 'CLIENT').length;
 
   const displayProject = project || activeProject;
 
@@ -262,9 +263,9 @@ export default function Users() {
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr><td colSpan="4" className="px-6 py-12 text-center text-slate-500">Loading team members...</td></tr>
-                  ) : users.length === 0 ? (
+                  ) : visibleUsers.length === 0 ? (
                     <tr><td colSpan="4" className="px-6 py-12 text-center text-slate-500">No members found for this project.</td></tr>
-                  ) : users.map(u => (
+                  ) : visibleUsers.map(u => (
                     <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">

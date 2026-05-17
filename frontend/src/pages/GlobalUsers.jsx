@@ -7,35 +7,46 @@ import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
 
 export default function GlobalUsers() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, token } = useAuthStore();
   const [users, setUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [userToView, setUserToView] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const isMasterAdmin = user?.role === 'MASTER_ADMIN';
 
   const fetchUsers = async () => {
+    if (!token) {
+      return;
+    }
+
+    setLoading(true);
+    setError('');
     try {
-      const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/auth/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
       if (res.ok) {
         setUsers(data.users || []);
+      } else {
+        setError(data.message || 'Failed to load users');
       }
     } catch (err) {
       console.error("Failed to fetch users:", err);
+      setError('Failed to load users');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (isMasterAdmin && token) {
+      fetchUsers();
+    }
+  }, [isMasterAdmin, token]);
 
   if (!isMasterAdmin) {
     return <div className="p-8 text-center">Unauthorized Access</div>;
@@ -122,6 +133,8 @@ export default function GlobalUsers() {
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr><td colSpan="4" className="px-6 py-12 text-center text-slate-500">Loading users...</td></tr>
+                  ) : error ? (
+                    <tr><td colSpan="4" className="px-6 py-12 text-center text-red-500">{error}</td></tr>
                   ) : users.map(u => (
                     <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 font-bold text-slate-900">{u.name}</td>
