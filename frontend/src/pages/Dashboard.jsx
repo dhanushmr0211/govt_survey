@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import MasterAdminDashboard from './MasterAdminDashboard';
 import AdminDashboard from './AdminDashboard';
@@ -12,6 +14,32 @@ export default function Dashboard() {
   const activeProject = useAuthStore((state) => state.activeProject);
   const clearActiveProject = useAuthStore((state) => state.clearActiveProject);
   const logout = useAuthStore((state) => state.logout);
+  const setActiveProject = useAuthStore((state) => state.setActiveProject);
+  const queryClient = useQueryClient();
+  
+  // Refresh projects on component mount and on window focus to get fresh permissions
+  useEffect(() => {
+    const handleFocus = async () => {
+      // Invalidate projects query to force fresh fetch
+      await queryClient.invalidateQueries({ queryKey: ['projects'] });
+      
+      // If user has active project, get fresh project data
+      if (activeProject) {
+        const freshProjects = queryClient.getQueryData(['projects']) || [];
+        const updatedProject = freshProjects.find(p => p.id === activeProject.id);
+        if (updatedProject) {
+          setActiveProject(updatedProject);
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    
+    // Also invalidate on initial mount
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
+    
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [queryClient, activeProject, setActiveProject]);
   
   if (!user) return null;
 
