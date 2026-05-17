@@ -107,7 +107,7 @@ export default function MasterAdminDashboard() {
                     <button
                       key={item.key}
                       onClick={() => { 
-                        setSearchParams({ projectId: String(selectedProjectId), view: item.key });
+                        setSearchParams({ projectId: String(effectiveProject?.id), view: item.key });
                         setSelectedUlb(null); 
                       }}
                       className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
@@ -137,7 +137,7 @@ export default function MasterAdminDashboard() {
                   return (
                     <button
                       key={item.key}
-                      onClick={() => setSearchParams({ projectId: String(selectedProjectId), view: item.key })}
+                      onClick={() => setSearchParams({ projectId: String(effectiveProject?.id), view: item.key })}
                       className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
                     >
                       <Icon size={16} /> {item.label}
@@ -220,36 +220,36 @@ export default function MasterAdminDashboard() {
           </div>
         )}
 
-        {selectedProjectId && activeView === 'pole_survey_summary' && !selectedUlb && (
-          <SummaryView projectId={selectedProjectId} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
+        {effectiveProject?.id && activeView === 'pole_survey_summary' && !selectedUlb && (
+          <SummaryView projectId={effectiveProject.id} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
         )}
         
-        {selectedProjectId && activeView === 'pole_survey_summary' && selectedUlb && (
-          <WardDetailsView projectId={selectedProjectId} ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
+        {effectiveProject?.id && activeView === 'pole_survey_summary' && selectedUlb && (
+          <WardDetailsView projectId={effectiveProject.id} ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
         )}
         
-        {selectedProjectId && activeView === 'pole_survey_today' && !selectedUlb && (
-          <SummaryView projectId={selectedProjectId} date={new Date().toISOString().split('T')[0]} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
+        {effectiveProject?.id && activeView === 'pole_survey_today' && !selectedUlb && (
+          <SummaryView projectId={effectiveProject.id} date={new Date().toISOString().split('T')[0]} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
         )}
 
-        {selectedProjectId && activeView === 'pole_survey_today' && selectedUlb && (
-          <WardDetailsView projectId={selectedProjectId} ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
+        {effectiveProject?.id && activeView === 'pole_survey_today' && selectedUlb && (
+          <WardDetailsView projectId={effectiveProject.id} ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
         )}
         
-        {selectedProjectId && activeView === 'pole_survey_issues' && (
-          <SubmissionQueueView projectId={selectedProjectId} />
+        {effectiveProject?.id && activeView === 'pole_survey_issues' && (
+          <SubmissionQueueView projectId={effectiveProject.id} />
         )}
         
-        {selectedProjectId && activeView === 'users' && (
-          <UsersView projectId={selectedProjectId} />
+        {effectiveProject?.id && activeView === 'users' && (
+          <UsersView projectId={effectiveProject.id} />
         )}
         
-        {selectedProjectId && activeView === 'employee_tracking' && (
-          <EmployeeTrackingView projectId={selectedProjectId} />
+        {effectiveProject?.id && activeView === 'employee_tracking' && (
+          <EmployeeTrackingView projectId={effectiveProject.id} />
         )}
         
-        {activeView === 'mobile_user_tracking' && (
-          <MobileUserTrackingView projectId={selectedProjectId} />
+        {effectiveProject?.id && activeView === 'mobile_user_tracking' && (
+          <MobileUserTrackingView projectId={effectiveProject.id} />
         )}
         </section>
       </div>
@@ -257,7 +257,7 @@ export default function MasterAdminDashboard() {
       <DownloadReportModal 
         isOpen={isDownloadModalOpen} 
         onClose={() => setIsDownloadModalOpen(false)} 
-        projectId={selectedProjectId}
+        projectId={effectiveProject?.id}
       />
     </div>
   );
