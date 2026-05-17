@@ -3,6 +3,32 @@ import axios from 'axios';
 import API_BASE_URL from '../../config/api';
 
 export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
+  const buildFormState = (sourceUser) => {
+    const dScope = Array.isArray(sourceUser?.district_scope) ? sourceUser.district_scope.map(Number) : [];
+    const uScope = Array.isArray(sourceUser?.ulb_scope) ? sourceUser.ulb_scope.map(Number) : [];
+
+    let initialScopeType = 'all';
+    if (uScope.length > 0) initialScopeType = 'ulbs';
+    else if (dScope.length > 0) initialScopeType = 'districts';
+
+    return {
+      formData: {
+        section_a: sourceUser?.section_a || false,
+        section_b: sourceUser?.section_b || false,
+        section_c: sourceUser?.section_c || false,
+        section_d: sourceUser?.section_d || false,
+        section_e: sourceUser?.section_e || false,
+        section_f: sourceUser?.section_f || false,
+        section_g: sourceUser?.section_g || false,
+        section_h: sourceUser?.section_h || false,
+        section_i: sourceUser?.section_i || false,
+        district_scope: dScope,
+        ulb_scope: uScope
+      },
+      scopeType: initialScopeType
+    };
+  };
+
   const [formData, setFormData] = useState({
     section_a: false, section_b: false, section_c: false, section_d: false,
     section_e: false, section_f: false, section_g: false, section_h: false, section_i: false,
@@ -14,30 +40,22 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
   const [loadingStructure, setLoadingStructure] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      const dScope = Array.isArray(user.district_scope) ? user.district_scope.map(Number) : [];
-      const uScope = Array.isArray(user.ulb_scope) ? user.ulb_scope.map(Number) : [];
-      
-      let initialScopeType = 'all';
-      if (uScope.length > 0) initialScopeType = 'ulbs';
-      else if (dScope.length > 0) initialScopeType = 'districts';
-
-      setFormData({
-        section_a: user.section_a || false,
-        section_b: user.section_b || false,
-        section_c: user.section_c || false,
-        section_d: user.section_d || false,
-        section_e: user.section_e || false,
-        section_f: user.section_f || false,
-        section_g: user.section_g || false,
-        section_h: user.section_h || false,
-        section_i: user.section_i || false,
-        district_scope: dScope,
-        ulb_scope: uScope
-      });
-      setScopeType(initialScopeType);
+    if (isOpen && user) {
+      const nextState = buildFormState(user);
+      setFormData(nextState.formData);
+      setScopeType(nextState.scopeType);
     }
-  }, [user]);
+
+    if (!isOpen) {
+      setFormData({
+        section_a: false, section_b: false, section_c: false, section_d: false,
+        section_e: false, section_f: false, section_g: false, section_h: false, section_i: false,
+        district_scope: [],
+        ulb_scope: []
+      });
+      setScopeType('all');
+    }
+  }, [isOpen, user]);
 
   useEffect(() => {
     const fetchStructure = async () => {
@@ -100,6 +118,11 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
       onSave();
       onClose();
     } catch (error) {
+      if (user) {
+        const nextState = buildFormState(user);
+        setFormData(nextState.formData);
+        setScopeType(nextState.scopeType);
+      }
       alert(error.response?.data?.message || 'Error updating access');
     }
   };

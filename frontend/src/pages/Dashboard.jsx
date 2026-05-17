@@ -25,7 +25,9 @@ export default function Dashboard() {
       
       // If user has active project, get fresh project data
       if (activeProject) {
-        const freshProjects = queryClient.getQueryData(['projects']) || [];
+        const token = useAuthStore.getState().token;
+        const raw = queryClient.getQueryData(['projects']) || queryClient.getQueryData(['projects', token]) || [];
+        const freshProjects = Array.isArray(raw) ? raw : (raw?.projects || []);
         const updatedProject = freshProjects.find(p => p.id === activeProject.id);
         if (updatedProject) {
           setActiveProject(updatedProject);
