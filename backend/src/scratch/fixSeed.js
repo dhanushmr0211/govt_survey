@@ -12,10 +12,10 @@ seedSql = seedSql.replace(
 
 // Replace rows
 // Pattern: ((SELECT id FROM ...), '...', '...'),
-// Replacement: ((SELECT id FROM hescom), (SELECT id FROM ...), '...', '...'),
+// Replacement: ((SELECT id FROM ideck), (SELECT id FROM ...), '...', '...'),
 seedSql = seedSql.replace(
   /\(\(SELECT id FROM (\w+)\),/g,
-  '((SELECT id FROM hescom), (SELECT id FROM $1),'
+  '((SELECT id FROM ideck), (SELECT id FROM $1),'
 );
 
 fs.writeFileSync(seedPath, seedSql);

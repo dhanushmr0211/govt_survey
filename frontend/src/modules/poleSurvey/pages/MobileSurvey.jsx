@@ -58,7 +58,7 @@ export default function MobileSurvey() {
           <button onClick={clearActiveProject} className="text-primary mr-1">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-lg font-bold text-gray-900">GovtSurvey</h1>
+          <h1 className="text-lg font-bold text-gray-900">PR ELECTRICALS</h1>
         </div>
         <button onClick={logout} className="text-sm text-red-500 font-medium px-2 py-1">Logout</button>
       </header>

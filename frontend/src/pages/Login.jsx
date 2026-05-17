@@ -85,10 +85,10 @@ export default function Login() {
       <div className="relative z-10 w-full max-w-[400px] p-4">
         <div className="bg-white/5 backdrop-blur-2xl p-10 rounded-[2.5rem] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] border border-white/20 ring-1 ring-white/10">
           <div className="flex flex-col items-center mb-10">
-            <div className="w-24 h-24 mb-5 rounded-3xl overflow-hidden shadow-2xl border border-white/20">
-              <img src="/logo.png" alt="GovtSurvey Logo" className="w-full h-full object-cover" />
+            <div className="w-24 h-24 mb-5 rounded-full overflow-hidden shadow-2xl border border-white/20">
+              <img src="/logo.png" alt="PR ELECTRICALS Logo" className="w-full h-full object-cover" />
             </div>
-            <h1 className="text-4xl font-black text-white drop-shadow-2xl tracking-tighter">GovtSurvey</h1>
+            <h1 className="text-4xl font-black text-white drop-shadow-2xl tracking-tighter">PR ELECTRICALS</h1>
             <p className="text-white/60 text-xs mt-2 font-bold uppercase tracking-[0.2em] drop-shadow-sm">Tracking Portal</p>
           </div>
           
@@ -107,7 +107,7 @@ export default function Login() {
                 className="w-full px-5 py-4 rounded-2xl border border-white/10 focus:border-white/40 focus:ring-4 focus:ring-white/5 transition-all text-sm outline-none bg-transparent text-white placeholder:text-white/20 shadow-sm" 
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="admin@govtsurvey.com"
+                placeholder="admin@prelectricals.com"
                 required
               />
             </div>

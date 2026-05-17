@@ -1,6 +1,6 @@
 import Dexie from 'dexie';
 
-export const offlineDb = new Dexie('GovtSurveyOfflineDB');
+export const offlineDb = new Dexie('PRElectricalsOfflineDB');
 
 offlineDb.version(1).stores({
   submissions: '++id, type, status, createdAt, projectId, ulbId, wardNumber'

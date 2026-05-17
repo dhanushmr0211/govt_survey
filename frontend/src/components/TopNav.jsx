@@ -26,9 +26,9 @@ export default function TopNav({ user }) {
 
   return (
     <header className="top-nav">
-      <div className="nav-brand" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
-        <div style={{ width: '24px', height: '24px', background: 'var(--primary-green)', borderRadius: '4px' }}></div>
-        GovtSurvey Platform
+      <div className="nav-brand" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
+        <img src="/logo.png" alt="PR ELECTRICALS" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+        PR ELECTRICALS Platform
       </div>
       <div className="nav-links">
         {navItems.map(item => (

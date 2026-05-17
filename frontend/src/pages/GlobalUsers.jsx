@@ -76,11 +76,9 @@ export default function GlobalUsers() {
         <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-950 text-white lg:flex fixed top-16 left-0 h-[calc(100vh-4rem)] z-30">
           <div className="p-6 border-b border-white/10">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/25">
-                <Landmark size={22} />
-              </div>
+              <img src="/logo.png" alt="PR ELECTRICALS" className="h-11 w-11 rounded-full object-cover shadow-lg border border-white/10" />
               <div>
-                <p className="text-base font-bold tracking-tight">Govt Survey</p>
+                <p className="text-base font-bold tracking-tight text-white">PR ELECTRICALS</p>
                 <p className="text-xs font-medium text-slate-400">Master Admin</p>
               </div>
             </div>

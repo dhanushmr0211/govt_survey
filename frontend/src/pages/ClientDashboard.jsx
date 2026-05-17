@@ -48,11 +48,9 @@ export default function ClientDashboard() {
       <aside className="w-64 shrink-0 flex flex-col bg-slate-950 text-white z-30 shadow-2xl">
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-indigo-600 shadow-lg shadow-indigo-500/25">
-              <Landmark size={22} />
-            </div>
+            <img src="/logo.png" alt="PR ELECTRICALS" className="h-11 w-11 rounded-full object-cover shadow-lg border border-white/10" />
             <div>
-              <p className="text-base font-bold tracking-tight text-white">Govt Survey</p>
+              <p className="text-base font-bold tracking-tight text-white">PR ELECTRICALS</p>
               <p className="text-xs font-medium text-slate-400">Client Console</p>
             </div>
           </div>
