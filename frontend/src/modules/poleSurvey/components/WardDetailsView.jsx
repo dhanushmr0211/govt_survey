@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Lightbulb, Zap, Edit2, Save } from 'lucide-react';
+import { ArrowLeft, Edit2, Save } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
+import { isMobileEditRestricted } from '../utils/mobileRestrictions';
 
 export const WardDetailsView = ({ projectId, ulb, onBack }) => {
   const token = localStorage.getItem('token');
@@ -43,11 +44,21 @@ export const WardDetailsView = ({ projectId, ulb, onBack }) => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const isRestricted = isMobileEditRestricted();
+      const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
+      
+      let sanitized = { ...formData };
+      if (isRestricted) {
+        Object.keys(sanitized).forEach((k) => {
+          if (!MOBILE_ALLOWED.has(k)) sanitized[k] = '';
+        });
+      }
+
       const endpoint = selectedDetail.type === 'switch_point'
         ? `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${selectedDetail.data.id}`
         : `${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${selectedDetail.data.pole_id}`;
       
-      const res = await axios.patch(endpoint, formData, {
+      const res = await axios.patch(endpoint, sanitized, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data;
@@ -154,6 +165,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack }) => {
   };
 
   const renderField = (label, name, value, options = null) => {
+    const isRestricted = isMobileEditRestricted();
+    const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
+    const isDisabled = isRestricted && !MOBILE_ALLOWED.has(name);
+
     if (!isEditing) {
       return (
         <div>
@@ -171,7 +186,8 @@ export const WardDetailsView = ({ projectId, ulb, onBack }) => {
             name={name}
             value={formData[name] || ''}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs"
+            disabled={isDisabled}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="">Select...</option>
             {options.map((opt) => (
@@ -190,7 +206,8 @@ export const WardDetailsView = ({ projectId, ulb, onBack }) => {
           name={name}
           value={formData[name] || ''}
           onChange={handleChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs"
+          disabled={isDisabled}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
     );

@@ -4,6 +4,7 @@ import { confirmPole } from '../services/poleSurveyService';
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '../../../store/authStore';
 import API_BASE_URL from '../../../config/api';
+import { isMobileEditRestricted } from '../utils/mobileRestrictions';
 
 export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
   const user = useAuthStore((state) => state.user);
@@ -47,13 +48,23 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const isRestricted = isMobileEditRestricted();
+      const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
+      
+      let sanitized = { ...formData };
+      if (isRestricted) {
+        Object.keys(sanitized).forEach((k) => {
+          if (!MOBILE_ALLOWED.has(k)) sanitized[k] = '';
+        });
+      }
+
       const response = await fetch(`${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${pole.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${useAuthStore.getState().token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(sanitized)
       });
       if (!response.ok) throw new Error('Failed to save changes');
       return response.json();
@@ -73,6 +84,10 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
   };
 
   const renderField = (label, name, value, options = null) => {
+    const isRestricted = isMobileEditRestricted();
+    const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
+    const isDisabled = isRestricted && !MOBILE_ALLOWED.has(name);
+
     if (!isEditing) {
       return (
         <div className="flex justify-between border-b border-gray-50 py-1">
@@ -90,7 +105,8 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
             name={name}
             value={formData[name] || ''}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+            disabled={isDisabled}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <option value="">Select...</option>
             {options.map((opt) => (
@@ -109,7 +125,8 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
           name={name}
           value={formData[name] || ''}
           onChange={handleChange}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+          disabled={isDisabled}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
     );
