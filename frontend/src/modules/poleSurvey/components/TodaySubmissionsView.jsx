@@ -389,6 +389,32 @@ export const TodaySubmissionsView = ({ projectId, ulb }) => {
                     )}
                   </div>
                 </div>
+
+                <div className="border-t pt-2 mt-2">
+                  <p className="font-semibold text-gray-700 mb-2">GPS Coordinates</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <p className="text-gray-500 text-xs">Latitude</p>
+                      <p className="font-medium text-sm">{selectedSubmission.latitude || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Longitude</p>
+                      <p className="font-medium text-sm">{selectedSubmission.longitude || 'N/A'}</p>
+                    </div>
+                  </div>
+                  {selectedSubmission.latitude && selectedSubmission.longitude && (
+                    <div className="mt-3">
+                      <a
+                        href={`https://www.google.com/maps?q=${selectedSubmission.latitude},${selectedSubmission.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded transition-all justify-center shadow-sm"
+                      >
+                        📍 Open in Google Maps
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Right Side: Photos */}

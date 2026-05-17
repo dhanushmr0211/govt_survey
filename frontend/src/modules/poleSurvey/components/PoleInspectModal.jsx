@@ -189,6 +189,33 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
                   {renderField('Pole Earthing Exists', 'pole_earthing_exists', pole.pole_earthing_exists, ['YES', 'NO'])}
                 </div>
               </div>
+
+              {/* GPS Coordinates */}
+              <div>
+                <h3 className="font-bold text-primary border-b pb-2 mb-3 text-base">GPS Coordinates</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between border-b border-gray-50 py-1">
+                    <span className="text-gray-500 text-xs">Latitude:</span>
+                    <span className="font-medium text-sm">{pole.latitude || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-gray-50 py-1">
+                    <span className="text-gray-500 text-xs">Longitude:</span>
+                    <span className="font-medium text-sm">{pole.longitude || 'N/A'}</span>
+                  </div>
+                  {pole.latitude && pole.longitude && (
+                    <div className="pt-2">
+                      <a
+                        href={`https://www.google.com/maps?q=${pole.latitude},${pole.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded transition-all w-full justify-center shadow-sm"
+                      >
+                        📍 Open in Google Maps
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Right Side: Images */}

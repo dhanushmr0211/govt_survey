@@ -5,6 +5,7 @@ import { FileUploader } from '../../../shared/uploads/FileUploader';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 import { offlineDb } from '../../../db/offlineDb';
+import { getCurrentLocation } from '../../../shared/utils/geolocation';
 
 export const PoleForm = ({ ulb, onBack }) => {
   const [formData, setFormData] = useState({
@@ -34,8 +35,10 @@ export const PoleForm = ({ ulb, onBack }) => {
   const [photos, setPhotos] = useState({ image1: null, image2: null, image3: null });
   const [compressing, setCompressing] = useState({ image1: false, image2: false, image3: false });
   const [uploading, setUploading] = useState(false);
+  const [statusText, setStatusText] = useState('');
 
   const projectId = 2; // Updated to match database id
+
 
   // Fetch switch points when ward_number changes
   const { data: switchPoints = [], refetch } = useQuery({
@@ -81,6 +84,20 @@ export const PoleForm = ({ ulb, onBack }) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     setUploading(true);
+    setStatusText('Capturing GPS location...');
+
+    let coords;
+    try {
+      coords = await getCurrentLocation();
+    } catch (err) {
+      console.error('GPS error:', err);
+      alert(err.message || 'Failed to capture GPS location. Please check location permissions.');
+      setUploading(false);
+      setStatusText('');
+      return;
+    }
+
+    setStatusText('Submitting...');
     
     const payload = {
       ...formData,
@@ -89,8 +106,8 @@ export const PoleForm = ({ ulb, onBack }) => {
       present_arm_length_mtrs: Number(formData.present_arm_length),
       how_many_lights_in_pole: formData.how_many_lights,
       road_width_mtrs: Number(formData.road_width),
-      latitude: 0,
-      longitude: 0,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
       ulb_id: ulb.id
     };
 
@@ -159,6 +176,7 @@ export const PoleForm = ({ ulb, onBack }) => {
       }
     } finally {
       setUploading(false);
+      setStatusText('');
     }
   };
 
@@ -442,7 +460,7 @@ export const PoleForm = ({ ulb, onBack }) => {
           disabled={uploading}
           className="w-full bg-primary text-white p-3 rounded-lg font-medium hover:bg-primary-dark transition-colors mt-4 disabled:opacity-60"
         >
-          {uploading ? 'Submitting...' : 'Submit Pole'}
+          {statusText ? statusText : uploading ? 'Submitting...' : 'Submit Pole'}
         </button>
       </div>
     </form>

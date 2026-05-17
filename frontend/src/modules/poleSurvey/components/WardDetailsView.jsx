@@ -213,11 +213,17 @@ export const WardDetailsView = ({ projectId, ulb, onBack }) => {
         ward_number: item.ward_number,
         sp_confirmed_by_name: item.sp_confirmed_by_name,
         sp_confirmed_at: item.sp_confirmed_at,
+        latitude: item.sp_latitude,
+        longitude: item.sp_longitude,
         poles: [],
       };
     }
     if (item.pole_id) {
-      acc[spId].poles.push(item);
+      acc[spId].poles.push({
+        ...item,
+        latitude: item.pole_latitude,
+        longitude: item.pole_longitude,
+      });
     }
     return acc;
   }, {});
@@ -439,8 +445,33 @@ export const WardDetailsView = ({ projectId, ulb, onBack }) => {
                     )}
                   </div>
                 </div>
-              </div>
 
+                <div className="border-t pt-2 mt-2">
+                  <p className="font-semibold text-gray-700 mb-2">GPS Coordinates</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <p className="text-gray-500 text-xs">Latitude</p>
+                      <p className="font-medium text-sm">{selectedDetail.data.latitude || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Longitude</p>
+                      <p className="font-medium text-sm">{selectedDetail.data.longitude || 'N/A'}</p>
+                    </div>
+                  </div>
+                  {selectedDetail.data.latitude && selectedDetail.data.longitude && (
+                    <div className="mt-3">
+                      <a
+                        href={`https://www.google.com/maps?q=${selectedDetail.data.latitude},${selectedDetail.data.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded transition-all justify-center shadow-sm"
+                      >
+                        📍 Open in Google Maps
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
               {/* Right Side: Images */}
               <div className="space-y-2">
                 <p className="font-semibold text-gray-700">Images</p>

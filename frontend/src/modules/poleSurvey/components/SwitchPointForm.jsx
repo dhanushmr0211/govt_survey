@@ -4,6 +4,7 @@ import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 import { offlineDb } from '../../../db/offlineDb';
+import { getCurrentLocation } from '../../../shared/utils/geolocation';
 
 export const SwitchPointForm = ({ ulb, onBack }) => {
   const [formData, setFormData] = useState({
@@ -19,6 +20,7 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
   const [photos, setPhotos] = useState({ image1: null, image2: null });
   const [compressing, setCompressing] = useState({ image1: false, image2: false });
   const [uploading, setUploading] = useState(false);
+  const [statusText, setStatusText] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,6 +32,20 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
     const token = localStorage.getItem('token');
     const projectId = 2;
     setUploading(true);
+    setStatusText('Capturing GPS location...');
+
+    let coords;
+    try {
+      coords = await getCurrentLocation();
+    } catch (err) {
+      console.error('GPS error:', err);
+      alert(err.message || 'Failed to capture GPS location. Please check location permissions.');
+      setUploading(false);
+      setStatusText('');
+      return;
+    }
+
+    setStatusText('Submitting...');
 
     const isMeterYes = formData.meter_exists === 'yes';
     const payload = {
@@ -40,8 +56,8 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
       meter_condition: isMeterYes ? formData.meter_condition : null,
       meter_rr_number: isMeterYes ? formData.meter_rr_number : null,
       meter_serial_number: isMeterYes ? formData.meter_serial_number : null,
-      latitude: 0,
-      longitude: 0,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
     };
 
     const imageFiles = Object.values(photos)
@@ -55,6 +71,7 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
       const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/switch-point`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       console.log(`⏱️ Switch Point record creation: ${(performance.now() - startRecord).toFixed(2)}ms`);
 
       // Step 2: Upload selected photos to Cloud Storage
@@ -109,6 +126,7 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
       }
     } finally {
       setUploading(false);
+      setStatusText('');
     }
   };
 
@@ -251,7 +269,7 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
           disabled={uploading}
           className="w-full bg-primary text-white p-3 rounded-lg font-medium hover:bg-primary-dark transition-colors mt-4 disabled:opacity-60"
         >
-          {uploading ? 'Submitting...' : 'Submit Switch Point'}
+          {statusText ? statusText : uploading ? 'Submitting...' : 'Submit Switch Point'}
         </button>
       </div>
     </form>

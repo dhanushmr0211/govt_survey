@@ -87,7 +87,6 @@ async function getWardSummary(ulbId, date = null, mode = 'exact') {
   const result = await query(sql, params);
   return result.rows;
 }
-
 async function getWardDetails(ulbId, wardNumber) {
   const sql = `
     SELECT 
@@ -103,6 +102,8 @@ async function getWardDetails(ulbId, wardNumber) {
       sp.confirmed_by as sp_confirmed_by,
       sp.confirmed_at as sp_confirmed_at,
       u1.name as sp_confirmed_by_name,
+      sp.latitude as sp_latitude,
+      sp.longitude as sp_longitude,
       p.id as pole_id,
       p.pole_number,
       p.pole_type,
@@ -125,7 +126,9 @@ async function getWardDetails(ulbId, wardNumber) {
       p.pole_earthing_exists,
       p.confirmed_by as pole_confirmed_by,
       p.confirmed_at as pole_confirmed_at,
-      u2.name as pole_confirmed_by_name
+      u2.name as pole_confirmed_by_name,
+      p.latitude as pole_latitude,
+      p.longitude as pole_longitude
     FROM switch_points sp
     LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted IS NOT TRUE
     LEFT JOIN users u1 ON sp.confirmed_by = u1.id
@@ -174,6 +177,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         sp.meter_rr_number,
         sp.meter_serial_number,
         sp.meter_condition,
+        sp.latitude,
+        sp.longitude,
         NULL as conductor_type,
         NULL as pole_type,
         NULL as pole_height_mtrs,
@@ -217,6 +222,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         NULL as meter_rr_number,
         NULL as meter_serial_number,
         NULL as meter_condition,
+        p.latitude,
+        p.longitude,
         p.conductor_type,
         p.pole_type,
         p.pole_height_mtrs,
@@ -249,7 +256,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
   
   const result = await query(sql, params);
   const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
-  return { rows: result.rows, total };
+    return { rows: result.rows, total };
 }
 
 async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null, districtScope = null, ulbScope = null) {
@@ -291,6 +298,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         sp.meter_rr_number,
         sp.meter_serial_number,
         sp.meter_condition,
+        sp.latitude,
+        sp.longitude,
         NULL::text as conductor_type,
         NULL::text as pole_type,
         NULL::numeric as pole_height_mtrs,
@@ -339,6 +348,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         NULL::text as meter_rr_number,
         NULL::text as meter_serial_number,
         NULL::text as meter_condition,
+        p.latitude,
+        p.longitude,
         p.conductor_type,
         p.pole_type,
         p.pole_height_mtrs,
@@ -413,6 +424,8 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         sp.meter_rr_number,
         sp.meter_serial_number,
         sp.meter_condition,
+        sp.latitude,
+        sp.longitude,
         NULL as conductor_type,
         NULL as pole_type,
         NULL as pole_height_mtrs,
@@ -456,6 +469,8 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         NULL as meter_rr_number,
         NULL as meter_serial_number,
         NULL as meter_condition,
+        p.latitude,
+        p.longitude,
         p.conductor_type,
         p.pole_type,
         p.pole_height_mtrs,
