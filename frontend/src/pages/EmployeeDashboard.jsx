@@ -26,6 +26,7 @@ export default function EmployeeDashboard() {
   );
   
   const [selectedUlb, setSelectedUlb] = useState(null);
+  const [ulbFilterParams, setUlbFilterParams] = useState(null);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
   const sectionItems = [
@@ -81,7 +82,7 @@ export default function EmployeeDashboard() {
                 return (
                   <button
                     key={item.key}
-                    onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
+                    onClick={() => { setActiveView(item.key); setSelectedUlb(null); setUlbFilterParams(null); }}
                     className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
                   >
                     <Icon size={16} /> {item.label}
@@ -98,7 +99,7 @@ export default function EmployeeDashboard() {
                 return (
                   <button
                     key={item.key}
-                    onClick={() => { setActiveView(item.key); setSelectedUlb(null); }}
+                    onClick={() => { setActiveView(item.key); setSelectedUlb(null); setUlbFilterParams(null); }}
                     className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
                   >
                     <Icon size={16} /> {item.label}
@@ -155,11 +156,30 @@ export default function EmployeeDashboard() {
             )}
             
             {activeView === 'pole_survey_today' && !selectedUlb && (
-              <SummaryView projectId={activeProject.id} date={new Date().toISOString().split('T')[0]} onViewDetails={(ulb) => setSelectedUlb(ulb)} hideZeroCounts={true} />
+              <SummaryView 
+                projectId={activeProject.id} 
+                date={new Date().toISOString().split('T')[0]} 
+                onViewDetails={(ulb, filters) => { 
+                  setSelectedUlb(ulb); 
+                  setUlbFilterParams(filters); 
+                }} 
+                hideZeroCounts={true} 
+              />
             )}
 
             {activeView === 'pole_survey_today' && selectedUlb && (
-              <WardDetailsView projectId={activeProject.id} ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
+              <WardDetailsView 
+                projectId={activeProject.id} 
+                ulb={selectedUlb} 
+                onBack={() => { 
+                  setSelectedUlb(null); 
+                  setUlbFilterParams(null); 
+                }} 
+                date={ulbFilterParams?.date}
+                mode={ulbFilterParams?.mode}
+                fromDate={ulbFilterParams?.fromDate}
+                toDate={ulbFilterParams?.toDate}
+              />
             )}
 
             {activeView === 'pole_survey_issues' && (

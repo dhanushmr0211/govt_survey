@@ -148,7 +148,7 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
                     <td>{ulb.total_poles}</td>
                     <td>
                       <button
-                        onClick={() => onViewDetails(ulb)}
+                        onClick={() => onViewDetails(ulb, { date: effectiveDate, mode, fromDate: effectiveFromDate, toDate: effectiveToDate })}
                         className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-dark"
                       >
                         View Full Details <ArrowUpRight size={14} />

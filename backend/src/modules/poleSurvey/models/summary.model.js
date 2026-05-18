@@ -94,7 +94,27 @@ async function getWardSummary(ulbId, date = null, mode = 'exact', fromDate = nul
   const result = await query(sql, params);
   return result.rows;
 }
-async function getWardDetails(ulbId, wardNumber) {
+async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fromDate = null, toDate = null) {
+  let dateFilter = '';
+  const params = [ulbId, wardNumber];
+  
+  if (fromDate && toDate) {
+    dateFilter = 'AND sp.created_at::date BETWEEN $3 AND $4';
+    params.push(fromDate, toDate);
+  } else if (date) {
+    if (date === 'till_yesterday') {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      dateFilter = 'AND sp.created_at::date <= $3';
+      params.push(yesterdayStr);
+    } else {
+      const operator = mode === 'cumulative' ? '<=' : '=';
+      dateFilter = `AND sp.created_at::date ${operator} $3`;
+      params.push(date);
+    }
+  }
+
   const sql = `
     SELECT 
       sp.ward_number,
@@ -140,11 +160,11 @@ async function getWardDetails(ulbId, wardNumber) {
     LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted IS NOT TRUE
     LEFT JOIN users u1 ON sp.confirmed_by = u1.id
     LEFT JOIN users u2 ON p.confirmed_by = u2.id
-    WHERE sp.ulb_id = $1 AND sp.ward_number = $2 AND sp.is_deleted IS NOT TRUE
+    WHERE sp.ulb_id = $1 AND sp.ward_number = $2 AND sp.is_deleted IS NOT TRUE ${dateFilter}
     ORDER BY sp.switch_point_number, p.pole_number;
   `;
   
-  const result = await query(sql, [ulbId, wardNumber]);
+  const result = await query(sql, params);
   return result.rows;
 }
 

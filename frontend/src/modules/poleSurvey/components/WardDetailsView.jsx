@@ -7,7 +7,7 @@ import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 import { isMobileEditRestricted } from '../utils/mobileRestrictions';
 
-export const WardDetailsView = ({ projectId, ulb, onBack }) => {
+export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'exact', fromDate = null, toDate = null }) => {
   const token = localStorage.getItem('token');
   const [selectedWard, setSelectedWard] = useState(null);
   const [selectedDetail, setSelectedDetail] = useState(null); // { type: 'switch_point' | 'pole', data: ... }
@@ -22,9 +22,15 @@ export const WardDetailsView = ({ projectId, ulb, onBack }) => {
   const [loadingImages, setLoadingImages] = useState(false);
 
   const { data: wards = [], isLoading: isLoadingWards } = useQuery({
-    queryKey: ['wardSummary', ulb.ulb_id],
+    queryKey: ['wardSummary', ulb.ulb_id, date, mode, fromDate, toDate],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/summary/ulbs/${ulb.ulb_id}/wards`, {
+      const params = new URLSearchParams();
+      if (date) params.append('date', date);
+      if (mode) params.append('mode', mode);
+      if (fromDate) params.append('fromDate', fromDate);
+      if (toDate) params.append('toDate', toDate);
+
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/summary/ulbs/${ulb.ulb_id}/wards?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.summary || [];
@@ -32,10 +38,16 @@ export const WardDetailsView = ({ projectId, ulb, onBack }) => {
   });
 
   const { data: details = [], isLoading: isLoadingDetails } = useQuery({
-    queryKey: ['wardDetails', ulb.ulb_id, selectedWard],
+    queryKey: ['wardDetails', ulb.ulb_id, selectedWard, date, mode, fromDate, toDate],
     queryFn: async () => {
       if (!selectedWard) return [];
-      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/summary/ulbs/${ulb.ulb_id}/wards/${selectedWard}/details`, {
+      const params = new URLSearchParams();
+      if (date) params.append('date', date);
+      if (mode) params.append('mode', mode);
+      if (fromDate) params.append('fromDate', fromDate);
+      if (toDate) params.append('toDate', toDate);
+
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/summary/ulbs/${ulb.ulb_id}/wards/${selectedWard}/details?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data.details || [];

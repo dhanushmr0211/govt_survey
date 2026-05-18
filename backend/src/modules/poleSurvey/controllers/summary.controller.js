@@ -69,6 +69,7 @@ async function getWardSummaryHandler(req, res, next) {
 async function getWardDetailsHandler(req, res, next) {
   try {
     const { ulbId, wardNumber } = req.params;
+    const { date, mode, fromDate, toDate } = req.query;
     
     const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
     const permissions = req.projectSections || {};
@@ -84,7 +85,14 @@ async function getWardDetailsHandler(req, res, next) {
       }
     }
 
-    const details = await getWardDetails(Number(ulbId), wardNumber);
+    const details = await getWardDetails(
+      Number(ulbId), 
+      wardNumber, 
+      date || null, 
+      mode || 'exact', 
+      fromDate || null, 
+      toDate || null
+    );
     res.json({ details });
   } catch (error) { next(error); }
 }

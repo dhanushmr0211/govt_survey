@@ -23,6 +23,7 @@ export default function MasterAdminDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProjectName, setSelectedProjectName] = useState(localStorage.getItem('master_selectedProjectName') || null);
   const [selectedUlb, setSelectedUlb] = useState(null);
+  const [ulbFilterParams, setUlbFilterParams] = useState(null);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
   const { data: projectsData = { projects: [] } } = useQuery({
@@ -88,6 +89,7 @@ export default function MasterAdminDashboard() {
               onClick={() => { 
                 setSearchParams({ view: 'projects' });
                 setSelectedUlb(null); 
+                setUlbFilterParams(null);
                 setSelectedProjectName(null);
                 localStorage.removeItem('master_selectedProjectName');
                 localStorage.removeItem('master_selectedProjectId');
@@ -109,6 +111,7 @@ export default function MasterAdminDashboard() {
                       onClick={() => { 
                         setSearchParams({ projectId: String(effectiveProject?.id), view: item.key });
                         setSelectedUlb(null); 
+                        setUlbFilterParams(null);
                       }}
                       className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
                     >
@@ -220,7 +223,7 @@ export default function MasterAdminDashboard() {
           </div>
         )}
 
-        {effectiveProject?.id && activeView === 'pole_survey_summary' && !selectedUlb && (
+         {effectiveProject?.id && activeView === 'pole_survey_summary' && !selectedUlb && (
           <SummaryView projectId={effectiveProject.id} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
         )}
         
@@ -229,11 +232,29 @@ export default function MasterAdminDashboard() {
         )}
         
         {effectiveProject?.id && activeView === 'pole_survey_today' && !selectedUlb && (
-          <SummaryView projectId={effectiveProject.id} date={new Date().toISOString().split('T')[0]} onViewDetails={(ulb) => setSelectedUlb(ulb)} />
+          <SummaryView 
+            projectId={effectiveProject.id} 
+            date={new Date().toISOString().split('T')[0]} 
+            onViewDetails={(ulb, filters) => { 
+              setSelectedUlb(ulb); 
+              setUlbFilterParams(filters); 
+            }} 
+          />
         )}
 
         {effectiveProject?.id && activeView === 'pole_survey_today' && selectedUlb && (
-          <WardDetailsView projectId={effectiveProject.id} ulb={selectedUlb} onBack={() => setSelectedUlb(null)} />
+          <WardDetailsView 
+            projectId={effectiveProject.id} 
+            ulb={selectedUlb} 
+            onBack={() => { 
+              setSelectedUlb(null); 
+              setUlbFilterParams(null); 
+            }} 
+            date={ulbFilterParams?.date}
+            mode={ulbFilterParams?.mode}
+            fromDate={ulbFilterParams?.fromDate}
+            toDate={ulbFilterParams?.toDate}
+          />
         )}
         
         {effectiveProject?.id && activeView === 'pole_survey_issues' && (
