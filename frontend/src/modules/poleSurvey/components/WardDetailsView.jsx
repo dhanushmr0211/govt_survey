@@ -14,7 +14,8 @@ export const WardDetailsView = ({ projectId, ulb, onBack }) => {
   const queryClient = useQueryClient();
 
   const user = useAuthStore((state) => state.user);
-  const canEdit = user?.role === 'MASTER_ADMIN';
+  const activeProject = useAuthStore((state) => state.activeProject);
+  const canEdit = user?.role === 'MASTER_ADMIN' || activeProject?.section_j;
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);
