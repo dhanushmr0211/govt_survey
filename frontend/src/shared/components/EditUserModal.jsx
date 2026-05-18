@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE_URL from '../../config/api';
+import { useAuthStore } from '../../store/authStore';
 
 export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
+  const { user: loggedInUser, activeProject } = useAuthStore();
+
   const buildFormState = (sourceUser) => {
     const dScope = Array.isArray(sourceUser?.district_scope) ? sourceUser.district_scope.map(Number) : [];
     const uScope = Array.isArray(sourceUser?.ulb_scope) ? sourceUser.ulb_scope.map(Number) : [];
@@ -160,12 +163,22 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
                 { id: 'section_h', label: 'Edit User Permissions' },
                 { id: 'section_i', label: 'Edit Survey Data (Images/Records)' },
                 { id: 'section_j', label: 'Edit Confirmed Data' },
-              ].map(sec => (
-                <label key={sec.id} className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-all ${formData[sec.id] ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-100 hover:bg-white hover:border-slate-200'}`}>
-                  <input type="checkbox" name={sec.id} checked={formData[sec.id]} onChange={handleChange} className="rounded text-orange-500 focus:ring-orange-500 w-4 h-4" />
-                  <span className={`text-sm font-medium ${formData[sec.id] ? 'text-orange-900' : 'text-slate-600'}`}>{sec.label}</span>
-                </label>
-              ))}
+              ].map(sec => {
+                const allowed = loggedInUser?.role === 'MASTER_ADMIN' || !!activeProject?.[sec.id];
+                return (
+                  <label key={sec.id} className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-all ${!allowed ? 'opacity-40 cursor-not-allowed' : formData[sec.id] ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-100 hover:bg-white hover:border-slate-200'}`}>
+                    <input 
+                      type="checkbox" 
+                      name={sec.id} 
+                      checked={formData[sec.id]} 
+                      onChange={handleChange} 
+                      disabled={!allowed}
+                      className="rounded text-orange-500 focus:ring-orange-500 w-4 h-4 disabled:opacity-50" 
+                    />
+                    <span className={`text-sm font-medium ${formData[sec.id] ? 'text-orange-900' : 'text-slate-600'}`}>{sec.label}</span>
+                  </label>
+                );
+              })}
             </div>
           </section>
 

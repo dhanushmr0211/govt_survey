@@ -61,10 +61,22 @@ async function register(req, res, next) {
 
     const projectRole = isKnownRole(data.project_role) ? normalizeRole(data.project_role) : ROLES.MOBILE_USER;
     
-    // Enforce creation hierarchy
+    // Enforce creation hierarchy & permission inheritance
     const creatorRole = req.user.role; // MASTER_ADMIN or MEMBER
-    // Note: If MEMBER, we should ideally check their project_role for the assigned projects
-    // For now, keeping simple: MASTER_ADMIN can create anyone, others restricted by logic below
+    if (creatorRole !== ROLES.MASTER_ADMIN && data.projects) {
+      const sectionsList = ['section_a', 'section_b', 'section_c', 'section_d', 'section_e', 'section_f', 'section_g', 'section_h', 'section_i', 'section_j'];
+      for (const pid of data.projects) {
+        const creatorMembership = await projectUserModel.isMember(Number(req.user.sub), pid);
+        if (!creatorMembership) {
+          return res.status(403).json({ message: `Forbidden: You do not have access to project ID ${pid}` });
+        }
+        for (const sec of sectionsList) {
+          if (data[sec] === true && !creatorMembership[sec]) {
+            return res.status(403).json({ message: `Forbidden: You cannot grant '${sec.replace('section_', 'section ')}' permission as you do not possess it.` });
+          }
+        }
+      }
+    }
     
     const passwordHash = await bcrypt.hash(data.password, 12);
     
@@ -209,6 +221,14 @@ async function updateAccess(req, res, next) {
       const membership = await projectUserModel.isMember(Number(req.user.sub), data.projectId);
       if (!membership || !membership.section_h) {
         return res.status(403).json({ message: 'Forbidden: You do not have permission to edit user access for this project' });
+      }
+
+      // Enforce permission inheritance
+      const sectionsList = ['section_a', 'section_b', 'section_c', 'section_d', 'section_e', 'section_f', 'section_g', 'section_h', 'section_i', 'section_j'];
+      for (const sec of sectionsList) {
+        if (data[sec] === true && !membership[sec]) {
+          return res.status(403).json({ message: `Forbidden: You cannot grant '${sec.replace('section_', 'section ')}' permission as you do not possess it.` });
+        }
       }
     }
 

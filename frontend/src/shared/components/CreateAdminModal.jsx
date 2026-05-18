@@ -176,12 +176,22 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
                   { id: 'section_h', label: 'Edit User Permissions' },
                   { id: 'section_i', label: 'Edit Survey Data (Images/Records)' },
                   { id: 'section_j', label: 'Edit Confirmed Data' },
-                ].map(sec => (
-                  <label key={sec.id} className="flex items-center gap-2 cursor-pointer py-1">
-                    <input type="checkbox" name={sec.id} checked={formData[sec.id]} onChange={handleChange} className="rounded text-primary focus:ring-primary" />
-                    <span className="text-xs text-slate-600 font-medium">{sec.label}</span>
-                  </label>
-                ))}
+                ].map(sec => {
+                  const allowed = loggedInUser?.role === 'MASTER_ADMIN' || !!activeProject?.[sec.id];
+                  return (
+                    <label key={sec.id} className={`flex items-center gap-2 cursor-pointer py-1 ${!allowed ? 'opacity-40 cursor-not-allowed' : ''}`}>
+                      <input 
+                        type="checkbox" 
+                        name={sec.id} 
+                        checked={formData[sec.id]} 
+                        onChange={handleChange} 
+                        disabled={!allowed}
+                        className="rounded text-primary focus:ring-primary disabled:opacity-50" 
+                      />
+                      <span className="text-xs text-slate-600 font-medium">{sec.label}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           )}
