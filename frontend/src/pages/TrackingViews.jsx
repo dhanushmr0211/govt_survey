@@ -353,6 +353,26 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
                     <p className="font-bold text-slate-900">{selectedSub.user_name}</p>
                   </div>
                   <div>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase">Submitted At</p>
+                    <p className="font-bold text-slate-900 text-xs">
+                      {selectedSub.created_at ? new Date(selectedSub.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}
+                    </p>
+                  </div>
+                  {selectedSub.confirmed_by_name && (
+                    <div>
+                      <p className="text-slate-400 text-[10px] font-bold uppercase">Confirmed By</p>
+                      <p className="font-bold text-slate-900">{selectedSub.confirmed_by_name}</p>
+                    </div>
+                  )}
+                  {selectedSub.confirmed_at && (
+                    <div>
+                      <p className="text-slate-400 text-[10px] font-bold uppercase">Confirmed At</p>
+                      <p className="font-bold text-slate-900 text-xs">
+                        {new Date(selectedSub.confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                      </p>
+                    </div>
+                  )}
+                  <div>
                     <p className="text-slate-400 text-[10px] font-bold uppercase">Ward</p>
                     <p className="font-bold text-slate-900">{selectedSub.ward_number}</p>
                   </div>
@@ -360,7 +380,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
                     <p className="text-slate-400 text-[10px] font-bold uppercase">ULB</p>
                     <p className="font-bold text-slate-900">{selectedSub.ulb_name || 'N/A'}</p>
                   </div>
-                  <div>
+                  <div className="col-span-2">
                     <p className="text-slate-400 text-[10px] font-bold uppercase">Identifier</p>
                     <p className="font-bold text-slate-900">{selectedSub.identifier || 'N/A'}</p>
                   </div>
