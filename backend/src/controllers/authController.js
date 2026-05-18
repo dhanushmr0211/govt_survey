@@ -281,4 +281,38 @@ async function getUserProjects(req, res, next) {
   }
 }
 
-module.exports = { register, login, me, listUsers, getUserProjects, updateAccess };
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8).max(128),
+});
+
+async function changePassword(req, res, next) {
+  try {
+    const data = changePasswordSchema.parse(req.body);
+    const userId = Number(req.user.sub);
+
+    const user = await userService.findUserById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const userWithPassword = await userService.findUserByEmail(user.email);
+    if (!userWithPassword) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const ok = await bcrypt.compare(data.currentPassword, userWithPassword.password);
+    if (!ok) {
+      return res.status(400).json({ message: 'Incorrect current password' });
+    }
+
+    const passwordHash = await bcrypt.hash(data.newPassword, 12);
+    await userService.changePassword(userId, passwordHash);
+
+    return res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+module.exports = { register, login, me, listUsers, getUserProjects, updateAccess, changePassword };

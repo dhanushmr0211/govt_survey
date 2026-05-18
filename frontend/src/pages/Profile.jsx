@@ -1,6 +1,117 @@
 import { useState } from 'react';
 import TopNav from '../components/TopNav';
 import { Activity, FileText, Settings, Shield, User } from 'lucide-react';
+import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
+import API_BASE_URL from '../config/api';
+
+function SecurityTab() {
+  const token = useAuthStore((state) => state.token);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [status, setStatus] = useState({ type: '', message: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setStatus({ type: 'error', message: 'All fields are required.' });
+      return;
+    }
+    if (newPassword.length < 8) {
+      setStatus({ type: 'error', message: 'New password must be at least 8 characters long.' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setStatus({ type: 'error', message: 'New passwords do not match.' });
+      return;
+    }
+
+    setLoading(true);
+    setStatus({ type: '', message: '' });
+
+    try {
+      await axios.post(
+        `${API_BASE_URL}/change-password`,
+        { currentPassword, newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setStatus({ type: 'success', message: 'Password updated successfully!' });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setStatus({
+        type: 'error',
+        message: err.response?.data?.message || 'Failed to update password. Please try again.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="form-grid" style={{ maxWidth: '500px' }}>
+      <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+        <label>Current Password</label>
+        <input
+          type="password"
+          className="input-field"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          placeholder="Enter current password"
+          required
+        />
+      </div>
+      <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+        <label>New Password</label>
+        <input
+          type="password"
+          className="input-field"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          placeholder="Enter new password (min. 8 characters)"
+          required
+        />
+      </div>
+      <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+        <label>Confirm New Password</label>
+        <input
+          type="password"
+          className="input-field"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Confirm new password"
+          required
+        />
+      </div>
+
+      {status.message && (
+        <div
+          style={{
+            gridColumn: '1 / -1',
+            padding: '12px',
+            borderRadius: '6px',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            backgroundColor: status.type === 'success' ? '#e6f4ea' : '#fce8e6',
+            color: status.type === 'success' ? '#137333' : '#c5221f',
+            border: `1px solid ${status.type === 'success' ? '#34a853' : '#ea4335'}`
+          }}
+        >
+          {status.message}
+        </div>
+      )}
+
+      <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? 'Updating...' : 'Change Password'}
+        </button>
+      </div>
+    </form>
+  );
+}
 
 export default function Profile() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -80,7 +191,10 @@ export default function Profile() {
                 </div>
               </div>
             )}
-            {activeTab !== 'Personal Info' && (
+            {activeTab === 'Security' && (
+              <SecurityTab />
+            )}
+            {activeTab !== 'Personal Info' && activeTab !== 'Security' && (
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', color: 'var(--text-muted)' }}>
                 {activeTab} module under construction.
               </div>

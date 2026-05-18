@@ -110,4 +110,12 @@ async function findByProject(projectId) {
   return result.rows;
 }
 
-module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, touch, findByProject };
+async function changePassword(id, passwordHash) {
+  const result = await query(
+    'UPDATE users SET password = $2, updated_at = NOW() WHERE id = $1 RETURNING id',
+    [id, passwordHash]
+  );
+  return result.rows[0] || null;
+}
+
+module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, touch, findByProject, changePassword };
