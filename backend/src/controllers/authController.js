@@ -145,7 +145,8 @@ async function login(req, res, next) {
         id: user.id,
         name: user.name,
         email: user.email,
-        role
+        role,
+        avatar_url: user.avatar_url
       },
     });
   } catch (error) {
@@ -167,7 +168,8 @@ async function me(req, res, next) {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: normalizeRole(user.role)
+        role: normalizeRole(user.role),
+        avatar_url: user.avatar_url
       },
     });
   } catch (error) {
@@ -315,4 +317,63 @@ async function changePassword(req, res, next) {
   }
 }
 
-module.exports = { register, login, me, listUsers, getUserProjects, updateAccess, changePassword };
+async function uploadAvatar(req, res, next) {
+  try {
+    const userId = Number(req.user.sub);
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const storageProvider = require('../services/storage/storageProvider');
+    const uploaded = await storageProvider.upload(req.file);
+    
+    // Get the old user object to delete their old avatar if it exists
+    const user = await userService.findUserById(userId);
+    if (user && user.avatar_url) {
+      try {
+        const oldFileKey = user.avatar_url.split('/').pop();
+        await storageProvider.delete(oldFileKey);
+      } catch (err) {
+        console.error('Failed to delete old avatar:', err.message);
+      }
+    }
+
+    // Update user's avatar_url in the database
+    await userService.updateAvatar(userId, uploaded.url);
+
+    return res.json({ 
+      message: 'Profile picture uploaded successfully', 
+      avatar_url: uploaded.url 
+    });
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    return next(error);
+  }
+}
+
+async function deleteAvatar(req, res, next) {
+  try {
+    const userId = Number(req.user.sub);
+    const user = await userService.findUserById(userId);
+    if (!user || !user.avatar_url) {
+      return res.status(400).json({ message: 'No profile picture to delete' });
+    }
+
+    const storageProvider = require('../services/storage/storageProvider');
+    try {
+      const fileKey = user.avatar_url.split('/').pop();
+      await storageProvider.delete(fileKey);
+    } catch (err) {
+      console.error('Failed to delete avatar from storage:', err.message);
+    }
+
+    await userService.updateAvatar(userId, null);
+
+    return res.json({ message: 'Profile picture deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting avatar:', error);
+    return next(error);
+  }
+}
+
+module.exports = { register, login, me, listUsers, getUserProjects, updateAccess, changePassword, uploadAvatar, deleteAvatar };

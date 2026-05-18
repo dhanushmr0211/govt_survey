@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import API_BASE_URL from '../../config/api';
 
 export const Topbar = () => {
   const navigate = useNavigate();
@@ -10,6 +11,11 @@ export const Topbar = () => {
   // Show project role if available, otherwise fallback to global role
   const displayRole = activeProject?.project_role || user?.role || 'Role';
   const role = displayRole.replaceAll('_', ' ').toLowerCase();
+
+  const getAvatarSrc = () => {
+    if (!user?.avatar_url) return null;
+    return user.avatar_url.startsWith('http') ? user.avatar_url : `${API_BASE_URL.replace('/api/v1', '')}${user.avatar_url}`;
+  };
 
   return (
     <header className="h-16 border-b border-slate-800 bg-slate-950 px-6 flex items-center justify-between">
@@ -29,8 +35,16 @@ export const Topbar = () => {
             <span className="font-semibold text-white">{user?.name || 'User'}</span>
             <span className="text-xs capitalize text-slate-500">{role}</span>
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500 font-bold text-white shadow-sm">
-            {user?.name?.[0] || 'U'}
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500 font-bold text-white shadow-sm overflow-hidden">
+            {user?.avatar_url ? (
+              <img 
+                src={getAvatarSrc()} 
+                alt={user.name} 
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              user?.name?.[0] || 'U'
+            )}
           </div>
         </div>
         <button 

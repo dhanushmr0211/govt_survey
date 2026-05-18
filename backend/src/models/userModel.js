@@ -1,12 +1,12 @@
 const { query } = require('../config/db');
 
 async function findById(id) {
-  const result = await query('SELECT id, name, email, role, phone, created_at, is_deleted FROM users WHERE id = $1 AND is_deleted IS NOT TRUE', [id]);
+  const result = await query('SELECT id, name, email, role, phone, avatar_url, created_at, is_deleted FROM users WHERE id = $1 AND is_deleted IS NOT TRUE', [id]);
   return result.rows[0] || null;
 }
 
 async function findByEmail(email) {
-  const result = await query('SELECT id, name, email, password, role, phone FROM users WHERE email = $1 AND is_deleted IS NOT TRUE', [email]);
+  const result = await query('SELECT id, name, email, password, role, phone, avatar_url FROM users WHERE email = $1 AND is_deleted IS NOT TRUE', [email]);
   return result.rows[0] || null;
 }
 
@@ -118,4 +118,12 @@ async function changePassword(id, passwordHash) {
   return result.rows[0] || null;
 }
 
-module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, touch, findByProject, changePassword };
+async function updateAvatar(id, avatarUrl) {
+  const result = await query(
+    'UPDATE users SET avatar_url = $2, updated_at = NOW() WHERE id = $1 RETURNING id, avatar_url',
+    [id, avatarUrl]
+  );
+  return result.rows[0] || null;
+}
+
+module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, touch, findByProject, changePassword, updateAvatar };

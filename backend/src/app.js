@@ -17,6 +17,11 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 const { requestId } = require('./middleware/requestId');
 
 function createApp() {
+  // Startup database migration to ensure user avatar column exists
+  pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;')
+    .then(() => console.log('[Startup Migration] Added avatar_url column successfully.'))
+    .catch((err) => console.error('[Startup Migration] Failed to add avatar_url column:', err.message));
+
   const app = express();
 
   app.disable('x-powered-by');

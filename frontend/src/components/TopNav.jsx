@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { User, ChevronDown, Bell } from 'lucide-react';
+import API_BASE_URL from '../config/api';
 
 export default function TopNav({ user }) {
   const navigate = useNavigate();
@@ -9,6 +10,11 @@ export default function TopNav({ user }) {
     localStorage.clear();
     navigate('/');
   }
+
+  const getAvatarSrc = () => {
+    if (!user?.avatar_url) return null;
+    return user.avatar_url.startsWith('http') ? user.avatar_url : `${API_BASE_URL.replace('/api/v1', '')}${user.avatar_url}`;
+  };
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard' },
@@ -47,8 +53,16 @@ export default function TopNav({ user }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => navigate('/profile')}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {user?.name ? user.name.charAt(0).toUpperCase() : <User size={16} color="#6b7280" />}
+          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            {user?.avatar_url ? (
+              <img 
+                src={getAvatarSrc()} 
+                alt={user.name} 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
+            ) : (
+              user?.name ? user.name.charAt(0).toUpperCase() : <User size={16} color="#6b7280" />
+            )}
           </div>
           <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>{user?.name?.toUpperCase() || 'ADMIN'}</span>
           <ChevronDown size={16} />

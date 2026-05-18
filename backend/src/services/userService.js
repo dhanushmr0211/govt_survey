@@ -32,4 +32,8 @@ async function changePassword(id, passwordHash) {
   return userModel.changePassword(id, passwordHash);
 }
 
-module.exports = { findUserById, findUserByEmail, createUser, listAllUsers, listMobileUsersByProjects, touch, listUsersByProject, changePassword };
+async function updateAvatar(id, avatarUrl) {
+  return userModel.updateAvatar(id, avatarUrl);
+}
+
+module.exports = { findUserById, findUserByEmail, createUser, listAllUsers, listMobileUsersByProjects, touch, listUsersByProject, changePassword, updateAvatar };
