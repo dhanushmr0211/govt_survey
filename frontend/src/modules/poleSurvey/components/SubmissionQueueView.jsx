@@ -15,6 +15,17 @@ export const SubmissionQueueView = ({ projectId }) => {
   const [page, setPage] = useState(1);
   const limit = 50;
 
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+
+  const getTodayDateString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const user = useAuthStore((state) => state.user);
   const activeProject = useAuthStore((state) => state.activeProject);
   const canEdit = user?.role === 'MASTER_ADMIN' || activeProject?.section_i;
@@ -24,11 +35,18 @@ export const SubmissionQueueView = ({ projectId }) => {
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
 
+  const dateField = activeTab === 'pending' ? 'created_at' : 'confirmed_at';
+
   const { data = { queue: [], total: 0 }, isLoading } = useQuery({
-    queryKey: ['submissions', activeTab, page],
+    queryKey: ['submissions', activeTab, page, projectId, fromDate, toDate, dateField],
     queryFn: async () => {
       const endpoint = activeTab === 'pending' ? 'queue/pending' : 'queue/confirmed';
-      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}?page=${page}&limit=${limit}`, {
+      let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}?page=${page}&limit=${limit}`;
+      if (fromDate) url += `&fromDate=${fromDate}`;
+      if (toDate) url += `&toDate=${toDate}`;
+      url += `&dateField=${dateField}`;
+
+      const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return { queue: res.data.queue || [], total: res.data.total || 0 };
@@ -231,25 +249,75 @@ export const SubmissionQueueView = ({ projectId }) => {
 
   return (
     <div className="premium-panel overflow-hidden">
-      <div className="flex flex-col justify-between gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-lg font-bold text-slate-950">Submission Queue</h2>
-          <p className="text-sm text-slate-500">{total} records in the {activeTab} queue</p>
+      <div className="flex flex-col gap-4 border-b border-slate-100 p-5">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h2 className="text-lg font-bold text-slate-950">Submission Queue</h2>
+            <p className="text-sm text-slate-500">{total} records in the {activeTab} queue</p>
+          </div>
+        
+          <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
+            <button
+              className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeTab === 'pending' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              onClick={() => { setActiveTab('pending'); setPage(1); }}
+            >
+              Pending
+            </button>
+            <button
+              className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeTab === 'confirmed' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              onClick={() => { setActiveTab('confirmed'); setPage(1); }}
+            >
+              Confirmed
+            </button>
+          </div>
         </div>
-      
-        <div className="inline-flex rounded-lg bg-slate-100 p-1">
-          <button
-            className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeTab === 'pending' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-            onClick={() => { setActiveTab('pending'); setPage(1); }}
-          >
-            Pending
-          </button>
-          <button
-            className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeTab === 'confirmed' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-            onClick={() => { setActiveTab('confirmed'); setPage(1); }}
-          >
-            Confirmed
-          </button>
+
+        {/* Date Filter Bar */}
+        <div className="flex flex-wrap items-end gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+          <div className="flex flex-col">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">From</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => { setFromDate(e.target.value); setPage(1); }}
+              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">To</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => { setToDate(e.target.value); setPage(1); }}
+              className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const todayStr = getTodayDateString();
+                setFromDate('');
+                setToDate(todayStr);
+                setPage(1);
+              }}
+              className="rounded-md bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-1.5 text-xs font-semibold shadow-sm transition-all"
+            >
+              Till Today
+            </button>
+            {(fromDate || toDate) && (
+              <button
+                onClick={() => {
+                  setFromDate('');
+                  setToDate('');
+                  setPage(1);
+                }}
+                className="rounded-md bg-rose-50 border border-rose-100 text-rose-600 hover:bg-rose-100 px-3 py-1.5 text-xs font-semibold shadow-sm transition-all"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
       
