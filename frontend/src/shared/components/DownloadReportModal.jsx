@@ -61,7 +61,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
     try {
       let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/report/download`;
       const params = [];
-      if (districtId && isMasterAdmin) params.push(`district=${encodeURIComponent(districtId)}`);
+      if (districtId) params.push(`district=${encodeURIComponent(districtId)}`);
       if (ulbId) params.push(`ulbId=${encodeURIComponent(ulbId)}`);
       if (fromDate) params.push(`fromDate=${encodeURIComponent(fromDate)}`);
       if (toDate) params.push(`toDate=${encodeURIComponent(toDate)}`);
@@ -107,24 +107,22 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
         </div>
 
         <div className="space-y-4">
-          {isMasterAdmin && (
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Select District</label>
-              <select
-                value={districtId}
-                onChange={(e) => {
-                  setDistrictId(e.target.value);
-                  setUlbId('');
-                }}
-                className="w-full rounded-lg border border-gray-300 p-2 text-sm"
-              >
-                <option value="">All Districts</option>
-                {districtOptions.map((district) => (
-                  <option key={district.id} value={district.id}>{district.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Select District</label>
+            <select
+              value={districtId}
+              onChange={(e) => {
+                setDistrictId(e.target.value);
+                setUlbId('');
+              }}
+              className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+            >
+              <option value="">All Districts</option>
+              {districtOptions.map((district) => (
+                <option key={district.id} value={district.id}>{district.name}</option>
+              ))}
+            </select>
+          </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Select ULB</label>
