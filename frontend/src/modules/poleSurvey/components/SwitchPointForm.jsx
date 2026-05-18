@@ -22,6 +22,8 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
   const [uploading, setUploading] = useState(false);
   const [statusText, setStatusText] = useState('');
 
+  const isCompressing = compressing.image1 || compressing.image2;
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -266,10 +268,10 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
 
         <button
           type="submit"
-          disabled={uploading}
+          disabled={uploading || isCompressing}
           className="w-full bg-primary text-white p-3 rounded-lg font-medium hover:bg-primary-dark transition-colors mt-4 disabled:opacity-60"
         >
-          {statusText ? statusText : uploading ? 'Submitting...' : 'Submit Switch Point'}
+          {statusText ? statusText : uploading ? 'Submitting...' : isCompressing ? 'Compressing image...' : 'Submit Switch Point'}
         </button>
       </div>
     </form>

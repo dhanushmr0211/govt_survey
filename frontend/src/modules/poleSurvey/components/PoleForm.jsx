@@ -38,6 +38,8 @@ export const PoleForm = ({ ulb, onBack }) => {
   const [uploading, setUploading] = useState(false);
   const [statusText, setStatusText] = useState('');
 
+  const isCompressing = compressing.image1 || compressing.image2 || compressing.image3;
+
   const projectId = 2; // Updated to match database id
   const isRestricted = isMobileEditRestricted();
   const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
@@ -508,10 +510,10 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         <button
           type="submit"
-          disabled={uploading}
+          disabled={uploading || isCompressing}
           className="w-full bg-primary text-white p-3 rounded-lg font-medium hover:bg-primary-dark transition-colors mt-4 disabled:opacity-60"
         >
-          {statusText ? statusText : uploading ? 'Submitting...' : 'Submit Pole'}
+          {statusText ? statusText : uploading ? 'Submitting...' : isCompressing ? 'Compressing image...' : 'Submit Pole'}
         </button>
       </div>
     </form>
