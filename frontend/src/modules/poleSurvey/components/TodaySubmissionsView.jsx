@@ -19,15 +19,17 @@ export const TodaySubmissionsView = ({ projectId: propProjectId, ulb }) => {
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = propProjectId || activeProject?.id;
 
+  const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
+
   const canShowEdit = user?.role === 'MASTER_ADMIN' || 
-    (user?.role === 'MOBILE_USER' && activeTab === 'pending') ||
+    (isMobileSurveyor && activeTab === 'pending') ||
     (activeProject?.section_i && activeTab === 'pending') || 
     (activeProject?.section_j && activeTab === 'confirmed');
 
   const canShowConfirm = (user?.role === 'MASTER_ADMIN' || 
     (activeProject?.section_i && activeTab === 'pending') || 
     (activeProject?.section_j && activeTab === 'confirmed')) && 
-    user?.role !== 'MOBILE_USER';
+    !isMobileSurveyor;
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});

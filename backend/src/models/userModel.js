@@ -25,7 +25,7 @@ async function countAll() {
 
 async function findAll(limit, offset) {
   let sql = `
-    SELECT u.id, u.name, u.email, u.role, u.created_at,
+    SELECT u.id, u.name, u.email, u.role, u.phone, u.created_at,
            COALESCE(asa.section_a, false) AS section_a,
            COALESCE(asa.section_b, false) AS section_b,
            COALESCE(asa.section_c, false) AS section_c,
@@ -86,7 +86,7 @@ async function touch(id) {
 
 async function findByProject(projectId) {
   const result = await query(
-    `SELECT u.id, u.name, u.email, u.role, u.created_at,
+    `SELECT u.id, u.name, u.email, u.role, u.phone, u.created_at,
             pu.project_role AS project_role,
             COALESCE(pu.section_a, false) AS section_a,
             COALESCE(pu.section_b, false) AS section_b,
