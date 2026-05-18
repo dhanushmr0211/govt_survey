@@ -22,6 +22,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
         section_g: sourceUser?.section_g || false,
         section_h: sourceUser?.section_h || false,
         section_i: sourceUser?.section_i || false,
+        section_j: sourceUser?.section_j || false,
         district_scope: dScope,
         ulb_scope: uScope
       },
@@ -31,7 +32,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
 
   const [formData, setFormData] = useState({
     section_a: false, section_b: false, section_c: false, section_d: false,
-    section_e: false, section_f: false, section_g: false, section_h: false, section_i: false,
+    section_e: false, section_f: false, section_g: false, section_h: false, section_i: false, section_j: false,
     district_scope: [],
     ulb_scope: []
   });
@@ -49,7 +50,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
     if (!isOpen) {
       setFormData({
         section_a: false, section_b: false, section_c: false, section_d: false,
-        section_e: false, section_f: false, section_g: false, section_h: false, section_i: false,
+        section_e: false, section_f: false, section_g: false, section_h: false, section_i: false, section_j: false,
         district_scope: [],
         ulb_scope: []
       });
@@ -158,6 +159,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
                 { id: 'section_g', label: 'Download Reports' },
                 { id: 'section_h', label: 'Edit User Permissions' },
                 { id: 'section_i', label: 'Edit Survey Data (Images/Records)' },
+                { id: 'section_j', label: 'Edit Confirmed Data' },
               ].map(sec => (
                 <label key={sec.id} className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-all ${formData[sec.id] ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-100 hover:bg-white hover:border-slate-200'}`}>
                   <input type="checkbox" name={sec.id} checked={formData[sec.id]} onChange={handleChange} className="rounded text-orange-500 focus:ring-orange-500 w-4 h-4" />

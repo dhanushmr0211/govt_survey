@@ -28,8 +28,10 @@ export const SubmissionQueueView = ({ projectId }) => {
 
   const user = useAuthStore((state) => state.user);
   const activeProject = useAuthStore((state) => state.activeProject);
-  const canEdit = user?.role === 'MASTER_ADMIN' || activeProject?.section_i;
-  const canShowEdit = user?.role === 'MASTER_ADMIN' || (activeProject?.section_i && activeTab === 'pending');
+  const canEdit = user?.role === 'MASTER_ADMIN' || activeProject?.section_i || activeProject?.section_j;
+  const canShowEdit = user?.role === 'MASTER_ADMIN' || 
+    (activeProject?.section_i && activeTab === 'pending') || 
+    (activeProject?.section_j && activeTab === 'confirmed');
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);

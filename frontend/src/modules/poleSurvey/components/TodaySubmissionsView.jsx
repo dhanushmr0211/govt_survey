@@ -17,7 +17,9 @@ export const TodaySubmissionsView = ({ projectId, ulb }) => {
 
   const user = useAuthStore((state) => state.user);
   const activeProject = useAuthStore((state) => state.activeProject);
-  const canShowEdit = user?.role === 'MASTER_ADMIN' || (activeProject?.section_i && activeTab === 'pending');
+  const canShowEdit = user?.role === 'MASTER_ADMIN' || 
+    (activeProject?.section_i && activeTab === 'pending') || 
+    (activeProject?.section_j && activeTab === 'confirmed');
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);

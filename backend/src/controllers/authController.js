@@ -24,6 +24,7 @@ const registerSchema = z.object({
   section_g: z.boolean().optional(),
   section_h: z.boolean().optional(),
   section_i: z.boolean().optional(),
+  section_j: z.boolean().optional(),
   district_scope: z.array(z.number().int()).nullable().optional(),
   ulb_scope: z.array(z.number().int()).nullable().optional(),
 });
@@ -39,6 +40,7 @@ const updateAccessSchema = z.object({
   section_g: z.boolean().optional(),
   section_h: z.boolean().optional(),
   section_i: z.boolean().optional(),
+  section_j: z.boolean().optional(),
   district_scope: z.array(z.number().int()).nullable().optional(),
   ulb_scope: z.array(z.number().int()).nullable().optional(),
 });
@@ -74,6 +76,7 @@ async function register(req, res, next) {
       section_a: data.section_a, section_b: data.section_b, section_c: data.section_c,
       section_d: data.section_d, section_e: data.section_e, section_f: data.section_f,
       section_g: data.section_g, section_h: data.section_h, section_i: data.section_i,
+      section_j: data.section_j,
       district_scope: data.district_scope,
       ulb_scope: data.ulb_scope
     };
@@ -228,6 +231,7 @@ async function updateAccess(req, res, next) {
         section_g: data.section_g ?? existingMember.section_g,
         section_h: data.section_h ?? existingMember.section_h,
         section_i: data.section_i ?? existingMember.section_i,
+        section_j: data.section_j ?? existingMember.section_j,
         district_scope: data.district_scope !== undefined ? data.district_scope : existingMember.district_scope,
         ulb_scope: data.ulb_scope !== undefined ? data.ulb_scope : existingMember.ulb_scope
       }

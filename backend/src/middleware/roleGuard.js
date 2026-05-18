@@ -56,6 +56,7 @@ function requireRole(...roles) {
         section_g: membership.section_g,
         section_h: membership.section_h,
         section_i: membership.section_i,
+        section_j: membership.section_j,
         district_scope: membership.district_scope,
         ulb_scope: membership.ulb_scope
       };

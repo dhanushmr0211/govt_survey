@@ -34,7 +34,8 @@ async function findAll(limit, offset) {
            COALESCE(asa.section_f, false) AS section_f,
            COALESCE(asa.section_g, false) AS section_g,
            COALESCE(asa.section_h, false) AS section_h,
-           COALESCE(asa.section_i, false) AS section_i
+           COALESCE(asa.section_i, false) AS section_i,
+           COALESCE(asa.section_j, false) AS section_j
     FROM users u
     LEFT JOIN admin_section_access asa ON u.id = asa.admin_id
     WHERE u.is_deleted IS NOT TRUE
@@ -96,6 +97,7 @@ async function findByProject(projectId) {
             COALESCE(pu.section_g, false) AS section_g,
             COALESCE(pu.section_h, false) AS section_h,
             COALESCE(pu.section_i, false) AS section_i,
+            COALESCE(pu.section_j, false) AS section_j,
             pu.district_scope,
             pu.ulb_scope
      FROM users u
