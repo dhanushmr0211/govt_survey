@@ -42,6 +42,11 @@ export const PoleForm = ({ ulb, onBack }) => {
   const isRestricted = isMobileEditRestricted();
   const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
 
+  const HIDE_RESTRICTED_FOR_MOBILE = true; // Set to false to roll back instantly!
+  const shouldHide = (fieldId) => {
+    return HIDE_RESTRICTED_FOR_MOBILE && isRestricted && !MOBILE_ALLOWED.has(fieldId);
+  };
+
 
   // Fetch switch points when ward_number changes
   const { data: switchPoints = [], refetch } = useQuery({
@@ -220,15 +225,17 @@ export const PoleForm = ({ ulb, onBack }) => {
           )}
         </div>
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Conductor Type</label>
-          <select name="conductor_type" value={formData.conductor_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required disabled={isRestricted}>
-            <option value="">Select Conductor Type</option>
-            <option value="ABC">ABC</option>
-            <option value="ACSR">ACSR</option>
-            <option value="UG">UG</option>
-          </select>
-        </div>
+        {!shouldHide('conductor_type') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Conductor Type</label>
+            <select name="conductor_type" value={formData.conductor_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={!shouldHide('conductor_type')} disabled={isRestricted}>
+              <option value="">Select Conductor Type</option>
+              <option value="ABC">ABC</option>
+              <option value="ACSR">ACSR</option>
+              <option value="UG">UG</option>
+            </select>
+          </div>
+        )}
 
 
 
@@ -237,139 +244,167 @@ export const PoleForm = ({ ulb, onBack }) => {
           <input type="text" name="pole_number" value={formData.pole_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required />
         </div>
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Pole Type</label>
-          <select name="pole_type" value={formData.pole_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required disabled={isRestricted}>
-            <option value="">Select Pole Type</option>
-            {['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'].map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+        {!shouldHide('pole_type') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Pole Type</label>
+            <select name="pole_type" value={formData.pole_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={!shouldHide('pole_type')} disabled={isRestricted}>
+              <option value="">Select Pole Type</option>
+              {['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'].map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Pole Height (mtrs)</label>
-          <select name="pole_height" value={formData.pole_height} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required disabled={isRestricted}>
-            <option value="">Select Height</option>
-            {[0, 4, 5, 6, 7, 8, 9, 12, 16, 18, 24, 30].map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+        {!shouldHide('pole_height') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Pole Height (mtrs)</label>
+            <select name="pole_height" value={formData.pole_height} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={!shouldHide('pole_height')} disabled={isRestricted}>
+              <option value="">Select Height</option>
+              {[0, 4, 5, 6, 7, 8, 9, 12, 16, 18, 24, 30].map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Pole Condition</label>
-          <select name="pole_condition" value={formData.pole_condition} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required disabled={isRestricted}>
-            <option value="">Select Condition</option>
-            <option value="Good">Good</option>
-            <option value="defective">Defective</option>
-            <option value="missing">Missing</option>
-          </select>
-        </div>
+        {!shouldHide('pole_condition') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Pole Condition</label>
+            <select name="pole_condition" value={formData.pole_condition} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={!shouldHide('pole_condition')} disabled={isRestricted}>
+              <option value="">Select Condition</option>
+              <option value="Good">Good</option>
+              <option value="defective">Defective</option>
+              <option value="missing">Missing</option>
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Pole To Pole Distance (mtrs)</label>
-          <input type="text" name="distance_mtrs" value={formData.distance_mtrs} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} />
-        </div>
+        {!shouldHide('distance_mtrs') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Pole To Pole Distance (mtrs)</label>
+            <input type="text" name="distance_mtrs" value={formData.distance_mtrs} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} />
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">ARM Type</label>
-          <select name="arm_type" value={formData.arm_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-            <option value="">Select ARM Type</option>
-            {['single', 'double', 'multiple', 'multiply', 'empty/not present'].map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+        {!shouldHide('arm_type') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">ARM Type</label>
+            <select name="arm_type" value={formData.arm_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+              <option value="">Select ARM Type</option>
+              {['single', 'double', 'multiple', 'multiply', 'empty/not present'].map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">ARM Status</label>
-          <select name="arm_status" value={formData.arm_status} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-            <option value="">Select ARM Status</option>
-            {['new', 'old', 'deteriorated', 'missing', 'empty/not present'].map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+        {!shouldHide('arm_status') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">ARM Status</label>
+            <select name="arm_status" value={formData.arm_status} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+              <option value="">Select ARM Status</option>
+              {['new', 'old', 'deteriorated', 'missing', 'empty/not present'].map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Present ARM No#</label>
-          <select name="present_arm_no" value={formData.present_arm_no} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-            <option value="">Select ARM No#</option>
-            {Array.from({ length: 12 }, (_, i) => i).map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+        {!shouldHide('present_arm_no') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Present ARM No#</label>
+            <select name="present_arm_no" value={formData.present_arm_no} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+              <option value="">Select ARM No#</option>
+              {Array.from({ length: 12 }, (_, i) => i).map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Present ARM Length (mtrs)</label>
-          <select name="present_arm_length" value={formData.present_arm_length} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-            <option value="">Select Length</option>
-            {[0, 1, 1.5, 2, 2.5].map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+        {!shouldHide('present_arm_length') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Present ARM Length (mtrs)</label>
+            <select name="present_arm_length" value={formData.present_arm_length} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+              <option value="">Select Length</option>
+              {[0, 1, 1.5, 2, 2.5].map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">How Many Lights in Pole</label>
-          <select name="how_many_lights" value={formData.how_many_lights} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-            <option value="">Select Count</option>
-            {Array.from({ length: 13 }, (_, i) => i).map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+        {!shouldHide('how_many_lights') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">How Many Lights in Pole</label>
+            <select name="how_many_lights" value={formData.how_many_lights} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+              <option value="">Select Count</option>
+              {Array.from({ length: 13 }, (_, i) => i).map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Light Mounting Height</label>
-          <select name="light_mounting_height" value={formData.light_mounting_height} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-            <option value="">Select Height</option>
-            {['5', '6-7', '9', 'mini mast', 'high mast'].map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+        {!shouldHide('light_mounting_height') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Light Mounting Height</label>
+            <select name="light_mounting_height" value={formData.light_mounting_height} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+              <option value="">Select Height</option>
+              {['5', '6-7', '9', 'mini mast', 'high mast'].map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Light Type</label>
-          <select name="light_type" value={formData.light_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-            <option value="">Select Type</option>
-            {['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'].map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+        {!shouldHide('light_type') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Light Type</label>
+            <select name="light_type" value={formData.light_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+              <option value="">Select Type</option>
+              {['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'].map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Light Capacity</label>
-          <select name="light_capacity" value={formData.light_capacity} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-            <option value="">Select Capacity</option>
-            {['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'].map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+        {!shouldHide('light_capacity') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Light Capacity</label>
+            <select name="light_capacity" value={formData.light_capacity} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+              <option value="">Select Capacity</option>
+              {['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'].map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Light Working Status</label>
-          <select name="light_working_status" value={formData.light_working_status} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-            <option value="">Select Status</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </select>
-        </div>
+        {!shouldHide('light_working_status') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Light Working Status</label>
+            <select name="light_working_status" value={formData.light_working_status} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+              <option value="">Select Status</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+        )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Road Category</label>
-          <select name="road_category" value={formData.road_category} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-            <option value="">Select Category</option>
-            {['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'].map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        </div>
+        {!shouldHide('road_category') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Road Category</label>
+            <select name="road_category" value={formData.road_category} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+              <option value="">Select Category</option>
+              {['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'].map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-gray-700 font-medium mb-1">Road Type</label>
@@ -391,14 +426,16 @@ export const PoleForm = ({ ulb, onBack }) => {
           </select>
         </div>
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Pole Earthing Exists</label>
-          <select name="pole_earthing_exists" value={formData.pole_earthing_exists} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-            <option value="">Select Earthing</option>
-            <option value="YES">YES</option>
-            <option value="NO">NO</option>
-          </select>
-        </div>
+        {!shouldHide('pole_earthing_exists') && (
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Pole Earthing Exists</label>
+            <select name="pole_earthing_exists" value={formData.pole_earthing_exists} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+              <option value="">Select Earthing</option>
+              <option value="YES">YES</option>
+              <option value="NO">NO</option>
+            </select>
+          </div>
+        )}
 
          <div className="space-y-2">
           <label className="block text-gray-700 font-medium mb-1">Photos (Optional)</label>
