@@ -302,6 +302,31 @@ async function downloadReportHandler(req, res, next) {
       { header: 'Created At', key: 'created_at', width: 20 }
     ];
     
+    // Header styling helper
+    const styleHeaderRow = (sheet) => {
+      const headerRow = sheet.getRow(1);
+      headerRow.height = 24; // Row padding/height
+      headerRow.eachCell((cell) => {
+        cell.font = {
+          name: 'Calibri',
+          size: 11,
+          bold: true,
+          color: { argb: 'FFFFFFFF' } // White text
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF002060' } // Premium Navy Blue / Dark Blue
+        };
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: 'center'
+        };
+      });
+    };
+
+    styleHeaderRow(spSheet);
+    
     data.switchPoints.forEach(sp => {
       spSheet.addRow({
         ...sp,
@@ -346,6 +371,8 @@ async function downloadReportHandler(req, res, next) {
       { header: 'Created By', key: 'user_name', width: 15 },
       { header: 'Created At', key: 'created_at', width: 20 }
     ];
+
+    styleHeaderRow(pSheet);
     
     data.poles.forEach(p => {
       pSheet.addRow({
