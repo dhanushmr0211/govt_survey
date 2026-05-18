@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
+import { useProjects } from '../shared/hooks/useProjects';
 import MasterAdminDashboard from './MasterAdminDashboard';
 import AdminDashboard from './AdminDashboard';
 import EmployeeDashboard from './EmployeeDashboard';
@@ -17,31 +18,37 @@ export default function Dashboard() {
   const setActiveProject = useAuthStore((state) => state.setActiveProject);
   const queryClient = useQueryClient();
   
-  // Refresh projects on component mount and on window focus to get fresh permissions
+  const { data: freshProjects = [] } = useProjects();
+
+  // Sync fresh project permissions to activeProject state dynamically
   useEffect(() => {
-    const handleFocus = async () => {
-      // Invalidate projects query to force fresh fetch
-      await queryClient.invalidateQueries({ queryKey: ['projects'] });
-      
-      // If user has active project, get fresh project data
-      if (activeProject) {
-        const token = useAuthStore.getState().token;
-        const raw = queryClient.getQueryData(['projects']) || queryClient.getQueryData(['projects', token]) || [];
-        const freshProjects = Array.isArray(raw) ? raw : (raw?.projects || []);
-        const updatedProject = freshProjects.find(p => p.id === activeProject.id);
-        if (updatedProject) {
+    if (activeProject && freshProjects.length > 0) {
+      const updatedProject = freshProjects.find(p => p.id === activeProject.id);
+      if (updatedProject) {
+        // Compare values by stringifying to avoid infinite render loops
+        const currentStr = JSON.stringify(activeProject);
+        const nextStr = JSON.stringify(updatedProject);
+        if (currentStr !== nextStr) {
+          console.log('[DEBUG] Dynamic sync activeProject permissions:', updatedProject);
           setActiveProject(updatedProject);
         }
       }
+    }
+  }, [freshProjects, activeProject, setActiveProject]);
+
+  // Refresh projects on component mount and on window focus to trigger refetch
+  useEffect(() => {
+    const handleFocus = async () => {
+      await queryClient.invalidateQueries({ queryKey: ['projects'] });
     };
 
     window.addEventListener('focus', handleFocus);
     
-    // Also invalidate on initial mount
+    // Trigger initial refetch to guarantee we fetch the freshest permissions
     queryClient.invalidateQueries({ queryKey: ['projects'] });
     
     return () => window.removeEventListener('focus', handleFocus);
-  }, [queryClient, activeProject, setActiveProject]);
+  }, [queryClient]);
   
   if (!user) return null;
 
