@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
 export const Topbar = () => {
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const activeProject = useAuthStore((state) => state.activeProject);
@@ -19,12 +21,17 @@ export const Topbar = () => {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <div className="flex flex-col text-right">
-          <span className="font-semibold text-white">{user?.name || 'User'}</span>
-          <span className="text-xs capitalize text-slate-500">{role}</span>
-        </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500 font-bold text-white shadow-sm">
-          {user?.name?.[0] || 'U'}
+        <div 
+          onClick={() => navigate('/profile')}
+          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <div className="flex flex-col text-right">
+            <span className="font-semibold text-white">{user?.name || 'User'}</span>
+            <span className="text-xs capitalize text-slate-500">{role}</span>
+          </div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500 font-bold text-white shadow-sm">
+            {user?.name?.[0] || 'U'}
+          </div>
         </div>
         <button 
           onClick={logout} 

@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { BarChart3, CalendarDays, ClipboardList, Download, FolderKanban, Smartphone, UserCheck, Users, LogOut } from 'lucide-react';
 import API_BASE_URL from '../config/api';
+import { useProjects } from '../shared/hooks/useProjects';
 
 export default function MasterAdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -26,17 +27,7 @@ export default function MasterAdminDashboard() {
   const [ulbFilterParams, setUlbFilterParams] = useState(null);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
-  const { data: projectsData = { projects: [] } } = useQuery({
-    queryKey: ['projects'],
-    queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API_BASE_URL}/projects`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.data;
-    },
-  });
-  const projects = projectsData.projects || [];
+  const { data: projects = [] } = useProjects();
 
   const currentProject = projects.find(p => p.id === Number(selectedProjectId));
   const activeProject = useAuthStore((state) => state.activeProject);

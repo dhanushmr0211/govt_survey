@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useAuthStore } from '../../store/authStore';
 import API_BASE_URL from '../../config/api';
+import { useProjects } from '../hooks/useProjects';
 
 export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole }) => {
   const { user: loggedInUser, activeProject } = useAuthStore();
@@ -32,17 +33,7 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
 
 
   // Fetch projects
-  const { data: projects = [], isLoading: loadingProjects } = useQuery({
-    queryKey: ['projects'],
-    queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API_BASE_URL}/projects`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.data.projects || [];
-    },
-    enabled: isOpen,
-  });
+  const { data: projects = [], isLoading: loadingProjects } = useProjects();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
