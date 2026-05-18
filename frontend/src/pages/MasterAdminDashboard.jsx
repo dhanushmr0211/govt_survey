@@ -45,7 +45,7 @@ export default function MasterAdminDashboard() {
   const sectionItems = [
     effectiveProject?.section_a && { key: 'pole_survey_summary', label: 'Summary', icon: BarChart3 },
     effectiveProject?.section_b && { key: 'pole_survey_today', label: "Today's Summary", icon: CalendarDays },
-    effectiveProject?.section_c && { key: 'pole_survey_issues', label: 'Issues', icon: ClipboardList },
+    effectiveProject?.section_c && { key: 'pole_survey_issues', label: 'Inspect', icon: ClipboardList },
   ].filter(Boolean);
 
   const utilityItems = [

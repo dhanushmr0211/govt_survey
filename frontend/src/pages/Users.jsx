@@ -103,7 +103,7 @@ export default function Users() {
   const sectionItems = [
     displayProject?.section_a && { key: 'pole_survey_summary', label: 'Summary', icon: BarChart3 },
     displayProject?.section_b && { key: 'pole_survey_today', label: "Today's Summary", icon: CalendarDays },
-    displayProject?.section_c && { key: 'pole_survey_issues', label: 'Issues', icon: ClipboardList },
+    displayProject?.section_c && { key: 'pole_survey_issues', label: 'Inspect', icon: ClipboardList },
   ].filter(Boolean);
 
   const utilityItems = [

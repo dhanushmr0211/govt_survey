@@ -1,3 +1,4 @@
+const { query } = require('../config/db');
 const { searchUlbs } = require('../models/districtUlbModel');
 const { createSwitchPoint } = require('../models/switchPointModel');
 const { createPole } = require('../models/poleModel');
@@ -16,7 +17,7 @@ async function searchUlbsHandler(req, res) {
   try {
     const { q } = req.query;
     if (!q) {
-      return res.status(400).json({ error: 'Search term is required' });
+      return res.status(400).json({ error: 'Search query is required' });
     }
     const ulbs = await searchUlbs(q);
     res.json({ ulbs });
@@ -43,6 +44,22 @@ async function createSwitchPointHandler(req, res) {
     // Add lat/lng bounds
     if (!isValidLatLng(data.latitude, data.longitude)) {
       return res.status(400).json({ error: 'Invalid latitude or longitude bounds' });
+    }
+
+    // Check for duplicate switch point number under the same ward and project/ulb
+    const duplicateCheck = await query(
+      `SELECT id FROM switch_points 
+       WHERE project_id = $1 
+         AND ulb_id = $2 
+         AND TRIM(LOWER(ward_number)) = TRIM(LOWER($3)) 
+         AND TRIM(LOWER(switch_point_number)) = TRIM(LOWER($4)) 
+         AND is_deleted IS NOT TRUE`,
+      [Number(projectId), Number(data.ulb_id), String(data.ward_number), String(data.switch_point_number)]
+    );
+
+    if (duplicateCheck.rows.length > 0) {
+      const errMsg = `switch point ${data.switch_point_number} under this ward is already exists`;
+      return res.status(400).json({ error: errMsg, message: errMsg });
     }
 
     data.project_id = Number(projectId);

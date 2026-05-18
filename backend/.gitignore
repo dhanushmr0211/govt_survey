@@ -19,3 +19,9 @@ gcp-key.json
 *.json
 !package.json
 !package-lock.json
+
+# Temporary scratch and dev helper files
+src/scratch/
+test_*.js
+*.test.js
+*.spec.js

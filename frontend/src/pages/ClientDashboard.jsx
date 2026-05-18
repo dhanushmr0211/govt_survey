@@ -32,7 +32,7 @@ export default function ClientDashboard() {
   const sectionItems = [
     hasSectionA && { key: 'pole_survey_summary', label: 'Summary', icon: BarChart3 },
     hasSectionB && { key: 'pole_survey_today', label: "Today's Summary", icon: CalendarDays },
-    hasSectionC && { key: 'pole_survey_issues', label: 'Issues', icon: ClipboardList },
+    hasSectionC && { key: 'pole_survey_issues', label: 'Inspect', icon: ClipboardList },
   ].filter(Boolean);
 
   const utilityItems = [

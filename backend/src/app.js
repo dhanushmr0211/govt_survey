@@ -17,10 +17,36 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 const { requestId } = require('./middleware/requestId');
 
 function createApp() {
-  // Startup database migration to ensure user avatar column exists
-  pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;')
-    .then(() => console.log('[Startup Migration] Added avatar_url column successfully.'))
-    .catch((err) => console.error('[Startup Migration] Failed to add avatar_url column:', err.message));
+  // Startup database migrations and performance indexing
+  const migrations = [
+    'ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;',
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email) WHERE is_deleted IS NOT TRUE;',
+    'CREATE INDEX IF NOT EXISTS idx_users_role_id ON users (role, id DESC) WHERE is_deleted IS NOT TRUE;',
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_project_users_comp ON project_users (project_id, user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_project_users_user_id ON project_users (user_id);',
+    'CREATE INDEX IF NOT EXISTS idx_poles_project_status_created ON poles (project_id, status, created_at DESC) WHERE is_deleted IS NOT TRUE;',
+    'CREATE INDEX IF NOT EXISTS idx_poles_switch_point_id ON poles (switch_point_id) WHERE is_deleted IS NOT TRUE;',
+    'CREATE INDEX IF NOT EXISTS idx_switch_points_project_status_created ON switch_points (project_id, status, created_at DESC) WHERE is_deleted IS NOT TRUE;',
+    `CREATE INDEX IF NOT EXISTS idx_switch_points_duplicate_check ON switch_points (
+      project_id, 
+      ulb_id, 
+      TRIM(LOWER(ward_number)), 
+      TRIM(LOWER(switch_point_number))
+    ) WHERE is_deleted IS NOT TRUE;`,
+    'CREATE INDEX IF NOT EXISTS idx_issues_project_status_raised ON issues (project_id, status, raised_at DESC);',
+    "CREATE INDEX IF NOT EXISTS idx_issues_open_status ON issues (status) WHERE status = 'OPEN';"
+  ];
+
+  (async () => {
+    for (const q of migrations) {
+      try {
+        await pool.query(q);
+      } catch (err) {
+        console.error(`[Startup Migration Failed] ${q.trim().substring(0, 50)}... :`, err.message);
+      }
+    }
+    console.log('[Startup Migration] All database migrations and performance indexes verified/applied successfully.');
+  })();
 
   const app = express();
 

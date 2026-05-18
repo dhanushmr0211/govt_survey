@@ -6,7 +6,7 @@ import { useAuthStore } from '../../../store/authStore';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 
-export const TodaySubmissionsView = ({ projectId, ulb }) => {
+export const TodaySubmissionsView = ({ projectId: propProjectId, ulb }) => {
   const token = localStorage.getItem('token');
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
@@ -17,9 +17,18 @@ export const TodaySubmissionsView = ({ projectId, ulb }) => {
 
   const user = useAuthStore((state) => state.user);
   const activeProject = useAuthStore((state) => state.activeProject);
+  const projectId = propProjectId || activeProject?.id;
+
   const canShowEdit = user?.role === 'MASTER_ADMIN' || 
+    (user?.role === 'MOBILE_USER' && activeTab === 'pending') ||
     (activeProject?.section_i && activeTab === 'pending') || 
     (activeProject?.section_j && activeTab === 'confirmed');
+
+  const canShowConfirm = (user?.role === 'MASTER_ADMIN' || 
+    (activeProject?.section_i && activeTab === 'pending') || 
+    (activeProject?.section_j && activeTab === 'confirmed')) && 
+    user?.role !== 'MOBILE_USER';
+
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);
@@ -479,7 +488,7 @@ export const TodaySubmissionsView = ({ projectId, ulb }) => {
                   <span>{saveMutation.isLoading ? 'Saving...' : 'Save Changes'}</span>
                 </button>
               ) : (
-                canShowEdit && (
+                canShowConfirm && (
                   <button
                     onClick={() => {
                       if (window.confirm('Are you sure you want to confirm this submission?')) {
