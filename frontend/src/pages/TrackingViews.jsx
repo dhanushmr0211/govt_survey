@@ -250,9 +250,16 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
   const [activeType, setActiveType] = useState('all');
+  const [page, setPage] = useState(1);
+  const limit = 50;
+
+  // Reset page when key filters change
+  useEffect(() => {
+    setPage(1);
+  }, [projectId, userId, confirmedBy, status, fromDate, toDate, activeType]);
   
   const { data, isLoading } = useQuery({
-    queryKey: ['user-submissions', projectId, userId, confirmedBy, status, fromDate, toDate, dateField, activeType],
+    queryKey: ['user-submissions', projectId, userId, confirmedBy, status, fromDate, toDate, dateField, activeType, page],
     queryFn: async () => {
       let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}`;
       let params = [];
@@ -262,6 +269,8 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
       if (toDate) params.push(`toDate=${toDate}`);
       if (dateField) params.push(`dateField=${dateField}`);
       if (activeType && activeType !== 'all') params.push(`type=${activeType}`);
+      params.push(`page=${page}`);
+      params.push(`limit=${limit}`);
       if (params.length > 0) url += `?${params.join('&')}`;
       
       const res = await axios.get(url, {
@@ -368,6 +377,32 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
           </tbody>
         </table>
       </div>
+
+      {submissions.length > 0 && (
+        <div className="flex items-center justify-between border-t border-slate-100 bg-white p-4 mt-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className={`rounded-md border px-4 py-2 text-sm font-semibold ${page === 1 ? 'cursor-not-allowed bg-slate-50 text-slate-400' : 'text-slate-700 hover:bg-slate-50'}`}
+          >
+            Previous
+          </button>
+          <span className="text-sm text-slate-600">
+            Page <span className="font-semibold text-slate-950">{page}</span> of <span className="font-semibold text-slate-950">{Math.ceil((data?.total || 0) / limit) || 1}</span> ({data?.total || 0} items)
+          </span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={submissions.length < limit}
+            className={`rounded-md border px-4 py-2 text-sm font-semibold ${submissions.length < limit ? 'cursor-not-allowed bg-slate-50 text-slate-400' : 'text-slate-700 hover:bg-slate-50'}`}
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      {submissions.length === 0 && (
+        <div className="py-12 text-center text-slate-500">No submissions found.</div>
+      )}
 
       {selectedSub && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60]">
