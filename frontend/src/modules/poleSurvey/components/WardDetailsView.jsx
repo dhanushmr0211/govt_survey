@@ -76,11 +76,20 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
       });
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries(['wardDetails']);
       alert('Changes saved successfully!');
       setIsEditing(false);
-      setSelectedDetail(null);
+      const updatedEntity = data?.switchPoint || data?.pole;
+      if (updatedEntity) {
+        setSelectedDetail(prev => ({
+          ...prev,
+          data: {
+            ...prev.data,
+            ...updatedEntity
+          }
+        }));
+      }
     },
     onError: (error) => {
       alert(error.response?.data?.message || 'Error saving changes');

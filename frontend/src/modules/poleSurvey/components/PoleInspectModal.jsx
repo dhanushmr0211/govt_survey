@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react';
 import { X, Check, AlertTriangle, Edit2, Save } from 'lucide-react';
 import { confirmPole } from '../services/poleSurveyService';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../store/authStore';
 import API_BASE_URL from '../../../config/api';
 import { isMobileEditRestricted } from '../utils/mobileRestrictions';
 
-export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
+export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
+  const [pole, setPole] = useState(initialPole);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setPole(initialPole);
+    setFormData({ ...initialPole });
+  }, [initialPole]);
+
   const user = useAuthStore((state) => state.user);
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = activeProject?.id;
@@ -15,7 +23,7 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
     (activeProject?.section_j && pole?.status === 'confirmed');
 
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({ ...pole });
+  const [formData, setFormData] = useState({ ...initialPole });
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
 
@@ -71,9 +79,16 @@ export const PoleInspectModal = ({ pole, onClose, onSuccess }) => {
       if (!response.ok) throw new Error('Failed to save changes');
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setIsEditing(false);
-      onSuccess();
+      const updatedEntity = data?.pole;
+      if (updatedEntity) {
+        setPole(prev => ({
+          ...prev,
+          ...updatedEntity
+        }));
+      }
+      queryClient.invalidateQueries(['poles']);
     },
   });
 

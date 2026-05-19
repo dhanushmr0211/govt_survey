@@ -86,11 +86,17 @@ export const TodaySubmissionsView = ({ projectId: propProjectId, ulb }) => {
       });
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries(['submissions']);
       alert('Changes saved successfully!');
       setIsEditing(false);
-      setSelectedSubmission(null);
+      const updatedEntity = data?.switchPoint || data?.pole;
+      if (updatedEntity) {
+        setSelectedSubmission(prev => ({
+          ...prev,
+          ...updatedEntity
+        }));
+      }
     },
     onError: (error) => {
       alert(error.response?.data?.message || 'Error saving changes');
