@@ -109,7 +109,7 @@ async function getPendingSubmissionsHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access the pending queue' });
     }
 
-    const { page = 1, limit = 50, userId, fromDate, toDate, dateField } = req.query;
+    const { page = 1, limit = 50, userId, fromDate, toDate, dateField, type } = req.query;
     // For mobile users, force filtering by their own ID
     const filterUserId = isMobileUser ? Number(req.user.sub) : (userId ? Number(userId) : null);
 
@@ -125,7 +125,8 @@ async function getPendingSubmissionsHandler(req, res, next) {
       permissions.ulb_scope,
       fromDate || null,
       toDate || null,
-      dateField || 'created_at'
+      dateField || 'created_at',
+      type || null
     );
     res.json({ queue: rows, total });
   } catch (error) { next(error); }
@@ -177,7 +178,7 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access confirmed submissions' });
     }
 
-    const { page = 1, limit = 50, userId, confirmedBy, fromDate, toDate, dateField } = req.query;
+    const { page = 1, limit = 50, userId, confirmedBy, fromDate, toDate, dateField, type } = req.query;
     // For mobile users, force filtering by their own ID
     const filterUserId = isMobileUser ? Number(req.user.sub) : (userId ? Number(userId) : null);
 
@@ -191,7 +192,8 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
       permissions.ulb_scope,
       fromDate || null,
       toDate || null,
-      dateField || 'created_at'
+      dateField || 'created_at',
+      type || null
     );
     res.json({ queue: rows, total });
   } catch (error) { next(error); }

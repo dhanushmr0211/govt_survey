@@ -10,6 +10,7 @@ export const SubmissionQueueView = ({ projectId }) => {
   const token = localStorage.getItem('token');
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
+  const [activeType, setActiveType] = useState('all');
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
@@ -40,12 +41,13 @@ export const SubmissionQueueView = ({ projectId }) => {
   const dateField = activeTab === 'pending' ? 'created_at' : 'confirmed_at';
 
   const { data = { queue: [], total: 0 }, isLoading } = useQuery({
-    queryKey: ['submissions', activeTab, page, projectId, fromDate, toDate, dateField],
+    queryKey: ['submissions', activeTab, activeType, page, projectId, fromDate, toDate, dateField],
     queryFn: async () => {
       const endpoint = activeTab === 'pending' ? 'queue/pending' : 'queue/confirmed';
       let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}?page=${page}&limit=${limit}`;
       if (fromDate) url += `&fromDate=${fromDate}`;
       if (toDate) url += `&toDate=${toDate}`;
+      if (activeType !== 'all') url += `&type=${activeType}`;
       url += `&dateField=${dateField}`;
 
       const res = await axios.get(url, {
@@ -252,25 +254,52 @@ export const SubmissionQueueView = ({ projectId }) => {
   return (
     <div className="premium-panel overflow-hidden">
       <div className="flex flex-col gap-4 border-b border-slate-100 p-5">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
             <h2 className="text-lg font-bold text-slate-950">Submission Queue</h2>
-            <p className="text-sm text-slate-500">{total} records in the {activeTab} queue</p>
+            <p className="text-sm text-slate-500">
+              {total} {activeType === 'all' ? 'records' : activeType === 'switch_point' ? 'switch points' : 'poles'} in the {activeTab} queue
+            </p>
           </div>
         
-          <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
-            <button
-              className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeTab === 'pending' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-              onClick={() => { setActiveTab('pending'); setPage(1); }}
-            >
-              Pending
-            </button>
-            <button
-              className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeTab === 'confirmed' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-              onClick={() => { setActiveTab('confirmed'); setPage(1); }}
-            >
-              Confirmed
-            </button>
+          <div className="flex flex-wrap gap-3">
+            {/* Status Tabs */}
+            <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
+              <button
+                className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeTab === 'pending' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                onClick={() => { setActiveTab('pending'); setPage(1); }}
+              >
+                Pending
+              </button>
+              <button
+                className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeTab === 'confirmed' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                onClick={() => { setActiveTab('confirmed'); setPage(1); }}
+              >
+                Confirmed
+              </button>
+            </div>
+
+            {/* Type Tabs */}
+            <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
+              <button
+                className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                onClick={() => { setActiveType('all'); setPage(1); }}
+              >
+                All
+              </button>
+              <button
+                className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'switch_point' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                onClick={() => { setActiveType('switch_point'); setPage(1); }}
+              >
+                Switch Points
+              </button>
+              <button
+                className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'pole' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                onClick={() => { setActiveType('pole'); setPage(1); }}
+              >
+                Poles
+              </button>
+            </div>
           </div>
         </div>
 

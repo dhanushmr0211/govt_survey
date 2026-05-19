@@ -168,7 +168,7 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fr
   return result.rows;
 }
 
-async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at') {
+async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at', type = null) {
   const offset = (page - 1) * limit;
   
   let scopeFilter = '';
@@ -196,8 +196,102 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
     params.push(fromDate, toDate);
   }
 
-  const sql = `
-    SELECT *, COUNT(*) OVER() AS total_count FROM (
+  let queryBody = '';
+  if (type === 'switch_point') {
+    queryBody = `
+      SELECT 
+        'switch_point' as type,
+        sp.id,
+        sp.created_by as user_id,
+        u.name as user_name,
+        sp.created_at,
+        sp.ward_number,
+        sp.switch_point_number::text as identifier,
+        ulb.name as ulb_name,
+        sp.switch_point_number::text as switch_point_number,
+        sp.switch_point_type,
+        sp.meter_exists,
+        sp.meter_type,
+        sp.meter_rr_number,
+        sp.meter_serial_number,
+        sp.meter_condition,
+        sp.latitude,
+        sp.longitude,
+        NULL as conductor_type,
+        NULL as pole_type,
+        NULL as pole_height_mtrs,
+        NULL as pole_condition,
+        NULL as pole_to_pole_distance_mtrs,
+        NULL as arm_type,
+        NULL as arm_status,
+        NULL as present_arm_no,
+        NULL as present_arm_length_mtrs,
+        NULL as how_many_lights_in_pole,
+        NULL as light_mounting_height,
+        NULL as light_type,
+        NULL as light_capacity,
+        NULL as light_working_status,
+        NULL as road_category,
+        NULL as road_type,
+        NULL as road_width_mtrs,
+        NULL as pole_earthing_exists
+      FROM switch_points sp
+      JOIN users u ON sp.created_by = u.id
+      LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+      WHERE sp.project_id = $1 AND sp.status = 'PENDING' AND sp.is_deleted IS NOT TRUE
+      AND ($4::int IS NULL OR sp.created_by = $4)
+      ${spDateFilter}
+      ${scopeFilter}
+    `;
+  } else if (type === 'pole') {
+    queryBody = `
+      SELECT 
+        'pole' as type,
+        p.id,
+        p.created_by as user_id,
+        u.name as user_name,
+        p.created_at,
+        sp.ward_number,
+        p.pole_number::text as identifier,
+        ulb.name as ulb_name,
+        p.switch_point_number::text as switch_point_number,
+        NULL as switch_point_type,
+        NULL as meter_exists,
+        NULL as meter_type,
+        NULL as meter_rr_number,
+        NULL as meter_serial_number,
+        NULL as meter_condition,
+        p.latitude,
+        p.longitude,
+        p.conductor_type,
+        p.pole_type,
+        p.pole_height_mtrs,
+        p.pole_condition,
+        p.pole_to_pole_distance_mtrs,
+        p.arm_type,
+        p.arm_status,
+        p.present_arm_no,
+        p.present_arm_length_mtrs,
+        p.how_many_lights_in_pole,
+        p.light_mounting_height,
+        p.light_type,
+        p.light_capacity,
+        p.light_working_status,
+        p.road_category,
+        p.road_type,
+        p.road_width_mtrs,
+        p.pole_earthing_exists
+      FROM poles p
+      JOIN switch_points sp ON p.switch_point_id = sp.id
+      JOIN users u ON p.created_by = u.id
+      LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+      WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted IS NOT TRUE
+      AND ($4::int IS NULL OR p.created_by = $4)
+      ${pDateFilter}
+      ${scopeFilter}
+    `;
+  } else {
+    queryBody = `
       SELECT 
         'switch_point' as type,
         sp.id,
@@ -288,6 +382,12 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       AND ($4::int IS NULL OR p.created_by = $4)
       ${pDateFilter}
       ${scopeFilter}
+    `;
+  }
+
+  const sql = `
+    SELECT *, COUNT(*) OVER() AS total_count FROM (
+      ${queryBody}
     ) combined
     ORDER BY created_at DESC
     LIMIT $2 OFFSET $3
@@ -295,10 +395,10 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
   
   const result = await query(sql, params);
   const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
-    return { rows: result.rows, total };
+  return { rows: result.rows, total };
 }
 
-async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at') {
+async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at', type = null) {
   const offset = (page - 1) * limit;
   
   let scopeFilter = '';
@@ -326,8 +426,112 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
     params.push(fromDate, toDate);
   }
 
-  const sql = `
-    SELECT *, COUNT(*) OVER() AS total_count FROM (
+  let queryBody = '';
+  if (type === 'switch_point') {
+    queryBody = `
+      SELECT 
+        'switch_point' as type,
+        sp.id,
+        sp.created_by as user_id,
+        u.name as user_name,
+        sp.created_at,
+        sp.ward_number,
+        sp.switch_point_number::text as identifier,
+        ulb.name as ulb_name,
+        sp.switch_point_number::text as switch_point_number,
+        sp.confirmed_by,
+        sp.confirmed_at,
+        u2.name as confirmed_by_name,
+        sp.switch_point_type,
+        sp.meter_exists,
+        sp.meter_type,
+        sp.meter_rr_number,
+        sp.meter_serial_number,
+        sp.meter_condition,
+        sp.latitude,
+        sp.longitude,
+        NULL::text as conductor_type,
+        NULL::text as pole_type,
+        NULL::numeric as pole_height_mtrs,
+        NULL::text as pole_condition,
+        NULL::numeric as pole_to_pole_distance_mtrs,
+        NULL::text as arm_type,
+        NULL::text as arm_status,
+        NULL::text as present_arm_no,
+        NULL::numeric as present_arm_length_mtrs,
+        NULL::text as how_many_lights_in_pole,
+        NULL::text as light_mounting_height,
+        NULL::text as light_type,
+        NULL::text as light_capacity,
+        NULL::text as light_working_status,
+        NULL::text as road_category,
+        NULL::text as road_type,
+        NULL::numeric as road_width_mtrs,
+        NULL::text as pole_earthing_exists
+      FROM switch_points sp
+      JOIN users u ON sp.created_by = u.id
+      LEFT JOIN users u2 ON sp.confirmed_by = u2.id
+      LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+      WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted IS NOT TRUE
+      AND ($4::int IS NULL OR sp.created_by = $4)
+      AND ($5::int IS NULL OR sp.confirmed_by = $5)
+      ${spDateFilter}
+      ${scopeFilter}
+    `;
+  } else if (type === 'pole') {
+    queryBody = `
+      SELECT 
+        'pole' as type,
+        p.id,
+        p.created_by as user_id,
+        u.name as user_name,
+        p.created_at,
+        sp.ward_number,
+        p.pole_number::text as identifier,
+        ulb.name as ulb_name,
+        p.switch_point_number::text as switch_point_number,
+        p.confirmed_by,
+        p.confirmed_at,
+        u3.name as confirmed_by_name,
+        NULL::text as switch_point_type,
+        NULL::boolean as meter_exists,
+        NULL::text as meter_type,
+        NULL::text as meter_rr_number,
+        NULL::text as meter_serial_number,
+        NULL::text as meter_condition,
+        p.latitude,
+        p.longitude,
+        p.conductor_type,
+        p.pole_type,
+        p.pole_height_mtrs,
+        p.pole_condition,
+        p.pole_to_pole_distance_mtrs,
+        p.arm_type,
+        p.arm_status,
+        p.present_arm_no,
+        p.present_arm_length_mtrs,
+        p.how_many_lights_in_pole,
+        p.light_mounting_height,
+        p.light_type,
+        p.light_capacity,
+        p.light_working_status,
+        p.road_category,
+        p.road_type,
+        p.road_width_mtrs,
+        p.pole_earthing_exists
+      FROM poles p
+      JOIN switch_points sp ON p.switch_point_id = sp.id
+      JOIN users u ON p.created_by = u.id
+      LEFT JOIN users u3 ON p.confirmed_by = u3.id
+      LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+      WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
+      AND ($4::int IS NULL OR p.created_by = $4)
+      AND ($5::int IS NULL OR p.confirmed_by = $5)
+      ${pDateFilter}
+      ${scopeFilter}
+    `;
+  } else {
+    queryBody = `
       SELECT 
         'switch_point' as type,
         sp.id,
@@ -428,6 +632,12 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       AND ($5::int IS NULL OR p.confirmed_by = $5)
       ${pDateFilter}
       ${scopeFilter}
+    `;
+  }
+
+  const sql = `
+    SELECT *, COUNT(*) OVER() AS total_count FROM (
+      ${queryBody}
     ) combined
     ORDER BY created_at DESC
     LIMIT $2 OFFSET $3
