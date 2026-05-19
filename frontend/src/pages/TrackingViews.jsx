@@ -249,9 +249,10 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
   const [selectedSub, setSelectedSub] = useState(null);
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
+  const [activeType, setActiveType] = useState('all');
   
   const { data, isLoading } = useQuery({
-    queryKey: ['user-submissions', projectId, userId, confirmedBy, status, fromDate, toDate, dateField],
+    queryKey: ['user-submissions', projectId, userId, confirmedBy, status, fromDate, toDate, dateField, activeType],
     queryFn: async () => {
       let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}`;
       let params = [];
@@ -260,6 +261,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
       if (fromDate) params.push(`fromDate=${fromDate}`);
       if (toDate) params.push(`toDate=${toDate}`);
       if (dateField) params.push(`dateField=${dateField}`);
+      if (activeType && activeType !== 'all') params.push(`type=${activeType}`);
       if (params.length > 0) url += `?${params.join('&')}`;
       
       const res = await axios.get(url, {
@@ -302,7 +304,31 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
 
   return (
     <div className="mt-4">
-      <h3 className="text-md font-medium text-gray-900 mb-2">{status} Submissions ({data?.total || 0})</h3>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h3 className="text-md font-medium text-gray-900">{status} Submissions ({data?.total || 0})</h3>
+        
+        {/* Type Filter Tabs */}
+        <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
+          <button
+            className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeType === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+            onClick={() => setActiveType('all')}
+          >
+            All
+          </button>
+          <button
+            className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeType === 'switch_point' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+            onClick={() => setActiveType('switch_point')}
+          >
+            Switch Points
+          </button>
+          <button
+            className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeType === 'pole' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+            onClick={() => setActiveType('pole')}
+          >
+            Poles
+          </button>
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead>
