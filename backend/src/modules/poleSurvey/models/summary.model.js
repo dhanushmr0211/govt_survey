@@ -579,27 +579,30 @@ async function getEmployeeTracking(projectId) {
       u.email,
       u.name,
       (
-        SELECT COUNT(*) FROM poles p 
-        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.is_deleted IS NOT TRUE
-      ) + 
-      (
         SELECT COUNT(*) FROM switch_points sp 
         WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND sp.is_deleted IS NOT TRUE
-      ) as total_resolved,
+      ) as total_sp_resolved,
       (
         SELECT COUNT(*) FROM poles p 
-        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.confirmed_at::date = CURRENT_DATE AND p.is_deleted IS NOT TRUE
-      ) + 
+        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.is_deleted IS NOT TRUE
+      ) as total_poles_resolved,
       (
         SELECT COUNT(*) FROM switch_points sp 
         WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND sp.confirmed_at::date = CURRENT_DATE AND sp.is_deleted IS NOT TRUE
-      ) as today_resolved
+      ) as today_sp_resolved,
+      (
+        SELECT COUNT(*) FROM poles p 
+        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.confirmed_at::date = CURRENT_DATE AND p.is_deleted IS NOT TRUE
+      ) as today_poles_resolved
     FROM project_users pu
     JOIN users u ON u.id = pu.user_id
     WHERE pu.project_id = $1
       AND pu.project_role = 'EMPLOYEE'
       AND u.is_deleted = FALSE
-    ORDER BY total_resolved DESC;
+    ORDER BY (
+      (SELECT COUNT(*) FROM switch_points sp WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND sp.is_deleted IS NOT TRUE) +
+      (SELECT COUNT(*) FROM poles p WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.is_deleted IS NOT TRUE)
+    ) DESC;
   `;
   const result = await query(sql, [projectId]);
   return result.rows;
@@ -611,24 +614,31 @@ async function getMobileUserTracking(projectId) {
       u.id, 
       u.email,
       u.name,
-      COALESCE(SUM(stats.total_count), 0) as total,
-      COALESCE(SUM(stats.today_count), 0) as today_total
+      (
+        SELECT COUNT(*) FROM switch_points sp 
+        WHERE sp.created_by = u.id AND sp.project_id = $1 AND sp.is_deleted IS NOT TRUE
+      ) as total_sp,
+      (
+        SELECT COUNT(*) FROM poles p 
+        WHERE p.created_by = u.id AND p.project_id = $1 AND p.is_deleted IS NOT TRUE
+      ) as total_poles,
+      (
+        SELECT COUNT(*) FROM switch_points sp 
+        WHERE sp.created_by = u.id AND sp.project_id = $1 AND sp.created_at::date = CURRENT_DATE AND sp.is_deleted IS NOT TRUE
+      ) as today_sp,
+      (
+        SELECT COUNT(*) FROM poles p 
+        WHERE p.created_by = u.id AND p.project_id = $1 AND p.created_at::date = CURRENT_DATE AND p.is_deleted IS NOT TRUE
+      ) as today_poles
     FROM project_users pu
     JOIN users u ON u.id = pu.user_id
-    LEFT JOIN (
-      SELECT created_by, COUNT(*) as total_count, COUNT(*) FILTER (WHERE created_at::date = CURRENT_DATE) as today_count
-      FROM (
-        SELECT created_by, created_at FROM switch_points WHERE project_id = $1 AND is_deleted IS NOT TRUE
-        UNION ALL
-        SELECT created_by, created_at FROM poles WHERE project_id = $1 AND is_deleted IS NOT TRUE
-      ) combined
-      GROUP BY created_by
-    ) stats ON u.id = stats.created_by
     WHERE pu.project_id = $1
       AND pu.project_role = 'MOBILE_USER'
       AND u.is_deleted = FALSE
-    GROUP BY u.id, u.email, u.name
-    ORDER BY total DESC;
+    ORDER BY (
+      (SELECT COUNT(*) FROM switch_points sp WHERE sp.created_by = u.id AND sp.project_id = $1 AND sp.is_deleted IS NOT TRUE) +
+      (SELECT COUNT(*) FROM poles p WHERE p.created_by = u.id AND p.project_id = $1 AND p.is_deleted IS NOT TRUE)
+    ) DESC;
   `;
   const result = await query(sql, [projectId]);
   return result.rows;
