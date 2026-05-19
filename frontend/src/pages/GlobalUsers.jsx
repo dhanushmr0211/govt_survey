@@ -141,8 +141,8 @@ export default function GlobalUsers() {
                 <thead>
                   <tr className="border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider">
                     <th className="px-6 py-4">Name</th>
-                    <th className="px-6 py-4">Email</th>
                     <th className="px-6 py-4">Mobile Number</th>
+                    <th className="px-6 py-4">Email</th>
                     <th className="px-6 py-4">Global Role</th>
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
@@ -155,8 +155,8 @@ export default function GlobalUsers() {
                   ) : users.map(u => (
                     <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 font-bold text-slate-900">{u.name}</td>
-                      <td className="px-6 py-4 text-slate-600">{u.email}</td>
                       <td className="px-6 py-4 text-slate-600">{u.phone || '—'}</td>
+                      <td className="px-6 py-4 text-slate-600">{u.email}</td>
                       <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${u.role === 'MASTER_ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`}>
                           {u.role}

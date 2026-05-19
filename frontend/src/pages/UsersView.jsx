@@ -96,6 +96,7 @@ export const UsersView = ({ projectId, roleFilter }) => {
             <thead>
               <tr className="border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider">
                 <th className="px-6 py-4">Team Member</th>
+                <th className="px-6 py-4">Mobile Number</th>
                 <th className="px-6 py-4">Role</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-right">Actions</th>
@@ -103,9 +104,9 @@ export const UsersView = ({ projectId, roleFilter }) => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr><td colSpan="4" className="px-6 py-12 text-center text-slate-500">Loading team members...</td></tr>
+                <tr><td colSpan="5" className="px-6 py-12 text-center text-slate-500">Loading team members...</td></tr>
               ) : visibleUsers.length === 0 ? (
-                <tr><td colSpan="4" className="px-6 py-12 text-center text-slate-500">No members found for this project.</td></tr>
+                <tr><td colSpan="5" className="px-6 py-12 text-center text-slate-500">No members found for this project.</td></tr>
               ) : visibleUsers.map(u => (
                 <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
@@ -119,6 +120,7 @@ export const UsersView = ({ projectId, roleFilter }) => {
                       </div>
                     </div>
                   </td>
+                  <td className="px-6 py-4 text-slate-600 font-medium text-sm">{u.phone || '—'}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                       u.project_role === 'ADMIN' ? 'bg-blue-100 text-blue-700' :
