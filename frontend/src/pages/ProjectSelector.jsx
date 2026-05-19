@@ -61,12 +61,12 @@ export default function ProjectSelector() {
                   <FolderKanban size={24} />
                 </div>
                 
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                <div className="absolute top-8 right-8 flex flex-col items-end gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-500/10 text-orange-600 border border-orange-500/20 shadow-sm">
                     {getRoleIcon(project.project_role)}
                     {(project.project_role || 'MEMBER').replace('_', ' ')}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                     {(project.project_type || 'POLE_SURVEY').replace('_', ' ')}
                   </span>
                 </div>

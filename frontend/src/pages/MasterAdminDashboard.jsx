@@ -200,8 +200,13 @@ export default function MasterAdminDashboard() {
                     localStorage.setItem('master_selectedProjectId', p.id);
                     setSearchParams({ projectId: String(p.id), view: 'pole_survey_summary' });
                   }}
-                  className="group cursor-pointer rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+                  className="group relative cursor-pointer rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
                 >
+                  <div className="absolute top-6 right-6">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-500/10 text-orange-600 border border-orange-500/20 shadow-sm">
+                      {(p.project_role || user?.role || 'MASTER_ADMIN').replace('_', ' ')}
+                    </span>
+                  </div>
                   <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600">
                     <FolderKanban size={22} />
                   </div>
