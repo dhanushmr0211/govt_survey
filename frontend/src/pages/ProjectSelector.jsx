@@ -66,6 +66,9 @@ export default function ProjectSelector() {
                     {getRoleIcon(project.project_role)}
                     {(project.project_role || 'MEMBER').replace('_', ' ')}
                   </span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-500/10 text-orange-600 border border-orange-500/20 shadow-sm">
+                    May/19/2026
+                  </span>
                   <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                     {(project.project_type || 'POLE_SURVEY').replace('_', ' ')}
                   </span>

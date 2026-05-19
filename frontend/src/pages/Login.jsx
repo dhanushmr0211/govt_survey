@@ -107,7 +107,7 @@ export default function Login() {
                 className="w-full px-5 py-4 rounded-2xl border border-white/15 focus:border-white/40 focus:ring-4 focus:ring-white/5 transition-all text-sm outline-none bg-transparent text-white placeholder:text-white/20 shadow-sm" 
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="admin@prelectricals.com"
+                placeholder="EMAIL_ADDRESS"
                 required
               />
             </div>
