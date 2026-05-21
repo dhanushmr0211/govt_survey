@@ -3,6 +3,12 @@ const { canAccessProject } = require('../../../middleware/projectAccess');
 const { ROLES } = require('../../../constants/roles');
 const ExcelJS = require('exceljs');
 
+const getLocalDateString = (date = new Date()) => {
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60 * 1000);
+  return localDate.toISOString().split('T')[0];
+};
+
 async function getDistrictSummaryHandler(req, res, next) {
   try {
     const { projectId } = req.params;
@@ -16,7 +22,7 @@ async function getDistrictSummaryHandler(req, res, next) {
     const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
     const permissions = req.projectSections || {};
     
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString();
     const isRequestForToday = date === todayStr;
 
     if (!isMasterAdmin && !permissions.section_a) {
@@ -43,7 +49,7 @@ async function getWardSummaryHandler(req, res, next) {
     const hasSectionA = permissions.section_a;
     const hasSectionB = permissions.section_b;
     
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString();
     const isRequestForToday = date === todayStr;
 
     if (!isMasterAdmin && !hasSectionA) {

@@ -1,12 +1,30 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSummary } from '../../../shared/hooks/useSummary';
 import { Zap, Lightbulb, ArrowUpRight } from 'lucide-react';
 
+const getLocalDateString = (date = new Date()) => {
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60 * 1000);
+  return localDate.toISOString().split('T')[0];
+};
+
 export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCounts = false }) => {
   const [selectedFilter, setSelectedFilter] = useState('today');
-  const today = new Date().toISOString().split('T')[0];
+  const [today, setToday] = useState(() => getLocalDateString());
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
+
+  useEffect(() => {
+    const now = new Date();
+    const nextMidnight = new Date(now);
+    nextMidnight.setHours(24, 0, 0, 0);
+
+    const timeoutId = window.setTimeout(() => {
+      setToday(getLocalDateString());
+    }, nextMidnight.getTime() - now.getTime());
+
+    return () => window.clearTimeout(timeoutId);
+  }, [today]);
 
   let effectiveDate = null;
   let mode = 'exact';
@@ -14,7 +32,7 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
   let effectiveToDate = null;
   
   if (selectedFilter === 'today') {
-    effectiveDate = date;
+    effectiveDate = today;
   } else if (selectedFilter === 'till_yesterday') {
     effectiveDate = 'till_yesterday';
   } else if (selectedFilter === 'till_date') {
