@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useSummary } from '../../../shared/hooks/useSummary';
 import { Zap, Lightbulb, ArrowUpRight } from 'lucide-react';
+import { getLocalDateString } from '../../../shared/utils/date';
 
 export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCounts = false }) => {
   const [selectedFilter, setSelectedFilter] = useState('today');
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
 

@@ -4,6 +4,7 @@ import { useProjects } from '../shared/hooks/useProjects';
 import { Search, FolderKanban, MapPin, Calendar, Clock, Edit, Trash2, X } from 'lucide-react';
 import { SummaryView } from '../modules/poleSurvey/components/SummaryView';
 import { SubmissionQueueView } from '../modules/poleSurvey/components/SubmissionQueueView';
+import { getLocalDateString } from '../shared/utils/date';
 
 export default function Projects() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -122,7 +123,7 @@ export default function Projects() {
                   <SummaryView projectId={selectedProject.id} onViewDetails={(ulb) => console.log('View details for ULB', ulb)} />
                 )}
                 {projectView === 'today_summary' && (
-                  <SummaryView projectId={selectedProject.id} date={new Date().toISOString().split('T')[0]} onViewDetails={(ulb) => console.log('View details for ULB', ulb)} />
+                  <SummaryView projectId={selectedProject.id} date={getLocalDateString()} onViewDetails={(ulb) => console.log('View details for ULB', ulb)} />
                 )}
                 {projectView === 'issues' && (
                   <SubmissionQueueView projectId={selectedProject.id} />

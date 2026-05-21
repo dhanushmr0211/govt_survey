@@ -7,6 +7,7 @@ import { UsersView } from './UsersView';
 import { EmployeeTrackingView, MobileUserTrackingView } from './TrackingViews';
 import { DownloadReportModal as SharedDownloadReportModal } from '../shared/components/DownloadReportModal';
 import { BarChart3, CalendarDays, ClipboardList, Download, Smartphone, UserCheck, ArrowLeft, Users as UsersIcon, Landmark, LogOut } from 'lucide-react';
+import { getLocalDateString } from '../shared/utils/date';
 
 export default function AdminDashboard() {
   const { user, activeProject, clearActiveProject } = useAuthStore();
@@ -175,7 +176,7 @@ export default function AdminDashboard() {
           {activeView === 'pole_survey_today' && !selectedUlb && (
             <SummaryView 
               projectId={activeProject.id} 
-              date={new Date().toISOString().split('T')[0]} 
+              date={getLocalDateString()} 
               onViewDetails={(ulb, filters) => { 
                 setSelectedUlb(ulb); 
                 setUlbFilterParams(filters); 

@@ -3,12 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useAuthStore } from '../../store/authStore';
 import API_BASE_URL from '../../config/api';
+import { getLocalDateString } from '../utils/date';
 
 export function DownloadReportModal({ isOpen, onClose, projectId }) {
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const isMasterAdmin = user?.role === 'MASTER_ADMIN';
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const [districtId, setDistrictId] = useState('');

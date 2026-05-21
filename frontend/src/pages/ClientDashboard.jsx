@@ -7,6 +7,7 @@ import { UsersView } from './UsersView';
 import { EmployeeTrackingView, MobileUserTrackingView } from './TrackingViews';
 import { DownloadReportModal } from '../shared/components/DownloadReportModal';
 import { BarChart3, CalendarDays, ClipboardList, ArrowLeft, Download, Landmark, LogOut, Users as UsersIcon, UserCheck, Smartphone } from 'lucide-react';
+import { getLocalDateString } from '../shared/utils/date';
 
 export default function ClientDashboard() {
   const { user, activeProject, clearActiveProject } = useAuthStore();
@@ -158,7 +159,7 @@ export default function ClientDashboard() {
             {activeView === 'pole_survey_today' && !selectedUlb && (
               <SummaryView 
                 projectId={activeProject.id} 
-                date={new Date().toISOString().split('T')[0]} 
+                date={getLocalDateString()} 
                 onViewDetails={(ulb, filters) => { 
                   setSelectedUlb(ulb); 
                   setUlbFilterParams(filters); 

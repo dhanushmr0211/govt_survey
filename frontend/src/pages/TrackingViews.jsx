@@ -4,12 +4,13 @@ import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useEmployeeTracking } from '../shared/hooks/useEmployeeTracking';
 import { useMobileUserTracking } from '../shared/hooks/useMobileUserTracking';
+import { getLocalDateString } from '../shared/utils/date';
 
 export function EmployeeTrackingView({ projectId }) {
   const { data: tracking = [], isLoading } = useEmployeeTracking(projectId);
   const [selectedEmp, setSelectedEmp] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
 
@@ -128,7 +129,7 @@ export function MobileUserTrackingView({ projectId }) {
   const { data: tracking = [], isLoading } = useMobileUserTracking(projectId);
   const [selectedUser, setSelectedUser] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
 

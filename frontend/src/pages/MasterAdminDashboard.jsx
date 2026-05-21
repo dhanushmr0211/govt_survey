@@ -12,6 +12,7 @@ import axios from 'axios';
 import { BarChart3, CalendarDays, ClipboardList, Download, FolderKanban, Smartphone, UserCheck, Users, LogOut } from 'lucide-react';
 import API_BASE_URL from '../config/api';
 import { useProjects } from '../shared/hooks/useProjects';
+import { getLocalDateString } from '../shared/utils/date';
 
 export default function MasterAdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -233,7 +234,7 @@ export default function MasterAdminDashboard() {
         {effectiveProject?.id && activeView === 'pole_survey_today' && !selectedUlb && (
           <SummaryView 
             projectId={effectiveProject.id} 
-            date={new Date().toISOString().split('T')[0]} 
+            date={getLocalDateString()} 
             onViewDetails={(ulb, filters) => { 
               setSelectedUlb(ulb); 
               setUlbFilterParams(filters); 
@@ -287,7 +288,7 @@ export default function MasterAdminDashboard() {
 
 function DownloadReportModal({ isOpen, onClose, projectId }) {
   const token = localStorage.getItem('token');
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const [district, setDistrict] = useState('');
   const [ulbId, setUlbId] = useState('');
   const [fromDate, setFromDate] = useState(today);
