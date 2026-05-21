@@ -11,6 +11,7 @@ import API_BASE_URL from '../../../config/api';
 import { OfflineQueueView } from '../components/OfflineQueueView';
 import { offlineSyncService } from '../services/offlineSyncService';
 import { useEffect } from 'react';
+import { getLocalDateString } from '../../../shared/utils/date';
 
 export default function MobileSurvey() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,6 +20,7 @@ export default function MobileSurvey() {
   const [view, setView] = useState(null); // 'switch_point' or 'pole'
   const [activeTab, setActiveTab] = useState('survey');
   const [pendingCount, setPendingCount] = useState(0);
+  const [selectedDate, setSelectedDate] = useState(() => getLocalDateString());
 
   const projectId = activeProject?.id;
 
@@ -48,7 +50,11 @@ export default function MobileSurvey() {
     enabled: searchTerm.length >= 2,
   });
 
-  const { data: stats = { switch_points: 0, poles: 0 } } = useUserStats(projectId, { enabled: activeTab === 'dashboard' });
+  const { data: stats = {
+    total: { switch_points: 0, poles: 0 },
+    today: { switch_points: 0, poles: 0 },
+    dateWise: { date: '', switch_points: 0, poles: 0 }
+  } } = useUserStats(projectId, selectedDate, { enabled: activeTab === 'dashboard' });
 
   return (
     <div className="max-w-md mx-auto flex flex-col h-screen bg-gray-50">
@@ -66,16 +72,76 @@ export default function MobileSurvey() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-4 space-y-6 pb-20">
         {activeTab === 'dashboard' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-800">Your Dashboard</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm flex flex-col items-center">
-                <span className="text-xs text-gray-500">Switch Points</span>
-                <span className="text-2xl font-bold text-primary">{stats.switch_points}</span>
+          <div className="space-y-6">
+            {/* Header/Welcome Card with Premium Gradient */}
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-5 rounded-2xl shadow-md relative overflow-hidden">
+              <div className="absolute right-0 top-0 w-24 h-24 bg-white/10 rounded-full blur-xl -mr-6 -mt-6"></div>
+              <h2 className="text-xl font-bold tracking-tight">Surveyor Console</h2>
+              <p className="text-xs text-emerald-100 mt-1 font-medium">Real-time survey progress and analytics</p>
+            </div>
+
+            {/* Today's Activity Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider flex items-center gap-2">
+                <span className="w-1.5 h-3 bg-emerald-500 rounded-full"></span>
+                Today's Submissions
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-emerald-100">
+                  <span className="text-xs font-semibold text-gray-400">Switch Points</span>
+                  <span className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.switch_points ?? 0}</span>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-emerald-100">
+                  <span className="text-xs font-semibold text-gray-400">Poles</span>
+                  <span className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.poles ?? 0}</span>
+                </div>
               </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm flex flex-col items-center">
-                <span className="text-xs text-gray-500">Poles</span>
-                <span className="text-2xl font-bold text-primary">{stats.poles}</span>
+            </div>
+
+            {/* Total Activity Section */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider flex items-center gap-2">
+                <span className="w-1.5 h-3 bg-blue-500 rounded-full"></span>
+                Total Submissions
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-blue-100">
+                  <span className="text-xs font-semibold text-gray-400">Switch Points</span>
+                  <span className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.switch_points ?? 0}</span>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-blue-100">
+                  <span className="text-xs font-semibold text-gray-400">Poles</span>
+                  <span className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.poles ?? 0}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Date-wise Section */}
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+              <div className="flex flex-col gap-2">
+                <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-1.5 h-3 bg-amber-50 rounded-full"></span>
+                  Date-Wise Submissions
+                </h3>
+                <p className="text-xs text-gray-400">Select a specific date to view statistics</p>
+              </div>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-sm font-medium text-gray-700 bg-gray-50/50 cursor-pointer"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="bg-amber-50/30 p-4 rounded-xl border border-amber-100/50 flex flex-col items-center">
+                  <span className="text-xs font-semibold text-amber-700/80">Switch Points</span>
+                  <span className="text-2xl font-black text-amber-900 mt-1">{stats?.dateWise?.switch_points ?? 0}</span>
+                </div>
+                <div className="bg-amber-50/30 p-4 rounded-xl border border-amber-100/50 flex flex-col items-center">
+                  <span className="text-xs font-semibold text-amber-700/80">Poles</span>
+                  <span className="text-2xl font-black text-amber-900 mt-1">{stats?.dateWise?.poles ?? 0}</span>
+                </div>
               </div>
             </div>
           </div>

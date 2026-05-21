@@ -203,9 +203,10 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
 async function getMyStatsHandler(req, res, next) {
   try {
     const { projectId } = req.params;
+    const { date } = req.query;
     const userId = req.user.sub;
     
-    const stats = await getMyStats(Number(projectId), Number(userId));
+    const stats = await getMyStats(Number(projectId), Number(userId), date || null);
     res.json({ stats });
   } catch (error) { next(error); }
 }

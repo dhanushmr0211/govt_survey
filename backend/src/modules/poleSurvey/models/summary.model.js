@@ -768,18 +768,62 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
   return { rows: result.rows, total };
 }
 
-async function getMyStats(projectId, userId) {
-  const spResult = await query(
+async function getMyStats(projectId, userId, date = null) {
+  const todayStr = getLocalDateString();
+  
+  // Total stats
+  const totalSpResult = await query(
     'SELECT COUNT(*) as total FROM switch_points WHERE project_id = $1 AND created_by = $2 AND is_deleted IS NOT TRUE',
     [projectId, userId]
   );
-  const poleResult = await query(
+  const totalPoleResult = await query(
     'SELECT COUNT(*) as total FROM poles WHERE project_id = $1 AND created_by = $2 AND is_deleted IS NOT TRUE',
     [projectId, userId]
   );
+
+  // Today's stats
+  const todaySpResult = await query(
+    `SELECT COUNT(*) as total FROM switch_points 
+     WHERE project_id = $1 AND created_by = $2 AND is_deleted IS NOT TRUE
+     AND (timezone('Asia/Kolkata', timezone('UTC', created_at)))::date = $3`,
+    [projectId, userId, todayStr]
+  );
+  const todayPoleResult = await query(
+    `SELECT COUNT(*) as total FROM poles 
+     WHERE project_id = $1 AND created_by = $2 AND is_deleted IS NOT TRUE
+     AND (timezone('Asia/Kolkata', timezone('UTC', created_at)))::date = $3`,
+    [projectId, userId, todayStr]
+  );
+
+  // Date-wise stats (custom date if passed, otherwise default to today)
+  const targetDate = date || todayStr;
+  const dateWiseSpResult = await query(
+    `SELECT COUNT(*) as total FROM switch_points 
+     WHERE project_id = $1 AND created_by = $2 AND is_deleted IS NOT TRUE
+     AND (timezone('Asia/Kolkata', timezone('UTC', created_at)))::date = $3`,
+    [projectId, userId, targetDate]
+  );
+  const dateWisePoleResult = await query(
+    `SELECT COUNT(*) as total FROM poles 
+     WHERE project_id = $1 AND created_by = $2 AND is_deleted IS NOT TRUE
+     AND (timezone('Asia/Kolkata', timezone('UTC', created_at)))::date = $3`,
+    [projectId, userId, targetDate]
+  );
+
   return {
-    switch_points: parseInt(spResult.rows[0].total, 10),
-    poles: parseInt(poleResult.rows[0].total, 10)
+    total: {
+      switch_points: parseInt(totalSpResult.rows[0].total, 10),
+      poles: parseInt(totalPoleResult.rows[0].total, 10)
+    },
+    today: {
+      switch_points: parseInt(todaySpResult.rows[0].total, 10),
+      poles: parseInt(todayPoleResult.rows[0].total, 10)
+    },
+    dateWise: {
+      date: targetDate,
+      switch_points: parseInt(dateWiseSpResult.rows[0].total, 10),
+      poles: parseInt(dateWisePoleResult.rows[0].total, 10)
+    }
   };
 }
 
