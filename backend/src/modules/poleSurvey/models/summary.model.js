@@ -1,4 +1,5 @@
 const { query } = require('../../../config/db');
+const { getLocalDateString } = require('../../../utils/date');
 
 async function getDistrictSummary(projectId, date = null, mode = 'exact', districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
   let dateFilter = '';
@@ -7,19 +8,19 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', distri
   
   let paramIdx = 2;
   if (fromDate && toDate) {
-    dateFilter = `AND sp.created_at::date BETWEEN $${paramIdx} AND $${paramIdx + 1}`;
+    dateFilter = `AND (timezone('Asia/Kolkata', sp.created_at))::date BETWEEN $${paramIdx} AND $${paramIdx + 1}`;
     params.push(fromDate, toDate);
     paramIdx += 2;
   } else if (date) {
     if (date === 'till_yesterday') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
-      dateFilter = `AND sp.created_at::date <= $${paramIdx}`;
+      const yesterdayStr = getLocalDateString(yesterday);
+      dateFilter = `AND (timezone('Asia/Kolkata', sp.created_at))::date <= $${paramIdx}`;
       params.push(yesterdayStr);
     } else {
       const operator = mode === 'cumulative' ? '<=' : '=';
-      dateFilter = `AND sp.created_at::date ${operator} $${paramIdx}`;
+      dateFilter = `AND (timezone('Asia/Kolkata', sp.created_at))::date ${operator} $${paramIdx}`;
       params.push(date);
     }
     paramIdx++;
@@ -63,18 +64,18 @@ async function getWardSummary(ulbId, date = null, mode = 'exact', fromDate = nul
   const params = [ulbId];
   
   if (fromDate && toDate) {
-    dateFilter = 'AND sp.created_at::date BETWEEN $2 AND $3';
+    dateFilter = "AND (timezone('Asia/Kolkata', sp.created_at))::date BETWEEN $2 AND $3";
     params.push(fromDate, toDate);
   } else if (date) {
     if (date === 'till_yesterday') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
-      dateFilter = 'AND sp.created_at::date <= $2';
+      const yesterdayStr = getLocalDateString(yesterday);
+      dateFilter = "AND (timezone('Asia/Kolkata', sp.created_at))::date <= $2";
       params.push(yesterdayStr);
     } else {
       const operator = mode === 'cumulative' ? '<=' : '=';
-      dateFilter = `AND sp.created_at::date ${operator} $2`;
+      dateFilter = `AND (timezone('Asia/Kolkata', sp.created_at))::date ${operator} $2`;
       params.push(date);
     }
   }
@@ -99,18 +100,18 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fr
   const params = [ulbId, wardNumber];
   
   if (fromDate && toDate) {
-    dateFilter = 'AND sp.created_at::date BETWEEN $3 AND $4';
+    dateFilter = "AND (timezone('Asia/Kolkata', sp.created_at))::date BETWEEN $3 AND $4";
     params.push(fromDate, toDate);
   } else if (date) {
     if (date === 'till_yesterday') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
-      dateFilter = 'AND sp.created_at::date <= $3';
+      const yesterdayStr = getLocalDateString(yesterday);
+      dateFilter = "AND (timezone('Asia/Kolkata', sp.created_at))::date <= $3";
       params.push(yesterdayStr);
     } else {
       const operator = mode === 'cumulative' ? '<=' : '=';
-      dateFilter = `AND sp.created_at::date ${operator} $3`;
+      dateFilter = `AND (timezone('Asia/Kolkata', sp.created_at))::date ${operator} $3`;
       params.push(date);
     }
   }
@@ -649,7 +650,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
 }
 
 async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const offset = (page - 1) * limit;
   
   let scopeFilter = '';
@@ -708,7 +709,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
       FROM switch_points sp
       JOIN users u ON sp.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
-      WHERE sp.project_id = $1 AND sp.created_at::date = $2 AND sp.is_deleted IS NOT TRUE
+      WHERE sp.project_id = $1 AND (timezone('Asia/Kolkata', sp.created_at))::date = $2 AND sp.is_deleted IS NOT TRUE
       AND ($5::int IS NULL OR sp.created_by = $5)
       ${scopeFilter}
       
@@ -754,7 +755,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
       JOIN switch_points sp ON p.switch_point_id = sp.id
       JOIN users u ON p.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
-      WHERE p.project_id = $1 AND p.created_at::date = $2 AND p.is_deleted IS NOT TRUE
+      WHERE p.project_id = $1 AND (timezone('Asia/Kolkata', p.created_at))::date = $2 AND p.is_deleted IS NOT TRUE
       AND ($5::int IS NULL OR p.created_by = $5)
       ${scopeFilter}
     ) combined
@@ -798,11 +799,11 @@ async function getEmployeeTracking(projectId) {
       ) as total_poles_resolved,
       (
         SELECT COUNT(*) FROM switch_points sp 
-        WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND sp.confirmed_at::date = CURRENT_DATE AND sp.is_deleted IS NOT TRUE
+        WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND (timezone('Asia/Kolkata', sp.confirmed_at))::date = (timezone('Asia/Kolkata', NOW()))::date AND sp.is_deleted IS NOT TRUE
       ) as today_sp_resolved,
       (
         SELECT COUNT(*) FROM poles p 
-        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.confirmed_at::date = CURRENT_DATE AND p.is_deleted IS NOT TRUE
+        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND (timezone('Asia/Kolkata', p.confirmed_at))::date = (timezone('Asia/Kolkata', NOW()))::date AND p.is_deleted IS NOT TRUE
       ) as today_poles_resolved
     FROM project_users pu
     JOIN users u ON u.id = pu.user_id
@@ -834,11 +835,11 @@ async function getMobileUserTracking(projectId) {
       ) as total_poles,
       (
         SELECT COUNT(*) FROM switch_points sp 
-        WHERE sp.created_by = u.id AND sp.project_id = $1 AND sp.created_at::date = CURRENT_DATE AND sp.is_deleted IS NOT TRUE
+        WHERE sp.created_by = u.id AND sp.project_id = $1 AND (timezone('Asia/Kolkata', sp.created_at))::date = (timezone('Asia/Kolkata', NOW()))::date AND sp.is_deleted IS NOT TRUE
       ) as today_sp,
       (
         SELECT COUNT(*) FROM poles p 
-        WHERE p.created_by = u.id AND p.project_id = $1 AND p.created_at::date = CURRENT_DATE AND p.is_deleted IS NOT TRUE
+        WHERE p.created_by = u.id AND p.project_id = $1 AND (timezone('Asia/Kolkata', p.created_at))::date = (timezone('Asia/Kolkata', NOW()))::date AND p.is_deleted IS NOT TRUE
       ) as today_poles
     FROM project_users pu
     JOIN users u ON u.id = pu.user_id
@@ -862,7 +863,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
   let rangeFilter = '';
   if (fromDate && toDate) {
     params.push(fromDate, toDate);
-    rangeFilter = `\n    AND (($${params.length - 1}::date IS NULL OR sp.created_at::date >= $${params.length - 1}) AND ($${params.length}::date IS NULL OR sp.created_at::date <= $${params.length}))`;
+    rangeFilter = `\n    AND (($${params.length - 1}::date IS NULL OR (timezone('Asia/Kolkata', sp.created_at))::date >= $${params.length - 1}) AND ($${params.length}::date IS NULL OR (timezone('Asia/Kolkata', sp.created_at))::date <= $${params.length}))`;
   }
 
   if (districtScope && Array.isArray(districtScope) && districtScope.length > 0) {
@@ -887,7 +888,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     JOIN ulbs ulb ON sp.ulb_id = ulb.id
     JOIN districts d ON ulb.district_id = d.id
     WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted IS NOT TRUE
-    AND ($2::date IS NULL OR sp.created_at::date <= $2)
+    AND ($2::date IS NULL OR (timezone('Asia/Kolkata', sp.created_at))::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
     AND ($4::int IS NULL OR sp.ulb_id = $4)
     ${rangeFilter}
@@ -910,7 +911,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     JOIN ulbs ulb ON sp.ulb_id = ulb.id
     JOIN districts d ON ulb.district_id = d.id
     WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
-    AND ($2::date IS NULL OR p.created_at::date <= $2)
+    AND ($2::date IS NULL OR (timezone('Asia/Kolkata', p.created_at))::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
     AND ($4::int IS NULL OR sp.ulb_id = $4)
     ${rangeFilter}
