@@ -7,10 +7,12 @@ import GlobalUsers from './pages/GlobalUsers'
 import { ProtectedRoute } from './core/auth/ProtectedRoute'
 import { DashboardLayout } from './app/layouts/DashboardLayout'
 import { TodaySubmissionsView } from './modules/poleSurvey/components/TodaySubmissionsView'
+import { ToastContainer } from './shared/components/ToastContainer'
 
 function App() {
   return (
     <BrowserRouter>
+      <ToastContainer />
       <Routes>
         <Route path="/login" element={<Login />} />
         

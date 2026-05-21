@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Edit2, Save } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
+import { useToastStore } from '../../../store/toastStore';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 import { isMobileEditRestricted } from '../utils/mobileRestrictions';
@@ -12,6 +13,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const [selectedWard, setSelectedWard] = useState(null);
   const [selectedDetail, setSelectedDetail] = useState(null); // { type: 'switch_point' | 'pole', data: ... }
   const queryClient = useQueryClient();
+  const addToast = useToastStore((state) => state.addToast);
 
   const user = useAuthStore((state) => state.user);
   const activeProject = useAuthStore((state) => state.activeProject);
@@ -78,7 +80,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['wardDetails']);
-      alert('Changes saved successfully!');
+      addToast('Changes saved successfully!', 'success');
       setIsEditing(false);
       const updatedEntity = data?.switchPoint || data?.pole;
       if (updatedEntity) {
@@ -92,7 +94,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
       }
     },
     onError: (error) => {
-      alert(error.response?.data?.message || 'Error saving changes');
+      addToast(error.response?.data?.message || 'Error saving changes', 'error');
     }
   });
 

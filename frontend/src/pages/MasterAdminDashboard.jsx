@@ -9,7 +9,7 @@ import { UsersView } from './UsersView';
 import { EmployeeTrackingView, MobileUserTrackingView } from './TrackingViews';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { BarChart3, CalendarDays, ClipboardList, Download, FolderKanban, Smartphone, UserCheck, Users, LogOut } from 'lucide-react';
+import { BarChart3, CalendarDays, ClipboardList, Download, FolderKanban, Smartphone, UserCheck, Users, LogOut, ArrowLeft } from 'lucide-react';
 import API_BASE_URL from '../config/api';
 import { useProjects } from '../shared/hooks/useProjects';
 import { getLocalDateString } from '../shared/utils/date';
@@ -170,19 +170,64 @@ export default function MasterAdminDashboard() {
         {/* Main Content */}
         <section className="min-w-0 flex-1 lg:ml-64">
           <div className="mb-5 flex flex-col justify-between gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Master Console</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">
-              {pageTitle}
-            </h1>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Master Console</p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">
+                {pageTitle}
+              </h1>
+            </div>
+
+            {/* Mobile View Switcher */}
+            {selectedProjectId && activeView !== 'projects' && (
+              <div className="flex flex-wrap gap-2 lg:hidden">
+                <button 
+                  onClick={() => { 
+                    setSearchParams({ view: 'projects' });
+                    setSelectedUlb(null); 
+                    setUlbFilterParams(null);
+                    setSelectedProjectName(null);
+                    localStorage.removeItem('master_selectedProjectName');
+                    localStorage.removeItem('master_selectedProjectId');
+                    useAuthStore.getState().clearActiveProject();
+                  }}
+                  className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-700"
+                >
+                  <ArrowLeft size={14} /> Back
+                </button>
+                {[...sectionItems, ...utilityItems].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => {
+                        setSearchParams({ projectId: String(effectiveProject?.id), view: item.key });
+                        setSelectedUlb(null); 
+                        setUlbFilterParams(null);
+                      }}
+                      className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold ${activeView === item.key ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-700'}`}
+                    >
+                      <Icon size={14} /> {item.label}
+                    </button>
+                  );
+                })}
+                {effectiveProject?.section_g && (
+                  <button
+                    onClick={() => setIsDownloadModalOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-700"
+                  >
+                    <Download size={14} /> Download
+                  </button>
+                )}
+              </div>
+            )}
+
+            <Link
+              to="/global-users"
+              className="inline-flex items-center gap-2 rounded-md bg-white border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm animate-fade-in"
+            >
+              <Users size={16} /> Global Users
+            </Link>
           </div>
-          <Link
-            to="/global-users"
-            className="inline-flex items-center gap-2 rounded-md bg-white border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
-          >
-            <Users size={16} /> Global Users
-          </Link>
-        </div>
 
         {(activeView === 'projects' || !selectedProjectId) && (
           <div className="premium-panel p-6">

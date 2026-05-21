@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { CheckCircle2, SearchCheck, Edit2, Save } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
+import { useToastStore } from '../../../store/toastStore';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 
@@ -11,6 +12,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId, ulb }) => {
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
   const queryClient = useQueryClient();
+  const addToast = useToastStore((state) => state.addToast);
 
   const [page, setPage] = useState(1);
   const limit = 50;
@@ -67,11 +69,11 @@ export const TodaySubmissionsView = ({ projectId: propProjectId, ulb }) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['submissions']);
-      alert('Submission confirmed successfully!');
+      addToast('Submission confirmed successfully!', 'success');
       setSelectedSubmission(null);
     },
     onError: (error) => {
-      alert(error.response?.data?.message || 'Error confirming submission');
+      addToast(error.response?.data?.message || 'Error confirming submission', 'error');
     }
   });
 
@@ -88,7 +90,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId, ulb }) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['submissions']);
-      alert('Changes saved successfully!');
+      addToast('Changes saved successfully!', 'success');
       setIsEditing(false);
       const updatedEntity = data?.switchPoint || data?.pole;
       if (updatedEntity) {
@@ -99,7 +101,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId, ulb }) => {
       }
     },
     onError: (error) => {
-      alert(error.response?.data?.message || 'Error saving changes');
+      addToast(error.response?.data?.message || 'Error saving changes', 'error');
     }
   });
 

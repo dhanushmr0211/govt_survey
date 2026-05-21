@@ -69,7 +69,7 @@ export default function Dashboard() {
     case 'EMPLOYEE':
       return <EmployeeDashboard />;
     case 'CLIENT':
-      return <ClientDashboard />;
+      return <AdminDashboard />;
     case 'MOBILE_USER':
       return <MobileSurvey />;
     default:

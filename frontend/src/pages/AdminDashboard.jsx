@@ -10,7 +10,8 @@ import { BarChart3, CalendarDays, ClipboardList, Download, Smartphone, UserCheck
 import { getLocalDateString } from '../shared/utils/date';
 
 export default function AdminDashboard() {
-  const { user, activeProject, clearActiveProject } = useAuthStore();
+  const { user, activeProject, clearActiveProject, logout } = useAuthStore();
+  const isClient = activeProject?.project_role === 'CLIENT';
   
   const hasSectionA = activeProject?.section_a;
   const hasSectionB = activeProject?.section_b;
@@ -53,15 +54,15 @@ export default function AdminDashboard() {
               <img src="/logo.png" alt="PR ELECTRICALS" className="h-11 w-11 rounded-full object-cover shadow-lg border border-white/10" />
               <div>
                 <p className="text-base font-bold tracking-tight text-white">PR ELECTRICALS</p>
-                <p className="text-xs font-medium text-slate-400">Operations Console</p>
+                <p className="text-xs font-medium text-slate-400">{isClient ? 'Client Console' : 'Operations Console'}</p>
               </div>
             </div>
           </div>
           
           <div className="p-4 border-b border-white/10">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Admin Workspace</p>
-            <p className="mt-1 text-lg font-bold">{user?.name || 'Admin'}</p>
-            <div className="mt-2 text-xs font-medium text-orange-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{isClient ? 'Client Workspace' : 'Admin Workspace'}</p>
+            <p className="mt-1 text-lg font-bold">{user?.name || (isClient ? 'Client' : 'Admin')}</p>
+            <div className={`mt-2 text-xs font-medium ${isClient ? 'text-indigo-400' : 'text-orange-500'}`}>
               Active Project: {activeProject.name}
             </div>
           </div>
@@ -124,11 +125,11 @@ export default function AdminDashboard() {
 
           <div className="p-4 border-t border-white/10">
             <button
-              onClick={clearActiveProject}
+              onClick={logout}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
             >
               <LogOut size={20} />
-              <span>Logout</span>
+              <span>Logout Account</span>
             </button>
           </div>
         </aside>

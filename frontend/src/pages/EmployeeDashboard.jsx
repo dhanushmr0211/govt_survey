@@ -45,109 +45,129 @@ export default function EmployeeDashboard() {
   if (!activeProject) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-100 flex overflow-hidden">
-      {/* Premium Sidebar */}
-      <aside className="w-64 shrink-0 flex flex-col bg-slate-950 text-white z-30 shadow-2xl">
-        <div className="p-6 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="PR ELECTRICALS" className="h-11 w-11 rounded-full object-cover shadow-lg border border-white/10" />
+    <div className="min-h-full -m-4 bg-slate-100 sm:-m-6 xl:-m-8">
+      <div className="mx-auto flex min-h-full w-full max-w-[1760px] gap-5 p-4 sm:p-6 xl:p-8">
+        {/* Premium Sidebar */}
+        <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-slate-950 text-white lg:flex fixed top-16 left-0 h-[calc(100vh-4rem)] z-30">
+          <div className="p-6 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="PR ELECTRICALS" className="h-11 w-11 rounded-full object-cover shadow-lg border border-white/10" />
+              <div>
+                <p className="text-base font-bold tracking-tight text-white">PR ELECTRICALS</p>
+                <p className="text-xs font-medium text-slate-400">Operations Console</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-4 border-b border-white/10 bg-white/5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Employee Workspace</p>
+            <p className="mt-1 text-lg font-bold truncate text-white">{user?.name || 'Employee'}</p>
+            <div className="mt-2 text-xs font-medium text-emerald-500 truncate">
+              {activeProject.name}
+            </div>
+          </div>
+
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto no-scrollbar">
+            <button
+              onClick={clearActiveProject}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <ArrowLeft size={18} /> Switch Project
+            </button>
+
+            <div className="my-4 border-t border-white/10"></div>
+
+            {sectionItems.length > 0 && (
+              <div className="space-y-1 border-l border-white/10 pl-3">
+                {sectionItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => { setActiveView(item.key); setSelectedUlb(null); setUlbFilterParams(null); }}
+                      className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
+                    >
+                      <Icon size={16} /> {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {utilityItems.length > 0 && (
+              <div className="space-y-1 border-l border-white/10 pl-3 mt-4">
+                {utilityItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => { setActiveView(item.key); setSelectedUlb(null); setUlbFilterParams(null); }}
+                      className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
+                    >
+                      <Icon size={16} /> {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {hasSectionG && (
+              <div className="space-y-1 border-l border-white/10 pl-3 mt-4">
+                <button
+                  onClick={() => setIsDownloadModalOpen(true)}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <Download size={16} /> Download Report
+                </button>
+              </div>
+            )}
+          </nav>
+
+          <div className="p-4 border-t border-white/10">
+            <button
+              onClick={() => useAuthStore.getState().logout()}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <LogOut size={20} />
+              <span>Logout Account</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <section className="min-w-0 flex-1 lg:ml-64">
+          <div className="mb-5 flex flex-col justify-between gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
             <div>
-              <p className="text-base font-bold tracking-tight text-white">PR ELECTRICALS</p>
-              <p className="text-xs font-medium text-slate-400">Operations Console</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {activeProject.name} Dashboard
+              </p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">
+                {sectionItems.find(i => i.key === activeView)?.label || utilityItems.find(i => i.key === activeView)?.label || 'Overview'}
+              </h1>
             </div>
-          </div>
-        </div>
-        
-        <div className="p-4 border-b border-white/10 bg-white/5">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Employee Workspace</p>
-          <p className="mt-1 text-lg font-bold truncate text-white">{user?.name || 'Employee'}</p>
-          <div className="mt-2 text-xs font-medium text-emerald-500 truncate">
-            {activeProject.name}
-          </div>
-        </div>
-
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto no-scrollbar">
-          <button
-            onClick={clearActiveProject}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
-          >
-            <ArrowLeft size={18} /> Switch Project
-          </button>
-
-          <div className="my-4 border-t border-white/10"></div>
-
-          {sectionItems.length > 0 && (
-            <div className="space-y-1 border-l border-white/10 pl-3">
-              {sectionItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.key}
-                    onClick={() => { setActiveView(item.key); setSelectedUlb(null); setUlbFilterParams(null); }}
-                    className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
-                  >
-                    <Icon size={16} /> {item.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {utilityItems.length > 0 && (
-            <div className="space-y-1 border-l border-white/10 pl-3 mt-4">
-              {utilityItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.key}
-                    onClick={() => { setActiveView(item.key); setSelectedUlb(null); setUlbFilterParams(null); }}
-                    className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold transition-colors ${activeView === item.key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
-                  >
-                    <Icon size={16} /> {item.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {hasSectionG && (
-            <div className="space-y-1 border-l border-white/10 pl-3 mt-4">
-              <button
-                onClick={() => setIsDownloadModalOpen(true)}
-                className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+            <div className="flex flex-wrap gap-2 lg:hidden">
+              <button 
+                onClick={clearActiveProject}
+                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-700"
               >
-                <Download size={16} /> Download Report
+                <ArrowLeft size={14} /> Back
               </button>
+              {[...sectionItems, ...utilityItems].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => { setActiveView(item.key); setSelectedUlb(null); setUlbFilterParams(null); }}
+                    className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold ${activeView === item.key ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-700'}`}
+                  >
+                    <Icon size={14} /> {item.label}
+                  </button>
+                );
+              })}
             </div>
-          )}
-        </nav>
-
-        <div className="p-4 border-t border-white/10">
-          <button
-            onClick={() => useAuthStore.getState().logout()}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <LogOut size={20} />
-            <span>Logout Account</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">
-              {sectionItems.find(i => i.key === activeView)?.label || utilityItems.find(i => i.key === activeView)?.label || 'Overview'}
-            </h1>
           </div>
-          <div className="flex items-center gap-3">
-             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{activeProject.name}</span>
-          </div>
-        </header>
 
-        <div className="flex-1 overflow-y-auto p-8">
-          <div className="max-w-[1400px] mx-auto">
+          <div className="space-y-6">
             {activeView === 'pole_survey_summary' && !selectedUlb && (
               <SummaryView projectId={activeProject.id} onViewDetails={(ulb) => setSelectedUlb(ulb)} hideZeroCounts={true} />
             )}
@@ -199,8 +219,8 @@ export default function EmployeeDashboard() {
               <MobileUserTrackingView projectId={activeProject.id} />
             )}
           </div>
-        </div>
-      </main>
+        </section>
+      </div>
       <DownloadReportModal
         isOpen={isDownloadModalOpen}
         onClose={() => setIsDownloadModalOpen(false)}
