@@ -163,6 +163,14 @@ export default function AdminDashboard() {
                   </button>
                 );
               })}
+              {hasSectionG && (
+                <button
+                  onClick={() => setIsDownloadModalOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200"
+                >
+                  <Download size={14} /> Download Report
+                </button>
+              )}
             </div>
           </div>
 

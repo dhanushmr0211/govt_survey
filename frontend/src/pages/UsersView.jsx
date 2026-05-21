@@ -12,6 +12,8 @@ export const UsersView = ({ projectId, roleFilter }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedRole, setSelectedRole] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchUsers = async () => {
     try {
@@ -35,10 +37,31 @@ export const UsersView = ({ projectId, roleFilter }) => {
   };
 
   useEffect(() => {
-    if (projectId) fetchUsers();
+    if (projectId) {
+      fetchUsers();
+      setSelectedRole('ALL');
+      setSearchQuery('');
+    }
   }, [projectId]);
 
   const visibleUsers = users.filter((member) => member.id !== currentUser?.id);
+
+  const filteredUsers = visibleUsers.filter((u) => {
+    // 1. Role Filter
+    if (selectedRole !== 'ALL' && u.project_role !== selectedRole) {
+      return false;
+    }
+    // 2. Search Query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      return (
+        u.name?.toLowerCase().includes(query) ||
+        u.email?.toLowerCase().includes(query) ||
+        u.phone?.toLowerCase().includes(query)
+      );
+    }
+    return true;
+  });
 
   const adminsCount = visibleUsers.filter(u => u.project_role === 'ADMIN').length;
   const employeesCount = visibleUsers.filter(u => u.project_role === 'EMPLOYEE').length;
@@ -80,15 +103,32 @@ export const UsersView = ({ projectId, roleFilter }) => {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-          <div className="relative">
+        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
-              placeholder="Search by name or email..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name, email, or mobile..." 
               className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm"
             />
           </div>
+          {!roleFilter && (
+            <div className="w-full sm:w-48">
+              <select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                className="w-full border border-slate-200 rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium text-slate-700"
+              >
+                <option value="ALL">All Roles</option>
+                <option value="ADMIN">Admin</option>
+                <option value="CLIENT">Client</option>
+                <option value="EMPLOYEE">Employee</option>
+                <option value="MOBILE_USER">Mobile User</option>
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -105,9 +145,9 @@ export const UsersView = ({ projectId, roleFilter }) => {
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr><td colSpan="5" className="px-6 py-12 text-center text-slate-500">Loading team members...</td></tr>
-              ) : visibleUsers.length === 0 ? (
+              ) : filteredUsers.length === 0 ? (
                 <tr><td colSpan="5" className="px-6 py-12 text-center text-slate-500">No members found for this project.</td></tr>
-              ) : visibleUsers.map(u => (
+              ) : filteredUsers.map(u => (
                 <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
