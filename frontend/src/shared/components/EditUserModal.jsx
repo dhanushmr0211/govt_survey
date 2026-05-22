@@ -16,6 +16,10 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
 
     return {
       formData: {
+        name: sourceUser?.name || '',
+        email: sourceUser?.email || '',
+        phone: sourceUser?.phone || '',
+        is_blocked: sourceUser?.is_blocked || false,
         section_a: sourceUser?.section_a || false,
         section_b: sourceUser?.section_b || false,
         section_c: sourceUser?.section_c || false,
@@ -34,6 +38,10 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
   };
 
   const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    is_blocked: false,
     section_a: false, section_b: false, section_c: false, section_d: false,
     section_e: false, section_f: false, section_g: false, section_h: false, section_i: false, section_j: false,
     district_scope: [],
@@ -52,6 +60,10 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
 
     if (!isOpen) {
       setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        is_blocked: false,
         section_a: false, section_b: false, section_c: false, section_d: false,
         section_e: false, section_f: false, section_g: false, section_h: false, section_i: false, section_j: false,
         district_scope: [],
@@ -82,8 +94,11 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
   }, [isOpen, projectId]);
 
   const handleChange = (e) => {
-    const { name, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: checked }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
   };
 
   const toggleItem = (listName, id) => {
@@ -133,20 +148,90 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
 
   if (!isOpen) return null;
 
+  const canEditDetails = loggedInUser?.role === 'MASTER_ADMIN' || !!activeProject?.section_d;
+  const canEditPermissions = loggedInUser?.role === 'MASTER_ADMIN' || !!activeProject?.section_h;
+  const canBlockTarget = canEditDetails && user?.id !== loggedInUser?.id && user?.role !== 'MASTER_ADMIN';
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Edit Permissions</h2>
+            <h2 className="text-xl font-bold text-slate-900">Edit Team Member</h2>
             <p className="text-xs font-semibold text-slate-500 mt-1">{user?.name} ({user?.email})</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition-colors">✕</button>
         </div>
         
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-8">
-          {/* Section Access */}
+          {/* User Profile Details */}
           <section>
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
+              User Profile Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Full Name</label>
+                <input 
+                  type="text" 
+                  name="name" 
+                  value={formData.name} 
+                  onChange={handleChange} 
+                  disabled={!canEditDetails}
+                  required
+                  placeholder="Enter full name"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-900 disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Email Address</label>
+                <input 
+                  type="email" 
+                  name="email" 
+                  value={formData.email} 
+                  onChange={handleChange} 
+                  disabled={!canEditDetails}
+                  required
+                  placeholder="Enter email address"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-900 disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Phone Number</label>
+                <input 
+                  type="text" 
+                  name="phone" 
+                  value={formData.phone || ''} 
+                  onChange={handleChange} 
+                  disabled={!canEditDetails}
+                  placeholder="Enter phone number"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium text-slate-900 disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Account Status</label>
+                <div className="flex items-center gap-3">
+                  <label className={`flex items-center gap-3 cursor-pointer p-2.5 rounded-xl border transition-all w-full h-[46px] ${!canBlockTarget ? 'opacity-40 cursor-not-allowed' : formData.is_blocked ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                    <input 
+                      type="checkbox" 
+                      name="is_blocked" 
+                      checked={formData.is_blocked} 
+                      onChange={handleChange} 
+                      disabled={!canBlockTarget}
+                      className="rounded text-red-500 focus:ring-red-500 w-4 h-4 disabled:opacity-50" 
+                    />
+                    <span className={`text-sm font-semibold ${formData.is_blocked ? 'text-red-900' : 'text-green-900'}`}>
+                      {formData.is_blocked ? 'Blocked' : 'Active'}
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Project Section Access */}
+          <section className="pt-6 border-t border-slate-100">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
               <span className="w-1.5 h-6 bg-orange-500 rounded-full"></span>
               Project Section Access
@@ -164,7 +249,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
                 { id: 'section_i', label: 'Edit Survey Data (Images/Records)' },
                 { id: 'section_j', label: 'Edit Confirmed Data' },
               ].map(sec => {
-                const allowed = loggedInUser?.role === 'MASTER_ADMIN' || !!activeProject?.[sec.id];
+                const allowed = canEditPermissions && (loggedInUser?.role === 'MASTER_ADMIN' || !!activeProject?.[sec.id]);
                 return (
                   <label key={sec.id} className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-all ${!allowed ? 'opacity-40 cursor-not-allowed' : formData[sec.id] ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-100 hover:bg-white hover:border-slate-200'}`}>
                     <input 
@@ -198,8 +283,9 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
                 <button
                   key={type.id}
                   type="button"
+                  disabled={!canEditPermissions}
                   onClick={() => setScopeType(type.id)}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${scopeType === type.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${scopeType === type.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'} disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {type.label}
                 </button>
@@ -212,8 +298,9 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
                   <button
                     key={d.id}
                     type="button"
+                    disabled={!canEditPermissions}
                     onClick={() => toggleItem('district_scope', d.id)}
-                    className={`p-2.5 text-left text-xs font-semibold rounded-lg border transition-all ${formData.district_scope?.includes(d.id) ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}
+                    className={`p-2.5 text-left text-xs font-semibold rounded-lg border transition-all ${formData.district_scope?.includes(d.id) ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'} disabled:opacity-70 disabled:cursor-not-allowed`}
                   >
                     {d.name}
                   </button>
@@ -234,8 +321,9 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
                           <button
                             key={u.id}
                             type="button"
+                            disabled={!canEditPermissions}
                             onClick={() => toggleItem('ulb_scope', u.id)}
-                            className={`p-2.5 text-left text-xs font-semibold rounded-lg border transition-all ${formData.ulb_scope?.includes(u.id) ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-300'}`}
+                            className={`p-2.5 text-left text-xs font-semibold rounded-lg border transition-all ${formData.ulb_scope?.includes(u.id) ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-300'} disabled:opacity-70 disabled:cursor-not-allowed`}
                           >
                             {u.name}
                           </button>

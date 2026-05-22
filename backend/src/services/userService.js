@@ -36,4 +36,8 @@ async function updateAvatar(id, avatarUrl) {
   return userModel.updateAvatar(id, avatarUrl);
 }
 
-module.exports = { findUserById, findUserByEmail, createUser, listAllUsers, listMobileUsersByProjects, touch, listUsersByProject, changePassword, updateAvatar };
+async function updateDetails(id, name, email, phone, isBlocked) {
+  return userModel.updateDetails(id, name, email, phone, isBlocked);
+}
+
+module.exports = { findUserById, findUserByEmail, createUser, listAllUsers, listMobileUsersByProjects, touch, listUsersByProject, changePassword, updateAvatar, updateDetails };

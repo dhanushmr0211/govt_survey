@@ -172,20 +172,25 @@ export const UsersView = ({ projectId, roleFilter }) => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                      Active
-                    </span>
+                    {u.is_blocked ? (
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-red-600">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                        Blocked
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        Active
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {u.project_role !== 'MOBILE_USER' && (
-                      <button 
-                        onClick={() => { setUserToEdit(u); setIsEditModalOpen(true); }}
-                        className="text-orange-500 font-bold text-xs hover:underline"
-                      >
-                        Permissions
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => { setUserToEdit(u); setIsEditModalOpen(true); }}
+                      className="text-orange-500 font-bold text-xs hover:underline"
+                    >
+                      Edit
+                    </button>
                   </td>
                 </tr>
               ))}

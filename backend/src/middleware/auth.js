@@ -18,7 +18,7 @@ async function authenticate(req, res, next) {
     // Check that the token still belongs to an active user and has not
     // outlived an access update.
     const userResult = await query(
-      `SELECT id, role, EXTRACT(EPOCH FROM updated_at)::int as updated_at_seconds
+      `SELECT id, role, is_blocked, EXTRACT(EPOCH FROM updated_at)::int as updated_at_seconds
        FROM users 
        WHERE id = $1 AND is_deleted = FALSE`,
       [payload.sub]
@@ -27,6 +27,10 @@ async function authenticate(req, res, next) {
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+    
+    if (user.is_blocked) {
+      return res.status(401).json({ message: 'Your account has been blocked. Please contact support.' });
     }
     
     if (user.updated_at_seconds) {

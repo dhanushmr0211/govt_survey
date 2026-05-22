@@ -31,6 +31,10 @@ const registerSchema = z.object({
 
 const updateAccessSchema = z.object({
   projectId: z.number().int().positive(),
+  name: z.string().trim().min(1).max(200).optional(),
+  email: z.string().trim().email().max(255).optional(),
+  phone: z.string().trim().max(20).nullable().optional(),
+  is_blocked: z.boolean().optional(),
   section_a: z.boolean().optional(),
   section_b: z.boolean().optional(),
   section_c: z.boolean().optional(),
@@ -121,6 +125,10 @@ async function login(req, res, next) {
 
     if (!ok) {
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    if (user.is_blocked) {
+      return res.status(403).json({ message: 'Your account has been blocked. Please contact administration.' });
     }
 
     const role = normalizeRole(user.role); // MASTER_ADMIN or MEMBER
@@ -216,29 +224,105 @@ async function updateAccess(req, res, next) {
   try {
     const { id } = req.params;
     const data = updateAccessSchema.parse(req.body);
-    
-    // Authorization Check
-    if (req.user.role !== ROLES.MASTER_ADMIN) {
-      // Check if logged in user has section_h (Edit Access) for this project
-      const membership = await projectUserModel.isMember(Number(req.user.sub), data.projectId);
-      if (!membership || !membership.section_h) {
-        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit user access for this project' });
-      }
 
-      // Enforce permission inheritance
-      const sectionsList = ['section_a', 'section_b', 'section_c', 'section_d', 'section_e', 'section_f', 'section_g', 'section_h', 'section_i', 'section_j'];
-      for (const sec of sectionsList) {
-        if (data[sec] === true && !membership[sec]) {
-          return res.status(403).json({ message: `Forbidden: You cannot grant '${sec.replace('section_', 'section ')}' permission as you do not possess it.` });
-        }
-      }
+    const targetUser = await userService.findUserById(Number(id));
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Self-Lockout Protection
+    if (Number(req.user.id) === Number(id) && data.is_blocked === true) {
+      return res.status(403).json({ message: 'Forbidden: You cannot block yourself.' });
+    }
+
+    // MASTER_ADMIN Protection
+    if (targetUser.role === 'MASTER_ADMIN' && data.is_blocked === true) {
+      return res.status(403).json({ message: 'Forbidden: MASTER_ADMIN cannot be blocked.' });
     }
 
     const existingMember = await projectUserModel.isMember(Number(id), data.projectId);
     if (!existingMember) {
       return res.status(404).json({ message: 'User is not assigned to this project' });
     }
+    
+    // Authorization Check
+    if (req.user.role !== ROLES.MASTER_ADMIN) {
+      const membership = await projectUserModel.isMember(Number(req.user.sub), data.projectId);
+      if (!membership) {
+        return res.status(403).json({ message: 'Forbidden: You are not assigned to this project' });
+      }
 
+      // Requester must have section_d (Team Management) or section_h (Edit Access)
+      if (!membership.section_d && !membership.section_h) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to manage team or edit access for this project' });
+      }
+
+      // Enforce project role hierarchy checks
+      if (membership.project_role === ROLES.CLIENT) {
+        return res.status(403).json({ message: 'Forbidden: Clients cannot manage users' });
+      }
+      if (membership.project_role === ROLES.EMPLOYEE && existingMember.project_role !== ROLES.MOBILE_USER) {
+        return res.status(403).json({ message: 'Forbidden: Employees can only manage Mobile Users' });
+      }
+
+      // Check if they want to edit details (name, email, phone, blocked status)
+      const wantsToEditDetails =
+        (data.name !== undefined && data.name !== targetUser.name) ||
+        (data.email !== undefined && data.email !== targetUser.email) ||
+        (data.phone !== undefined && data.phone !== targetUser.phone) ||
+        (data.is_blocked !== undefined && data.is_blocked !== targetUser.is_blocked);
+
+      if (wantsToEditDetails && !membership.section_d) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit user details (requires Team Management access)' });
+      }
+
+      // Check if they want to edit permissions/scopes
+      const sectionsList = ['section_a', 'section_b', 'section_c', 'section_d', 'section_e', 'section_f', 'section_g', 'section_h', 'section_i', 'section_j'];
+      let wantsToEditPermissions = false;
+      for (const sec of sectionsList) {
+        if (data[sec] !== undefined && data[sec] !== existingMember[sec]) {
+          wantsToEditPermissions = true;
+          break;
+        }
+      }
+      if (data.district_scope !== undefined && JSON.stringify(data.district_scope || []) !== JSON.stringify(existingMember.district_scope || [])) {
+        wantsToEditPermissions = true;
+      }
+      if (data.ulb_scope !== undefined && JSON.stringify(data.ulb_scope || []) !== JSON.stringify(existingMember.ulb_scope || [])) {
+        wantsToEditPermissions = true;
+      }
+
+      if (wantsToEditPermissions) {
+        if (!membership.section_h) {
+          return res.status(403).json({ message: 'Forbidden: You do not have permission to edit user permissions or scopes (requires Edit User Permissions access)' });
+        }
+
+        // Enforce permission inheritance
+        for (const sec of sectionsList) {
+          if (data[sec] === true && !membership[sec]) {
+            return res.status(403).json({ message: `Forbidden: You cannot grant '${sec.replace('section_', 'section ')}' permission as you do not possess it.` });
+          }
+        }
+      }
+    }
+
+    // Email collision check if email is modified
+    if (data.email && data.email.toLowerCase().trim() !== targetUser.email.toLowerCase().trim()) {
+      const collision = await userService.findUserByEmail(data.email);
+      if (collision && collision.id !== Number(id)) {
+        return res.status(409).json({ message: 'Email already exists' });
+      }
+    }
+
+    // Update details in users table
+    const updatedName = data.name !== undefined ? data.name : targetUser.name;
+    const updatedEmail = data.email !== undefined ? data.email : targetUser.email;
+    const updatedPhone = data.phone !== undefined ? data.phone : targetUser.phone;
+    const updatedBlocked = data.is_blocked !== undefined ? data.is_blocked : targetUser.is_blocked;
+    
+    await userService.updateDetails(Number(id), updatedName, updatedEmail, updatedPhone, updatedBlocked);
+
+    // Update project section/scopes access in project_users table
     await projectUserModel.addUserToProject(
       Number(id),
       data.projectId,

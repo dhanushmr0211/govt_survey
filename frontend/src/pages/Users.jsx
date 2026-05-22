@@ -22,7 +22,25 @@ export default function Users() {
 
   const isMasterAdmin = user?.role === 'MASTER_ADMIN';
   const hasSectionD = activeProject?.section_d;
+  const [selectedRole, setSelectedRole] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+
   const visibleUsers = users.filter((member) => member.id !== user?.id);
+
+  const filteredUsers = visibleUsers.filter((u) => {
+    if (selectedRole !== 'ALL' && u.project_role !== selectedRole) {
+      return false;
+    }
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      return (
+        u.name?.toLowerCase().includes(query) ||
+        u.email?.toLowerCase().includes(query) ||
+        u.phone?.toLowerCase().includes(query)
+      );
+    }
+    return true;
+  });
 
   const fetchUsers = async () => {
     try {
@@ -237,14 +255,29 @@ export default function Users() {
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-              <div className="relative">
+            <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
                   type="text" 
-                  placeholder="Search by name or email..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name, email, or mobile..." 
                   className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                 />
+              </div>
+              <div className="w-full sm:w-48">
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                  className="w-full border border-slate-200 rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-slate-700"
+                >
+                  <option value="ALL">All Roles</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="CLIENT">Client</option>
+                  <option value="EMPLOYEE">Employee</option>
+                  <option value="MOBILE_USER">Mobile User</option>
+                </select>
               </div>
             </div>
 
@@ -262,9 +295,9 @@ export default function Users() {
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
                     <tr><td colSpan="5" className="px-6 py-12 text-center text-slate-500">Loading team members...</td></tr>
-                  ) : visibleUsers.length === 0 ? (
+                  ) : filteredUsers.length === 0 ? (
                     <tr><td colSpan="5" className="px-6 py-12 text-center text-slate-500">No members found for this project.</td></tr>
-                  ) : visibleUsers.map(u => (
+                  ) : filteredUsers.map(u => (
                     <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -289,17 +322,24 @@ export default function Users() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                          Active
-                        </span>
+                        {u.is_blocked ? (
+                          <span className="flex items-center gap-1.5 text-xs font-semibold text-red-600">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                            Blocked
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Active
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button 
                           onClick={() => { setUserToEdit(u); setIsEditModalOpen(true); }}
                           className="text-primary font-bold text-xs hover:underline"
                         >
-                          Permissions
+                          Edit
                         </button>
                       </td>
                     </tr>

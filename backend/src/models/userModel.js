@@ -1,12 +1,12 @@
 const { query } = require('../config/db');
 
 async function findById(id) {
-  const result = await query('SELECT id, name, email, role, phone, avatar_url, created_at, is_deleted FROM users WHERE id = $1 AND is_deleted IS NOT TRUE', [id]);
+  const result = await query('SELECT id, name, email, role, phone, is_blocked, avatar_url, created_at, is_deleted FROM users WHERE id = $1 AND is_deleted IS NOT TRUE', [id]);
   return result.rows[0] || null;
 }
 
 async function findByEmail(email) {
-  const result = await query('SELECT id, name, email, password, role, phone, avatar_url FROM users WHERE email = $1 AND is_deleted IS NOT TRUE', [email]);
+  const result = await query('SELECT id, name, email, password, role, phone, is_blocked, avatar_url FROM users WHERE email = $1 AND is_deleted IS NOT TRUE', [email]);
   return result.rows[0] || null;
 }
 
@@ -25,7 +25,7 @@ async function countAll() {
 
 async function findAll(limit, offset) {
   let sql = `
-    SELECT u.id, u.name, u.email, u.role, u.phone, u.created_at,
+    SELECT u.id, u.name, u.email, u.role, u.phone, u.is_blocked AS is_blocked, u.created_at,
            COALESCE(asa.section_a, false) AS section_a,
            COALESCE(asa.section_b, false) AS section_b,
            COALESCE(asa.section_c, false) AS section_c,
@@ -86,7 +86,7 @@ async function touch(id) {
 
 async function findByProject(projectId) {
   const result = await query(
-    `SELECT u.id, u.name, u.email, u.role, u.phone, u.created_at,
+    `SELECT u.id, u.name, u.email, u.role, u.phone, u.is_blocked AS is_blocked, u.created_at,
             pu.project_role AS project_role,
             COALESCE(pu.section_a, false) AS section_a,
             COALESCE(pu.section_b, false) AS section_b,
@@ -126,4 +126,20 @@ async function updateAvatar(id, avatarUrl) {
   return result.rows[0] || null;
 }
 
-module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, touch, findByProject, changePassword, updateAvatar };
+async function updateDetails(id, name, email, phone, isBlocked) {
+  const existing = await findById(id);
+  if (!existing) return null;
+
+  const finalName = name !== undefined && name !== null ? name : existing.name;
+  const finalEmail = email !== undefined && email !== null ? email : existing.email;
+  const finalPhone = phone !== undefined && phone !== null ? phone : existing.phone;
+  const finalBlocked = isBlocked !== undefined && isBlocked !== null ? isBlocked : existing.is_blocked;
+
+  const result = await query(
+    'UPDATE users SET name = $2, email = $3, phone = $4, is_blocked = $5, updated_at = NOW() WHERE id = $1 RETURNING id, name, email, phone, is_blocked',
+    [id, finalName, finalEmail, finalPhone, finalBlocked]
+  );
+  return result.rows[0] || null;
+}
+
+module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, touch, findByProject, changePassword, updateAvatar, updateDetails };
