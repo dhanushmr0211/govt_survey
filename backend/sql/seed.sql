@@ -36,6 +36,7 @@ INSERT INTO ulbs (project_id, district_id, name, type) VALUES
 ((SELECT id FROM ideck), (SELECT id FROM yagdir), 'TP HUNASAGI', 'TP'),
 
 -- BIDAR
+((SELECT id FROM ideck), (SELECT id FROM bidar), 'CMC Bidar', 'CMC'),
 ((SELECT id FROM ideck), (SELECT id FROM bidar), 'CMC Basavakalyan', 'CMC'),
 ((SELECT id FROM ideck), (SELECT id FROM bidar), 'TMC Bhalki', 'TMC'),
 ((SELECT id FROM ideck), (SELECT id FROM bidar), 'TMC Humnabad', 'TMC'),

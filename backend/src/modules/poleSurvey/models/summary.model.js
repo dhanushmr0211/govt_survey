@@ -2,13 +2,15 @@ const { query } = require('../../../config/db');
 const { getLocalDateString } = require('../../../utils/date');
 
 async function getDistrictSummary(projectId, date = null, mode = 'exact', districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
-  let dateFilter = '';
+  let dateFilterSp = '';
+  let dateFilterP = '';
   let scopeFilter = '';
   const params = [projectId];
   
   let paramIdx = 2;
   if (fromDate && toDate) {
-    dateFilter = `AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date BETWEEN $${paramIdx} AND $${paramIdx + 1}`;
+    dateFilterSp = `AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date BETWEEN $${paramIdx} AND $${paramIdx + 1}`;
+    dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date BETWEEN $${paramIdx} AND $${paramIdx + 1}`;
     params.push(fromDate, toDate);
     paramIdx += 2;
   } else if (date) {
@@ -16,11 +18,13 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', distri
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = getLocalDateString(yesterday);
-      dateFilter = `AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $${paramIdx}`;
+      dateFilterSp = `AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $${paramIdx}`;
+      dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $${paramIdx}`;
       params.push(yesterdayStr);
     } else {
       const operator = mode === 'cumulative' ? '<=' : '=';
-      dateFilter = `AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date ${operator} $${paramIdx}`;
+      dateFilterSp = `AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date ${operator} $${paramIdx}`;
+      dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date ${operator} $${paramIdx}`;
       params.push(date);
     }
     paramIdx++;
@@ -44,12 +48,17 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', distri
       d.name as district_name,
       u.id as ulb_id,
       u.name as ulb_name,
-      COUNT(DISTINCT sp.id) as total_switch_points,
-      COUNT(DISTINCT p.id) as total_poles
+      COALESCE((
+        SELECT COUNT(sp.id) FROM switch_points sp
+        WHERE sp.ulb_id = u.id AND sp.is_deleted IS NOT TRUE ${dateFilterSp}
+      ), 0) as total_switch_points,
+      COALESCE((
+        SELECT COUNT(p.id) FROM poles p
+        JOIN switch_points sp ON p.switch_point_id = sp.id
+        WHERE sp.ulb_id = u.id AND p.is_deleted IS NOT TRUE AND sp.is_deleted IS NOT TRUE ${dateFilterP}
+      ), 0) as total_poles
     FROM districts d
     JOIN ulbs u ON u.district_id = d.id
-    LEFT JOIN switch_points sp ON sp.ulb_id = u.id AND sp.is_deleted IS NOT TRUE ${dateFilter}
-    LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted IS NOT TRUE
     WHERE d.project_id = $1 ${scopeFilter}
     GROUP BY d.id, u.id
     ORDER BY d.name, u.name;
@@ -60,36 +69,53 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', distri
 }
 
 async function getWardSummary(ulbId, date = null, mode = 'exact', fromDate = null, toDate = null) {
-  let dateFilter = '';
+  let dateFilterSp = '';
+  let dateFilterP = '';
   const params = [ulbId];
   
   if (fromDate && toDate) {
-    dateFilter = "AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date BETWEEN $2 AND $3";
+    dateFilterSp = "AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date BETWEEN $2 AND $3";
+    dateFilterP = "AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date BETWEEN $2 AND $3";
     params.push(fromDate, toDate);
   } else if (date) {
     if (date === 'till_yesterday') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = getLocalDateString(yesterday);
-      dateFilter = "AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $2";
+      dateFilterSp = "AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $2";
+      dateFilterP = "AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $2";
       params.push(yesterdayStr);
     } else {
       const operator = mode === 'cumulative' ? '<=' : '=';
-      dateFilter = `AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date ${operator} $2`;
+      dateFilterSp = `AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date ${operator} $2`;
+      dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date ${operator} $2`;
       params.push(date);
     }
   }
 
   const sql = `
-    SELECT 
-      sp.ward_number,
-      COUNT(DISTINCT sp.id) as total_switch_points,
-      COUNT(DISTINCT p.id) as total_poles
-    FROM switch_points sp
-    LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted IS NOT TRUE
-    WHERE sp.ulb_id = $1 AND sp.is_deleted IS NOT TRUE ${dateFilter}
-    GROUP BY sp.ward_number
-    ORDER BY sp.ward_number;
+    WITH wards AS (
+      SELECT DISTINCT ward_number 
+      FROM switch_points 
+      WHERE ulb_id = $1 AND is_deleted IS NOT TRUE
+    ),
+    ward_counts AS (
+      SELECT 
+        w.ward_number,
+        COALESCE((
+          SELECT COUNT(sp.id) FROM switch_points sp
+          WHERE sp.ulb_id = $1 AND sp.ward_number = w.ward_number AND sp.is_deleted IS NOT TRUE ${dateFilterSp}
+        ), 0) as total_switch_points,
+        COALESCE((
+          SELECT COUNT(p.id) FROM poles p
+          JOIN switch_points sp ON p.switch_point_id = sp.id
+          WHERE sp.ulb_id = $1 AND sp.ward_number = w.ward_number AND p.is_deleted IS NOT TRUE AND sp.is_deleted IS NOT TRUE ${dateFilterP}
+        ), 0) as total_poles
+      FROM wards w
+    )
+    SELECT * FROM ward_counts
+    WHERE total_switch_points > 0 OR total_poles > 0
+    ORDER BY ward_number;
   `;
   
   const result = await query(sql, params);
@@ -100,18 +126,30 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fr
   const params = [ulbId, wardNumber];
   
   if (fromDate && toDate) {
-    dateFilter = "AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date BETWEEN $3 AND $4";
+    dateFilter = `AND (
+      (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date BETWEEN $3 AND $4
+      OR 
+      (p.id IS NOT NULL AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date BETWEEN $3 AND $4)
+    )`;
     params.push(fromDate, toDate);
   } else if (date) {
     if (date === 'till_yesterday') {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = getLocalDateString(yesterday);
-      dateFilter = "AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $3";
+      dateFilter = `AND (
+        (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $3
+        OR 
+        (p.id IS NOT NULL AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $3)
+      )`;
       params.push(yesterdayStr);
     } else {
       const operator = mode === 'cumulative' ? '<=' : '=';
-      dateFilter = `AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date ${operator} $3`;
+      dateFilter = `AND (
+        (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date ${operator} $3
+        OR 
+        (p.id IS NOT NULL AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date ${operator} $3)
+      )`;
       params.push(date);
     }
   }
@@ -904,10 +942,14 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
   let pIdx = 5;
   let scopeFilter = '';
 
-  let rangeFilter = '';
+  let spRangeFilter = '';
+  let pRangeFilter = '';
   if (fromDate && toDate) {
     params.push(fromDate, toDate);
-    rangeFilter = `\n    AND (($${params.length - 1}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date >= $${params.length - 1}) AND ($${params.length}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $${params.length}))`;
+    const fromIdx = params.length - 1;
+    const toIdx = params.length;
+    spRangeFilter = `\n    AND (($${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date >= $${fromIdx}) AND ($${toIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $${toIdx}))`;
+    pRangeFilter = `\n    AND (($${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date >= $${fromIdx}) AND ($${toIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $${toIdx}))`;
   }
 
   if (districtScope && Array.isArray(districtScope) && districtScope.length > 0) {
@@ -935,7 +977,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     AND ($2::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
     AND ($4::int IS NULL OR sp.ulb_id = $4)
-    ${rangeFilter}
+    ${spRangeFilter}
     ${scopeFilter}
     ORDER BY sp.created_at DESC
   `;
@@ -958,7 +1000,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     AND ($2::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
     AND ($4::int IS NULL OR sp.ulb_id = $4)
-    ${rangeFilter}
+    ${pRangeFilter}
     ${scopeFilter}
     ORDER BY p.created_at DESC
   `;
