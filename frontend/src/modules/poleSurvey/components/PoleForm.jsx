@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { FileUploader } from '../../../shared/uploads/FileUploader';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 import { offlineDb } from '../../../db/offlineDb';
@@ -51,7 +50,7 @@ export const PoleForm = ({ ulb, onBack }) => {
 
 
   // Fetch switch points when ward_number changes
-  const { data: switchPoints = [], refetch } = useQuery({
+  const { data: switchPoints = [] } = useQuery({
     queryKey: ['switchPoints', ulb.id, formData.ward_number],
     queryFn: async () => {
       if (!formData.ward_number) return [];
@@ -67,17 +66,62 @@ export const PoleForm = ({ ulb, onBack }) => {
   // Auto-select latest switch point
   useEffect(() => {
     if (switchPoints.length > 0) {
-      setFormData((prev) => ({ 
-        ...prev, 
-        switch_point_id: switchPoints[0].id,
-        switch_point_number: switchPoints[0].switch_point_number 
-      }));
+      const timer = setTimeout(() => {
+        setFormData((prev) => ({ 
+          ...prev, 
+          switch_point_id: switchPoints[0].id,
+          switch_point_number: switchPoints[0].switch_point_number 
+        }));
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [switchPoints]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      
+      // Auto-fill rules
+      if (name === 'pole_type') {
+        if (value === 'RCC' || value === 'PSC') {
+          updated.pole_height = '9';
+          updated.pole_condition = 'Good';
+          updated.pole_earthing_exists = 'NO';
+        } else if (value === 'High Mast') {
+          updated.pole_height = '16';
+          updated.pole_condition = 'Good';
+          updated.pole_earthing_exists = 'YES';
+        } else if (value === 'Mini Mast') {
+          updated.pole_height = '12';
+          updated.pole_condition = 'Good';
+          updated.pole_earthing_exists = 'YES';
+        }
+      } else if (name === 'arm_type') {
+        if (value === 'empty/not present') {
+          updated.arm_status = 'empty/not present';
+          updated.present_arm_length = '0';
+          updated.present_arm_no = '0';
+        }
+      } else if (name === 'light_type') {
+        const valLower = String(value || '').toLowerCase();
+        if (valLower === 'led') {
+          updated.light_capacity = '40W';
+        } else if (valLower === 'cfl') {
+          updated.light_capacity = '5W-25W';
+        } else if (valLower === 'tube light') {
+          updated.light_capacity = '40W';
+        } else if (valLower === 'svl') {
+          updated.light_capacity = '250';
+        } else if (valLower === 'mini mast') {
+          updated.light_capacity = '150';
+        } else if (valLower === 'high mast') {
+          updated.light_capacity = '200';
+        }
+      }
+      
+      return updated;
+    });
   };
 
   const handleSwitchPointChange = (e) => {

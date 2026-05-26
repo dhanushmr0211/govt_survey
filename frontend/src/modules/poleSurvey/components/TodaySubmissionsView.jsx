@@ -7,7 +7,7 @@ import { useToastStore } from '../../../store/toastStore';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 
-export const TodaySubmissionsView = ({ projectId: propProjectId, ulb }) => {
+export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   const token = localStorage.getItem('token');
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
@@ -39,7 +39,10 @@ export const TodaySubmissionsView = ({ projectId: propProjectId, ulb }) => {
   const [loadingImages, setLoadingImages] = useState(false);
 
   useEffect(() => {
-    setPage(1);
+    const timer = setTimeout(() => {
+      setPage(1);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [activeTab]);
 
   const { data = { queue: [], total: 0 }, isLoading } = useQuery({
@@ -97,6 +100,11 @@ export const TodaySubmissionsView = ({ projectId: propProjectId, ulb }) => {
         setSelectedSubmission(prev => ({
           ...prev,
           ...updatedEntity
+        }));
+        setFormData(prev => ({
+          ...prev,
+          ...updatedEntity,
+          pole_number: updatedEntity.pole_number || updatedEntity.identifier || prev.pole_number
         }));
       }
     },
@@ -184,10 +192,52 @@ export const TodaySubmissionsView = ({ projectId: propProjectId, ulb }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      };
+      
+      // Auto-fill rules
+      if (name === 'pole_type') {
+        if (value === 'RCC' || value === 'PSC') {
+          updated.pole_height_mtrs = '9';
+          updated.pole_condition = 'Good';
+          updated.pole_earthing_exists = 'NO';
+        } else if (value === 'High Mast') {
+          updated.pole_height_mtrs = '16';
+          updated.pole_condition = 'Good';
+          updated.pole_earthing_exists = 'YES';
+        } else if (value === 'Mini Mast') {
+          updated.pole_height_mtrs = '12';
+          updated.pole_condition = 'Good';
+          updated.pole_earthing_exists = 'YES';
+        }
+      } else if (name === 'arm_type') {
+        if (value === 'empty/not present') {
+          updated.arm_status = 'empty/not present';
+          updated.present_arm_length_mtrs = '0';
+          updated.present_arm_no = '0';
+        }
+      } else if (name === 'light_type') {
+        const valLower = String(value || '').toLowerCase();
+        if (valLower === 'led') {
+          updated.light_capacity = '40W';
+        } else if (valLower === 'cfl') {
+          updated.light_capacity = '5W-25W';
+        } else if (valLower === 'tube light') {
+          updated.light_capacity = '40W';
+        } else if (valLower === 'svl') {
+          updated.light_capacity = '250';
+        } else if (valLower === 'mini mast') {
+          updated.light_capacity = '150';
+        } else if (valLower === 'high mast') {
+          updated.light_capacity = '200';
+        }
+      }
+      
+      return updated;
+    });
   };
 
   const renderField = (label, name, value, options = null) => {
@@ -299,7 +349,10 @@ export const TodaySubmissionsView = ({ projectId: propProjectId, ulb }) => {
                     <button
                       onClick={() => {
                         setSelectedSubmission(item);
-                        setFormData({ ...item });
+                        setFormData({ 
+                          ...item,
+                          pole_number: item.type === 'pole' ? (item.pole_number || item.identifier) : undefined
+                        });
                         setIsEditing(false);
                       }}
                       className="text-primary hover:underline font-medium inline-flex items-center gap-1"

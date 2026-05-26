@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { FileUploader } from '../../../shared/uploads/FileUploader';
 import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';

@@ -21,11 +21,16 @@ export const OfflineQueueView = () => {
   };
 
   useEffect(() => {
-    fetchSubmissions();
+    const timer = setTimeout(() => {
+      fetchSubmissions();
+    }, 0);
     
     // Refresh list when sync happens
     const interval = setInterval(fetchSubmissions, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleSync = async () => {

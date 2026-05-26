@@ -10,11 +10,6 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
   const [pole, setPole] = useState(initialPole);
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    setPole(initialPole);
-    setFormData({ ...initialPole });
-  }, [initialPole]);
-
   const user = useAuthStore((state) => state.user);
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = activeProject?.id;
@@ -23,9 +18,23 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
     (activeProject?.section_j && pole?.status === 'confirmed');
 
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({ ...initialPole });
+  const [formData, setFormData] = useState({
+    ...initialPole,
+    pole_number: initialPole.pole_number || initialPole.identifier
+  });
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPole(initialPole);
+      setFormData({
+        ...initialPole,
+        pole_number: initialPole.pole_number || initialPole.identifier
+      });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [initialPole]);
 
   useEffect(() => {
     if (!projectId || !pole.id) return;
@@ -87,6 +96,11 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
           ...prev,
           ...updatedEntity
         }));
+        setFormData(prev => ({
+          ...prev,
+          ...updatedEntity,
+          pole_number: updatedEntity.pole_number || updatedEntity.identifier || prev.pole_number
+        }));
       }
       queryClient.invalidateQueries(['poles']);
     },
@@ -94,10 +108,52 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      };
+      
+      // Auto-fill rules
+      if (name === 'pole_type') {
+        if (value === 'RCC' || value === 'PSC') {
+          updated.pole_height_mtrs = '9';
+          updated.pole_condition = 'Good';
+          updated.pole_earthing_exists = 'NO';
+        } else if (value === 'High Mast') {
+          updated.pole_height_mtrs = '16';
+          updated.pole_condition = 'Good';
+          updated.pole_earthing_exists = 'YES';
+        } else if (value === 'Mini Mast') {
+          updated.pole_height_mtrs = '12';
+          updated.pole_condition = 'Good';
+          updated.pole_earthing_exists = 'YES';
+        }
+      } else if (name === 'arm_type') {
+        if (value === 'empty/not present') {
+          updated.arm_status = 'empty/not present';
+          updated.present_arm_length_mtrs = '0';
+          updated.present_arm_no = '0';
+        }
+      } else if (name === 'light_type') {
+        const valLower = String(value || '').toLowerCase();
+        if (valLower === 'led') {
+          updated.light_capacity = '40W';
+        } else if (valLower === 'cfl') {
+          updated.light_capacity = '5W-25W';
+        } else if (valLower === 'tube light') {
+          updated.light_capacity = '40W';
+        } else if (valLower === 'svl') {
+          updated.light_capacity = '250';
+        } else if (valLower === 'mini mast') {
+          updated.light_capacity = '150';
+        } else if (valLower === 'high mast') {
+          updated.light_capacity = '200';
+        }
+      }
+      
+      return updated;
+    });
   };
 
   const renderField = (label, name, value, options = null) => {
