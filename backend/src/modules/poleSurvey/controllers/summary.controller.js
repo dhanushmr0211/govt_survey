@@ -183,12 +183,15 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
     // For mobile users, force filtering by their own ID
     const filterUserId = isMobileUser ? Number(req.user.sub) : (userId ? Number(userId) : null);
 
+    const isEmployee = projectRole === ROLES.EMPLOYEE;
+    const filterConfirmedBy = isEmployee ? Number(req.user.sub) : (confirmedBy ? Number(confirmedBy) : null);
+
     const { rows, total } = await getConfirmedSubmissions(
       Number(projectId), 
       Number(page), 
       Number(limit), 
       filterUserId, 
-      confirmedBy ? Number(confirmedBy) : null,
+      filterConfirmedBy,
       permissions.district_scope,
       permissions.ulb_scope,
       fromDate || null,
