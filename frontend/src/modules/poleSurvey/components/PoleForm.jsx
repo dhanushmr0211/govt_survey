@@ -6,8 +6,12 @@ import API_BASE_URL from '../../../config/api';
 import { offlineDb } from '../../../db/offlineDb';
 import { getCurrentLocation } from '../../../shared/utils/geolocation';
 import { isMobileEditRestricted } from '../utils/mobileRestrictions';
+import { useAuthStore } from '../../../store/authStore';
 
 export const PoleForm = ({ ulb, onBack }) => {
+  const user = useAuthStore((state) => state.user);
+  const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
+
   const [formData, setFormData] = useState({
     ward_number: '',
     switch_point_id: '',
@@ -82,41 +86,43 @@ export const PoleForm = ({ ulb, onBack }) => {
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
       
-      // Auto-fill rules
-      if (name === 'pole_type') {
-        if (value === 'RCC' || value === 'PSC') {
-          updated.pole_height = '9';
-          updated.pole_condition = 'Good';
-          updated.pole_earthing_exists = 'NO';
-        } else if (value === 'High Mast') {
-          updated.pole_height = '16';
-          updated.pole_condition = 'Good';
-          updated.pole_earthing_exists = 'YES';
-        } else if (value === 'Mini Mast') {
-          updated.pole_height = '12';
-          updated.pole_condition = 'Good';
-          updated.pole_earthing_exists = 'YES';
-        }
-      } else if (name === 'arm_type') {
-        if (value === 'empty/not present') {
-          updated.arm_status = 'empty/not present';
-          updated.present_arm_length = '0';
-          updated.present_arm_no = '0';
-        }
-      } else if (name === 'light_type') {
-        const valLower = String(value || '').toLowerCase();
-        if (valLower === 'led') {
-          updated.light_capacity = '40W';
-        } else if (valLower === 'cfl') {
-          updated.light_capacity = '5W-25W';
-        } else if (valLower === 'tube light') {
-          updated.light_capacity = '40W';
-        } else if (valLower === 'svl') {
-          updated.light_capacity = '250';
-        } else if (valLower === 'mini mast') {
-          updated.light_capacity = '150';
-        } else if (valLower === 'high mast') {
-          updated.light_capacity = '200';
+      // Auto-fill rules (only for pratheekar1997@gmail.com)
+      if (isAutofillUser) {
+        if (name === 'pole_type') {
+          if (value === 'RCC' || value === 'PSC') {
+            updated.pole_height = '9';
+            updated.pole_condition = 'Good';
+            updated.pole_earthing_exists = 'NO';
+          } else if (value === 'High Mast') {
+            updated.pole_height = '16';
+            updated.pole_condition = 'Good';
+            updated.pole_earthing_exists = 'YES';
+          } else if (value === 'Mini Mast') {
+            updated.pole_height = '12';
+            updated.pole_condition = 'Good';
+            updated.pole_earthing_exists = 'YES';
+          }
+        } else if (name === 'arm_type') {
+          if (value === 'empty/not present') {
+            updated.arm_status = 'empty/not present';
+            updated.present_arm_length = '0';
+            updated.present_arm_no = '0';
+          }
+        } else if (name === 'light_type') {
+          const valLower = String(value || '').toLowerCase();
+          if (valLower === 'led') {
+            updated.light_capacity = '40W';
+          } else if (valLower === 'cfl') {
+            updated.light_capacity = '5W-25W';
+          } else if (valLower === 'tube light') {
+            updated.light_capacity = '40W';
+          } else if (valLower === 'svl') {
+            updated.light_capacity = '250';
+          } else if (valLower === 'mini mast') {
+            updated.light_capacity = '150';
+          } else if (valLower === 'high mast') {
+            updated.light_capacity = '200';
+          }
         }
       }
       
