@@ -8,7 +8,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 const { env } = require('./config/env');
-const { pool } = require('./config/db');
+const { pool, tgplPool } = require('./config/db');
 const { authRouter } = require('./routes/auth.routes');
 const { projectRouter } = require('./routes/project.routes');
 const { poleSurveyRouter } = require('./modules/poleSurvey/routes/poleSurvey.routes');
@@ -37,18 +37,51 @@ function createApp() {
       TRIM(LOWER(switch_point_number))
     ) WHERE is_deleted IS NOT TRUE;`,
     'CREATE INDEX IF NOT EXISTS idx_issues_project_status_raised ON issues (project_id, status, raised_at DESC);',
-    "CREATE INDEX IF NOT EXISTS idx_issues_open_status ON issues (status) WHERE status = 'OPEN';"
+    "CREATE INDEX IF NOT EXISTS idx_issues_open_status ON issues (status) WHERE status = 'OPEN';",
+    'CREATE TABLE IF NOT EXISTS entity_files (id SERIAL PRIMARY KEY, project_id INT NOT NULL, entity_type TEXT NOT NULL, entity_id INT NOT NULL, url TEXT NOT NULL, uploaded_by INT, uploaded_at TIMESTAMP DEFAULT NOW());',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS image_url_1 TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS image_url_2 TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS image_url_3 TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS dtc_number TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS dtc_capacity TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS ccms_number TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS meter_type TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS meter_rr_number TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS meter_serial_number TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS meter_dimensional_status TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS pole_height TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS pole_to_pole_distance TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS present_arm_length TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_arm_number TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_arm_length TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_led_lights_no TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_led_wattage TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_dedicated_wire TEXT;',
+    'CREATE TABLE IF NOT EXISTS wards (id SERIAL PRIMARY KEY, name TEXT NOT NULL, is_deleted BOOLEAN DEFAULT FALSE);'
   ];
 
   (async () => {
+    // Migrations for Default Pool
     for (const q of migrations) {
       try {
         await pool.query(q);
       } catch (err) {
-        console.error(`[Startup Migration Failed] ${q.trim().substring(0, 50)}... :`, err.message);
+        console.error(`[Startup Migration Failed - Default] ${q.trim().substring(0, 50)}... :`, err.message);
       }
     }
-    console.log('[Startup Migration] All database migrations and performance indexes verified/applied successfully.');
+
+    // Migrations for TGPL Pool
+    for (const q of migrations) {
+      try {
+        await tgplPool.query(q);
+      } catch (err) {
+        // Ignore failures on tgplPool that are expected (e.g. table doesn't exist yet but we're trying to add index)
+        if (!err.message.includes('does not exist')) {
+          console.error(`[Startup Migration Failed - TGPL] ${q.trim().substring(0, 50)}... :`, err.message);
+        }
+      }
+    }
+    console.log('[Startup Migration] Database migrations and performance indexes verified/applied successfully across all pools.');
   })();
 
   const app = express();
