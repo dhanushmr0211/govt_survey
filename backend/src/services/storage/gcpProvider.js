@@ -1,4 +1,5 @@
 const { uploadBuffer, deleteObject, getSignedReadUrl } = require('../../config/gcs');
+const { env } = require('../../config/env');
 
 async function upload(file) {
   const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
@@ -6,7 +7,7 @@ async function upload(file) {
   const uploaded = await uploadBuffer(file.buffer, objectName, file.mimetype);
   return {
     fileKey: uploaded.objectName,
-    url: await getSignedReadUrl(uploaded.objectName),
+    url: `https://storage.googleapis.com/${env.gcsBucketName}/${uploaded.objectName}`,
   };
 }
 
@@ -16,7 +17,7 @@ async function deleteFile(fileKey) {
 }
 
 async function getPublicUrl(fileKey) {
-  return await getSignedReadUrl(fileKey);
+  return `https://storage.googleapis.com/${env.env?.gcsBucketName || env.gcsBucketName}/${fileKey}`;
 }
 
 module.exports = { upload, delete: deleteFile, getPublicUrl };

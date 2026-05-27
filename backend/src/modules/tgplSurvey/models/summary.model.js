@@ -25,6 +25,13 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', distri
     pIdx++;
   }
 
+  let scopeFilter = '';
+  if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
+    scopeFilter = `AND w.id = ANY($${pIdx})`;
+    tgplParams.push(ulbScope);
+    pIdx++;
+  }
+
   const tgplSql = `
     SELECT 
       1 as district_id,
@@ -37,14 +44,14 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', distri
         WHERE p.ward_id = w.id AND p.is_deleted = FALSE ${dateFilter}
       ), 0) as total_poles
     FROM wards w
-    WHERE w.is_deleted = FALSE
+    WHERE w.is_deleted = FALSE ${scopeFilter}
     ORDER BY w.name;
   `;
   const result = await query(tgplSql, tgplParams);
   return result.rows;
 }
 
-async function getWardSummary(ulbId, date = null, mode = 'exact', fromDate = null, toDate = null) {
+async function getWardSummary(ulbId, date = null, mode = 'exact', ulbScope = null, fromDate = null, toDate = null) {
   let dateFilter = '';
   const tgplParams = [ulbId];
   let pIdx = 2;
@@ -52,6 +59,7 @@ async function getWardSummary(ulbId, date = null, mode = 'exact', fromDate = nul
   if (fromDate && toDate) {
     dateFilter = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date BETWEEN $${pIdx} AND $${pIdx + 1}`;
     tgplParams.push(fromDate, toDate);
+    pIdx += 2;
   } else if (date) {
     if (date === 'till_yesterday') {
       const yesterday = new Date();
@@ -64,6 +72,14 @@ async function getWardSummary(ulbId, date = null, mode = 'exact', fromDate = nul
       dateFilter = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date ${operator} $${pIdx}`;
       tgplParams.push(date);
     }
+    pIdx++;
+  }
+
+  let scopeFilter = '';
+  if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
+    scopeFilter = `AND w.id = ANY($${pIdx})`;
+    tgplParams.push(ulbScope);
+    pIdx++;
   }
 
   const tgplSql = `
@@ -75,13 +91,13 @@ async function getWardSummary(ulbId, date = null, mode = 'exact', fromDate = nul
         WHERE p.ward_id = w.id AND p.is_deleted = FALSE ${dateFilter}
       ), 0) as total_poles
     FROM wards w
-    WHERE w.id = $1 AND w.is_deleted = FALSE;
+    WHERE w.id = $1 AND w.is_deleted = FALSE ${scopeFilter};
   `;
   const result = await query(tgplSql, tgplParams);
   return result.rows;
 }
 
-async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fromDate = null, toDate = null) {
+async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', ulbScope = null, fromDate = null, toDate = null) {
   let dateFilter = '';
   const tgplParams = [ulbId];
   let pIdx = 2;
@@ -89,6 +105,7 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fr
   if (fromDate && toDate) {
     dateFilter = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date BETWEEN $${pIdx} AND $${pIdx + 1}`;
     tgplParams.push(fromDate, toDate);
+    pIdx += 2;
   } else if (date) {
     if (date === 'till_yesterday') {
       const yesterday = new Date();
@@ -101,6 +118,14 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fr
       dateFilter = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date ${operator} $${pIdx}`;
       tgplParams.push(date);
     }
+    pIdx++;
+  }
+
+  let scopeFilter = '';
+  if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
+    scopeFilter = `AND w.id = ANY($${pIdx})`;
+    tgplParams.push(ulbScope);
+    pIdx++;
   }
 
   const tgplSql = `
@@ -158,7 +183,7 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fr
     FROM poles p
     JOIN wards w ON p.ward_id = w.id
     LEFT JOIN users u ON p.confirmed_by = u.id
-    WHERE p.ward_id = $1 AND p.is_deleted = FALSE ${dateFilter}
+    WHERE p.ward_id = $1 AND p.is_deleted = FALSE ${dateFilter} ${scopeFilter}
     ORDER BY p.id DESC;
   `;
   const result = await query(tgplSql, tgplParams);

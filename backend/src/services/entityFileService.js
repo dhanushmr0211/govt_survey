@@ -11,7 +11,7 @@ async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
     projectId,
     entityType,
     entityId,
-    uploaded.objectName, // Store object name in the URL column for now to generate signed URLs later
+    uploaded.objectName, // Store object name in the URL column for now
     uploadedBy
   );
   
@@ -51,18 +51,16 @@ async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
   
   return {
     ...entityFile,
-    signed_url: await getSignedReadUrl(entityFile.url),
+    signed_url: publicUrl,
   };
 }
 
 async function getFilesForEntity(projectId, entityType, entityId) {
   const files = await entityFileModel.getFilesForEntity(projectId, entityType, entityId);
-  const filesWithUrls = await Promise.all(
-    files.map(async (file) => ({
-      ...file,
-      signed_url: await getSignedReadUrl(file.url),
-    }))
-  );
+  const filesWithUrls = files.map((file) => ({
+    ...file,
+    signed_url: `https://storage.googleapis.com/${env.gcsBucketName}/${file.url}`,
+  }));
   return filesWithUrls;
 }
 
