@@ -53,20 +53,38 @@ gcloud run deploy govt-survey-backend \
   --allow-unauthenticated
 ```
 
-## What's Being Deployed
-The backend code now includes:
-- ✅ `getPendingSubmissionsHandler` - accepts `fromDate`, `toDate`, `dateField` parameters
-- ✅ `getConfirmedSubmissionsHandler` - accepts `fromDate`, `toDate`, `dateField`, `confirmedBy` parameters
-- ✅ SQL queries filtering by date ranges on `created_at` or `confirmed_at` columns
-- ✅ Summary endpoints with date-range support
+## Frontend Deployment (Firebase Hosting)
 
-## After Deployment
-Once backend is redeployed:
-1. Refresh the production dashboard (Ctrl+Shift+R for hard refresh)
-2. Try the date filters again
-3. Both Employee Tracking and Mobile User Tracking should work without 500 errors
+We have shifted the frontend hosting configuration from Google Cloud Run to **Firebase Hosting**. This allows you to easily bind custom domains.
 
-## Frontend Deployment (Already Done)
-Frontend is already deployed with:
-- From/To date pickers in Summary and Tracking detail views
-- Correct query parameters being sent to backend
+### Steps to Deploy:
+
+1. **Navigate to the frontend directory**:
+   ```bash
+   cd frontend
+   ```
+
+2. **Login to Firebase** (Only needed the first time):
+   ```bash
+   npx firebase login
+   ```
+   *This will open a browser tab asking you to log in with your Google account.*
+
+3. **Build the production assets**:
+   ```bash
+   npm run build
+   ```
+   *This compiles all React components and outputs them into the `dist/` folder.*
+
+4. **Deploy to Hosting**:
+   ```bash
+   npx firebase deploy --only hosting
+   ```
+
+---
+
+## What was configured for Firebase Hosting:
+* **SPA Routing**: Configured in `firebase.json` so that all routes redirect to `index.html` (resolving any page-reload 404 errors).
+* **Caching Policy**:
+  * `index.html` is configured to never cache, preventing users from seeing stale builds on new deployments.
+  * Hashed assets (`/assets/**`) are cached for 1 year with `immutable` for optimal loading performance.
