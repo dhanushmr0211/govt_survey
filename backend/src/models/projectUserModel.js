@@ -1,4 +1,5 @@
-const { query } = require('../config/db');
+const { pool } = require('../config/db');
+const query = (text, params) => pool.query(text, params);
 
 /**
  * Check if a user is a member of a specific project, and return their project_role and sections.

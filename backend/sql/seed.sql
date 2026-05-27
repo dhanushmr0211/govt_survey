@@ -12,6 +12,9 @@ bidar AS (
 ),
 kalaburgi AS (
     INSERT INTO districts (project_id, name) SELECT id, 'KALABURGI DISTRICT' FROM ideck RETURNING id
+),
+ballari AS (
+    INSERT INTO districts (project_id, name) SELECT id, 'BALLARI DISTRICT' FROM ideck RETURNING id
 )
 INSERT INTO ulbs (project_id, district_id, name, type) VALUES
 -- HAVERI
@@ -55,4 +58,13 @@ INSERT INTO ulbs (project_id, district_id, name, type) VALUES
 ((SELECT id FROM ideck), (SELECT id FROM kalaburgi), 'Wadi TMC', 'TMC'),
 ((SELECT id FROM ideck), (SELECT id FROM kalaburgi), 'Kalagi Tp', 'TP'),
 ((SELECT id FROM ideck), (SELECT id FROM kalaburgi), 'Kamalapur TP', 'TP'),
-((SELECT id FROM ideck), (SELECT id FROM kalaburgi), 'Yadrami TP', 'TP');
+((SELECT id FROM ideck), (SELECT id FROM kalaburgi), 'Yadrami TP', 'TP'),
+
+-- BALLARI
+((SELECT id FROM ideck), (SELECT id FROM ballari), 'CMC Sirugappa', 'CMC'),
+((SELECT id FROM ideck), (SELECT id FROM ballari), 'TMC Kambli', 'TMC'),
+((SELECT id FROM ideck), (SELECT id FROM ballari), 'TMC Sandur', 'TMC'),
+((SELECT id FROM ideck), (SELECT id FROM ballari), 'TMC Kurugodu', 'TMC'),
+((SELECT id FROM ideck), (SELECT id FROM ballari), 'TMC Kurekuppa', 'TMC'),
+((SELECT id FROM ideck), (SELECT id FROM ballari), 'TP Tekkalakote', 'TP'),
+((SELECT id FROM ideck), (SELECT id FROM ballari), 'TP Kudathini', 'TP');

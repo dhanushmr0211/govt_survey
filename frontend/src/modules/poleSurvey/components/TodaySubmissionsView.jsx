@@ -21,6 +21,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = propProjectId || activeProject?.id;
+  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY';
 
   const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
 
@@ -440,6 +441,41 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                         {renderField('RR Number', 'meter_rr_number', selectedSubmission.meter_rr_number)}
                         {renderField('Serial Number', 'meter_serial_number', selectedSubmission.meter_serial_number)}
                         {renderField('Condition', 'meter_condition', selectedSubmission.meter_condition, ['working', 'not working', 'missing'])}
+                      </>
+                    ) : isTgpl ? (
+                      <>
+                        {renderField('DTC No', 'dtc_number', selectedSubmission.dtc_number)}
+                        {renderField('DTC Capacity', 'dtc_capacity', selectedSubmission.dtc_capacity)}
+                        {renderField('CCMS No', 'ccms_number', selectedSubmission.ccms_number)}
+                        {renderField('Meter Type', 'meter_type', selectedSubmission.meter_type, ['1P', '3P'])}
+                        {renderField('RR Number', 'meter_rr_number', selectedSubmission.meter_rr_number)}
+                        {renderField('Serial Number', 'meter_serial_number', selectedSubmission.meter_serial_number)}
+                        {renderField('Meter Dim. Status', 'meter_dimensional_status', selectedSubmission.meter_dimensional_status, ['Working', 'not working', 'missing', 'door lock', 'no meter'])}
+                        {renderField('Conductor Type', 'conductor_type', selectedSubmission.conductor_type, ['ABC', 'ACSR', 'UG'])}
+                        {renderField('Pole No', 'pole_number', selectedSubmission.identifier)}
+                        {renderField('Pole Type', 'pole_type', selectedSubmission.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
+                        {renderField('Height', 'pole_height', selectedSubmission.pole_height, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                        {renderField('Distance', 'pole_to_pole_distance', selectedSubmission.pole_to_pole_distance)}
+                        {renderField('ARM Type', 'arm_type', selectedSubmission.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
+                        {renderField('ARM Status', 'arm_status', selectedSubmission.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
+                        {renderField('Present ARM No', 'present_arm_no', selectedSubmission.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
+                        {renderField('Present ARM Length', 'present_arm_length', selectedSubmission.present_arm_length, ['0', '1', '1.5', '2', '2.5'])}
+                        {renderField('Lights Count', 'how_many_lights_in_pole', selectedSubmission.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
+                        {renderField('Mounting Height', 'light_mounting_height', selectedSubmission.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
+                        {renderField('Light Type', 'light_type', selectedSubmission.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                        {renderField('Capacity', 'light_capacity', selectedSubmission.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Working', 'light_working_status', selectedSubmission.light_working_status, ['yes', 'no'])}
+                        {renderField('Road Cat', 'road_category', selectedSubmission.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
+                        {renderField('Road Type', 'road_type', selectedSubmission.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
+                        {renderField('Road Width', 'road_width_mtrs', selectedSubmission.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                        {renderField('Earthing', 'pole_earthing_exists', selectedSubmission.pole_earthing_exists, ['YES', 'NO'])}
+                        
+                        <div className="col-span-2 border-t pt-2 mt-2 font-semibold text-gray-700">Proposal Form</div>
+                        {renderField('Req ARM No', 'req_arm_number', selectedSubmission.req_arm_number)}
+                        {renderField('Req ARM Length', 'req_arm_length', selectedSubmission.req_arm_length)}
+                        {renderField('Req LED Lights No', 'req_led_lights_no', selectedSubmission.req_led_lights_no)}
+                        {renderField('Req LED Wattage', 'req_led_wattage', selectedSubmission.req_led_wattage)}
+                        {renderField('Req Dedicated Wire', 'req_dedicated_wire', selectedSubmission.req_dedicated_wire)}
                       </>
                     ) : (
                       <>

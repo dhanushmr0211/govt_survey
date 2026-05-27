@@ -1,4 +1,5 @@
-const { query } = require('../config/db');
+const { pool } = require('../config/db');
+const query = (text, params) => pool.query(text, params);
 
 async function countAll() {
   const result = await query('SELECT COUNT(*)::int AS total FROM projects WHERE is_deleted IS NOT TRUE');

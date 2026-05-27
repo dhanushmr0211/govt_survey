@@ -12,7 +12,7 @@ async function escalateIssues() {
   console.log('[Escalation Worker] Running issue escalation check...');
 
   try {
-    for (const [levelStr, hours] of Object.entries(ESCALATION_RULES)) {
+    for (const levelStr of Object.keys(ESCALATION_RULES)) {
       const currentLevel = parseInt(levelStr, 10);
       const nextLevel = currentLevel + 1;
 

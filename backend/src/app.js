@@ -12,9 +12,11 @@ const { pool } = require('./config/db');
 const { authRouter } = require('./routes/auth.routes');
 const { projectRouter } = require('./routes/project.routes');
 const { poleSurveyRouter } = require('./modules/poleSurvey/routes/poleSurvey.routes');
+const { tgplSurveyRouter } = require('./modules/tgplSurvey/routes/tgplSurvey.routes');
 const { issueRouter } = require('./routes/issue.routes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const { requestId } = require('./middleware/requestId');
+const { TGPL_PROJECT_ID } = require('./constants/projects');
 
 function createApp() {
   // Startup database migrations and performance indexing
@@ -130,10 +132,18 @@ function createApp() {
 
   // All domain routes under /api/v1
   const { requireProjectMember } = require('./middleware/roleGuard');
+  const { dbRouter } = require('./middleware/dbRouter');
   const apiRouter = express.Router({ mergeParams: true });
+  apiRouter.use(dbRouter);
   apiRouter.use('/auth', authRouter);
   apiRouter.use('/projects', projectRouter);
-  apiRouter.use('/projects/:projectId/pole-survey', requireProjectMember(), poleSurveyRouter);
+  apiRouter.use('/projects/:projectId/pole-survey', requireProjectMember(), (req, res, next) => {
+    const projectId = String(req.params.projectId || req.headers['x-project-id']);
+    if (projectId === TGPL_PROJECT_ID) {
+      return tgplSurveyRouter(req, res, next);
+    }
+    return poleSurveyRouter(req, res, next);
+  });
   apiRouter.use('/projects/:projectId/issues', requireProjectMember(), issueRouter);
   app.use('/api/v1', apiRouter);
 

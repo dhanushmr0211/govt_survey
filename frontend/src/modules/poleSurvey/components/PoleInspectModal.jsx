@@ -14,6 +14,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = activeProject?.id;
+  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY';
   const canEdit = user?.role === 'MASTER_ADMIN' || 
     (activeProject?.section_i && pole?.status === 'pending') || 
     (activeProject?.section_j && pole?.status === 'confirmed');
@@ -68,7 +69,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const isRestricted = isMobileEditRestricted();
+      const isRestricted = !isTgpl && isMobileEditRestricted();
       const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
       
       let sanitized = { ...formData };
@@ -160,7 +161,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
   };
 
   const renderField = (label, name, value, options = null) => {
-    const isRestricted = isMobileEditRestricted();
+    const isRestricted = !isTgpl && isMobileEditRestricted();
     const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
     const isDisabled = isRestricted && !MOBILE_ALLOWED.has(name);
 
@@ -241,45 +242,87 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
             <div className="lg:w-1/3 space-y-6 overflow-y-auto max-h-[70vh] pr-2">
               
               {/* Switch Point Details */}
-              <div>
-                <h3 className="font-bold text-primary border-b pb-2 mb-3 text-base">Switch Point Details</h3>
-                <div className="space-y-2">
-                  {renderField('Ward Number', 'ward_number', pole.ward_number)}
-                  {renderField('Switch Point Number', 'switch_point_number', pole.switch_point_number)}
-                  {renderField('Switch Point Type', 'switch_point_type', pole.switch_point_type, ['DP', 'MCB', 'SWITCH', 'HOOK'])}
-                  {renderField('Does Meter Exists', 'meter_exists', pole.meter_exists ? 'YES' : 'NO', ['YES', 'NO'])}
-                  {renderField('Meter Type', 'meter_type', pole.meter_type, ['1P', '3P'])}
-                  {renderField('Meter RR Number', 'meter_rr_number', pole.meter_rr_number)}
-                  {renderField('Meter Serial Number', 'meter_serial_number', pole.meter_serial_number)}
-                  {renderField('Meter Condition', 'meter_condition', pole.meter_condition, ['working', 'not working', 'missing'])}
+              {!isTgpl && (
+                <div>
+                  <h3 className="font-bold text-primary border-b pb-2 mb-3 text-base">Switch Point Details</h3>
+                  <div className="space-y-2">
+                    {renderField('Ward Number', 'ward_number', pole.ward_number)}
+                    {renderField('Switch Point Number', 'switch_point_number', pole.switch_point_number)}
+                    {renderField('Switch Point Type', 'switch_point_type', pole.switch_point_type, ['DP', 'MCB', 'SWITCH', 'HOOK'])}
+                    {renderField('Does Meter Exists', 'meter_exists', pole.meter_exists ? 'YES' : 'NO', ['YES', 'NO'])}
+                    {renderField('Meter Type', 'meter_type', pole.meter_type, ['1P', '3P'])}
+                    {renderField('Meter RR Number', 'meter_rr_number', pole.meter_rr_number)}
+                    {renderField('Meter Serial Number', 'meter_serial_number', pole.meter_serial_number)}
+                    {renderField('Meter Condition', 'meter_condition', pole.meter_condition, ['working', 'not working', 'missing'])}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Pole Details */}
               <div>
-                <h3 className="font-bold text-primary border-b pb-2 mb-3 text-base">Pole Details</h3>
+                <h3 className="font-bold text-primary border-b pb-2 mb-3 text-base">{isTgpl ? 'TGPL Pole Details' : 'Pole Details'}</h3>
                 <div className="space-y-2">
-                  {renderField('Ward No#', 'ward_number', pole.ward_number)}
-                  {renderField('Switch point No#', 'switch_point_number', pole.switch_point_number)}
-                  {renderField('Conductor Type', 'conductor_type', pole.conductor_type, ['ABC', 'ACSR', 'UG'])}
-                  {renderField('Pole No#', 'pole_number', pole.pole_number)}
-                  {renderField('Pole Type', 'pole_type', pole.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
-                  {renderField('Pole Height (mtrs)', 'pole_height_mtrs', pole.pole_height_mtrs, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
-                  {renderField('Pole Condition', 'pole_condition', pole.pole_condition, ['Good', 'defective', 'missing'])}
-                  {renderField('Pole To Pole Distance', 'pole_to_pole_distance_mtrs', pole.pole_to_pole_distance_mtrs)}
-                  {renderField('ARM Type', 'arm_type', pole.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
-                  {renderField('ARM Status', 'arm_status', pole.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
-                  {renderField('Present ARM No#', 'present_arm_no', pole.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
-                  {renderField('Present ARM Length', 'present_arm_length_mtrs', pole.present_arm_length_mtrs, ['0', '1', '1.5', '2', '2.5'])}
-                  {renderField('Lights in Pole', 'how_many_lights_in_pole', pole.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
-                  {renderField('Light Mounting Height', 'light_mounting_height', pole.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
-                  {renderField('Light Type', 'light_type', pole.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                  {renderField('Light Capacity', 'light_capacity', pole.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
-                  {renderField('Light Working Status', 'light_working_status', pole.light_working_status, ['yes', 'no'])}
-                  {renderField('Road Category', 'road_category', pole.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
-                  {renderField('Road Type', 'road_type', pole.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
-                  {renderField('Road Width', 'road_width_mtrs', pole.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
-                  {renderField('Pole Earthing Exists', 'pole_earthing_exists', pole.pole_earthing_exists, ['YES', 'NO'])}
+                  {isTgpl ? (
+                    <>
+                      {renderField('Ward No#', 'ward_number', pole.ward_number)}
+                      {renderField('DTC No', 'dtc_number', pole.dtc_number)}
+                      {renderField('DTC Capacity', 'dtc_capacity', pole.dtc_capacity)}
+                      {renderField('CCMS No', 'ccms_number', pole.ccms_number)}
+                      {renderField('Meter Type', 'meter_type', pole.meter_type, ['1P', '3P'])}
+                      {renderField('RR Number', 'meter_rr_number', pole.meter_rr_number)}
+                      {renderField('Serial Number', 'meter_serial_number', pole.meter_serial_number)}
+                      {renderField('Meter Dim. Status', 'meter_dimensional_status', pole.meter_dimensional_status, ['Working', 'not working', 'missing', 'door lock', 'no meter'])}
+                      {renderField('Conductor Type', 'conductor_type', pole.conductor_type, ['ABC', 'ACSR', 'UG'])}
+                      {renderField('Pole No#', 'pole_number', pole.pole_number)}
+                      {renderField('Pole Type', 'pole_type', pole.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
+                      {renderField('Height', 'pole_height', pole.pole_height, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                      {renderField('Distance', 'pole_to_pole_distance', pole.pole_to_pole_distance)}
+                      {renderField('ARM Type', 'arm_type', pole.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
+                      {renderField('ARM Status', 'arm_status', pole.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
+                      {renderField('Present ARM No#', 'present_arm_no', pole.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
+                      {renderField('Present ARM Length', 'present_arm_length', pole.present_arm_length, ['0', '1', '1.5', '2', '2.5'])}
+                      {renderField('Lights Count', 'how_many_lights_in_pole', pole.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
+                      {renderField('Mounting Height', 'light_mounting_height', pole.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
+                      {renderField('Light Type', 'light_type', pole.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                      {renderField('Capacity', 'light_capacity', pole.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                      {renderField('Working', 'light_working_status', pole.light_working_status, ['yes', 'no'])}
+                      {renderField('Road Cat', 'road_category', pole.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
+                      {renderField('Road Type', 'road_type', pole.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
+                      {renderField('Road Width', 'road_width_mtrs', pole.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                      {renderField('Earthing', 'pole_earthing_exists', pole.pole_earthing_exists, ['YES', 'NO'])}
+                      
+                      <div className="border-b pb-1 mt-3 mb-2 font-bold text-primary text-sm">Proposal Form</div>
+                      {renderField('Req ARM No', 'req_arm_number', pole.req_arm_number)}
+                      {renderField('Req ARM Length', 'req_arm_length', pole.req_arm_length)}
+                      {renderField('Req LED Lights No', 'req_led_lights_no', pole.req_led_lights_no)}
+                      {renderField('Req LED Wattage', 'req_led_wattage', pole.req_led_wattage)}
+                      {renderField('Req Dedicated Wire', 'req_dedicated_wire', pole.req_dedicated_wire)}
+                    </>
+                  ) : (
+                    <>
+                      {renderField('Ward No#', 'ward_number', pole.ward_number)}
+                      {renderField('Switch point No#', 'switch_point_number', pole.switch_point_number)}
+                      {renderField('Conductor Type', 'conductor_type', pole.conductor_type, ['ABC', 'ACSR', 'UG'])}
+                      {renderField('Pole No#', 'pole_number', pole.pole_number)}
+                      {renderField('Pole Type', 'pole_type', pole.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
+                      {renderField('Pole Height (mtrs)', 'pole_height_mtrs', pole.pole_height_mtrs, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                      {renderField('Pole Condition', 'pole_condition', pole.pole_condition, ['Good', 'defective', 'missing'])}
+                      {renderField('Pole To Pole Distance', 'pole_to_pole_distance_mtrs', pole.pole_to_pole_distance_mtrs)}
+                      {renderField('ARM Type', 'arm_type', pole.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
+                      {renderField('ARM Status', 'arm_status', pole.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
+                      {renderField('Present ARM No#', 'present_arm_no', pole.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
+                      {renderField('Present ARM Length', 'present_arm_length_mtrs', pole.present_arm_length_mtrs, ['0', '1', '1.5', '2', '2.5'])}
+                      {renderField('Lights in Pole', 'how_many_lights_in_pole', pole.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
+                      {renderField('Light Mounting Height', 'light_mounting_height', pole.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
+                      {renderField('Light Type', 'light_type', pole.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                      {renderField('Light Capacity', 'light_capacity', pole.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                      {renderField('Light Working Status', 'light_working_status', pole.light_working_status, ['yes', 'no'])}
+                      {renderField('Road Category', 'road_category', pole.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
+                      {renderField('Road Type', 'road_type', pole.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
+                      {renderField('Road Width', 'road_width_mtrs', pole.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                      {renderField('Pole Earthing Exists', 'pole_earthing_exists', pole.pole_earthing_exists, ['YES', 'NO'])}
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -312,8 +355,8 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
             </div>
 
             {/* Right Side: Images */}
-            <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[0, 1, 2].map((index) => {
+            <div className={`lg:w-2/3 grid grid-cols-1 ${isTgpl ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
+              {(isTgpl ? [0, 1] : [0, 1, 2]).map((index) => {
                 const img = images[index];
                 return (
                   <div key={index} className="bg-gray-50 h-[65vh] rounded-lg flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 overflow-hidden">
@@ -325,7 +368,9 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                       <>
                         <span className="text-sm font-semibold">Image {index + 1}</span>
                         <span className="text-xs">
-                          {index === 0 ? 'Switch Point / Meter' : index === 1 ? 'Pole View' : 'Light / Bracket View'}
+                          {isTgpl
+                            ? (index === 0 ? 'Pole View 1' : 'Pole View 2')
+                            : (index === 0 ? 'Switch Point / Meter' : index === 1 ? 'Pole View' : 'Light / Bracket View')}
                         </span>
                       </>
                     )}

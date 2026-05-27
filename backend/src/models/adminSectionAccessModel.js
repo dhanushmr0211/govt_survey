@@ -1,4 +1,5 @@
-const { query } = require('../config/db');
+const { pool } = require('../config/db');
+const query = (text, params) => pool.query(text, params);
 
 async function setSectionAccess(userId, sectionA, sectionB, sectionC, sectionD = false, sectionE = false, sectionF = false, sectionG = false, sectionH = false) {
   const result = await query(

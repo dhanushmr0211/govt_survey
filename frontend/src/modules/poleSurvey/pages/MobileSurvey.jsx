@@ -23,6 +23,13 @@ export default function MobileSurvey() {
   const [selectedDate, setSelectedDate] = useState(() => getLocalDateString());
 
   const projectId = activeProject?.id;
+  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY';
+
+  useEffect(() => {
+    if (isTgpl && selectedUlb && !view) {
+      setView('pole');
+    }
+  }, [isTgpl, selectedUlb, view]);
 
   useEffect(() => {
     offlineSyncService.start();
@@ -80,41 +87,45 @@ export default function MobileSurvey() {
               <p className="text-xs text-emerald-100 mt-1 font-medium">Real-time survey progress and analytics</p>
             </div>
 
-            {/* Today's Activity Section */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider flex items-center gap-2">
-                <span className="w-1.5 h-3 bg-emerald-500 rounded-full"></span>
-                Today's Submissions
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-emerald-100">
-                  <span className="text-xs font-semibold text-gray-400">Switch Points</span>
-                  <span className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.switch_points ?? 0}</span>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-emerald-100">
-                  <span className="text-xs font-semibold text-gray-400">Poles</span>
-                  <span className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.poles ?? 0}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Total Activity Section */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider flex items-center gap-2">
-                <span className="w-1.5 h-3 bg-blue-500 rounded-full"></span>
-                Total Submissions
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-blue-100">
-                  <span className="text-xs font-semibold text-gray-400">Switch Points</span>
-                  <span className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.switch_points ?? 0}</span>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-blue-100">
-                  <span className="text-xs font-semibold text-gray-400">Poles</span>
-                  <span className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.poles ?? 0}</span>
-                </div>
-              </div>
-            </div>
+             {/* Today's Activity Section */}
+             <div className="space-y-3">
+               <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider flex items-center gap-2">
+                 <span className="w-1.5 h-3 bg-emerald-500 rounded-full"></span>
+                 Today's Submissions
+               </h3>
+               <div className={`grid ${isTgpl ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+                 {!isTgpl && (
+                   <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-emerald-100">
+                     <span className="text-xs font-semibold text-gray-400">Switch Points</span>
+                     <span className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.switch_points ?? 0}</span>
+                   </div>
+                 )}
+                 <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-emerald-100">
+                   <span className="text-xs font-semibold text-gray-400">Poles</span>
+                   <span className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.poles ?? 0}</span>
+                 </div>
+               </div>
+             </div>
+ 
+             {/* Total Activity Section */}
+             <div className="space-y-3">
+               <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider flex items-center gap-2">
+                 <span className="w-1.5 h-3 bg-blue-500 rounded-full"></span>
+                 Total Submissions
+               </h3>
+               <div className={`grid ${isTgpl ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+                 {!isTgpl && (
+                   <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-blue-100">
+                     <span className="text-xs font-semibold text-gray-400">Switch Points</span>
+                     <span className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.switch_points ?? 0}</span>
+                   </div>
+                 )}
+                 <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-blue-100">
+                   <span className="text-xs font-semibold text-gray-400">Poles</span>
+                   <span className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.poles ?? 0}</span>
+                 </div>
+               </div>
+             </div>
 
             {/* Date-wise Section */}
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
@@ -133,11 +144,13 @@ export default function MobileSurvey() {
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-sm font-medium text-gray-700 bg-gray-50/50 cursor-pointer"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4 mt-2">
-                <div className="bg-amber-50/30 p-4 rounded-xl border border-amber-100/50 flex flex-col items-center">
-                  <span className="text-xs font-semibold text-amber-700/80">Switch Points</span>
-                  <span className="text-2xl font-black text-amber-900 mt-1">{stats?.dateWise?.switch_points ?? 0}</span>
-                </div>
+              <div className={`grid ${isTgpl ? 'grid-cols-1' : 'grid-cols-2'} gap-4 mt-2`}>
+                {!isTgpl && (
+                  <div className="bg-amber-50/30 p-4 rounded-xl border border-amber-100/50 flex flex-col items-center">
+                    <span className="text-xs font-semibold text-amber-700/80">Switch Points</span>
+                    <span className="text-2xl font-black text-amber-900 mt-1">{stats?.dateWise?.switch_points ?? 0}</span>
+                  </div>
+                )}
                 <div className="bg-amber-50/30 p-4 rounded-xl border border-amber-100/50 flex flex-col items-center">
                   <span className="text-xs font-semibold text-amber-700/80">Poles</span>
                   <span className="text-2xl font-black text-amber-900 mt-1">{stats?.dateWise?.poles ?? 0}</span>
@@ -198,16 +211,18 @@ export default function MobileSurvey() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
-                  <button
-                    onClick={() => setView('switch_point')}
-                    className={`p-4 rounded-lg border flex flex-col items-center justify-center gap-2 transition-colors ${
-                      view === 'switch_point'
-                        ? 'border-primary bg-primary/5 text-primary'
-                        : 'border-gray-200 hover:border-primary/50'
-                    }`}
-                  >
-                    <span className="text-sm font-medium">Create Switch Point</span>
-                  </button>
+                  {!isTgpl && (
+                    <button
+                      onClick={() => setView('switch_point')}
+                      className={`p-4 rounded-lg border flex flex-col items-center justify-center gap-2 transition-colors ${
+                        view === 'switch_point'
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-gray-200 hover:border-primary/50'
+                      }`}
+                    >
+                      <span className="text-sm font-medium">Create Switch Point</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => setView('pole')}
                     className={`p-4 rounded-lg border flex flex-col items-center justify-center gap-2 transition-colors ${

@@ -1,11 +1,9 @@
 const express = require('express');
 
 const { authenticate } = require('../middleware/auth');
-const { requireRole } = require('../middleware/roleGuard');
 const { searchUlbsHandler, createSwitchPointHandler, createPoleHandler } = require('../controllers/surveyDataController');
 const { uploadImage, getImagesByRecord, deleteImage } = require('../controllers/imageController');
 const { upload } = require('../utils/upload');
-const { ROLES } = require('../constants/roles');
 
 const surveyRouter = express.Router();
 

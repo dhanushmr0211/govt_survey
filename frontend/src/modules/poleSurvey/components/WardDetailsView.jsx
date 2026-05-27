@@ -18,6 +18,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const user = useAuthStore((state) => state.user);
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
   const activeProject = useAuthStore((state) => state.activeProject);
+  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY';
   const canEdit = user?.role === 'MASTER_ADMIN' || activeProject?.section_j;
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
@@ -60,7 +61,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const isRestricted = isMobileEditRestricted();
+      const isRestricted = !isTgpl && isMobileEditRestricted();
       const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
       
       let sanitized = { ...formData };
@@ -157,6 +158,12 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   };
 
   useEffect(() => {
+    if (isTgpl && wards.length > 0 && !selectedWard) {
+      setSelectedWard(wards[0].ward_number);
+    }
+  }, [isTgpl, wards, selectedWard]);
+
+  useEffect(() => {
     const fetchImages = async () => {
       if (!selectedDetail) return;
       setLoadingImages(true);
@@ -239,7 +246,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   };
 
   const renderField = (label, name, value, options = null) => {
-    const isRestricted = isMobileEditRestricted();
+    const isRestricted = !isTgpl && isMobileEditRestricted();
     const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
     const isDisabled = isRestricted && !MOBILE_ALLOWED.has(name);
 
@@ -367,50 +374,32 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
             </div>
           ) : (
             <div className="space-y-6">
-              {Object.values(switchPoints).map((sp) => (
-                <div key={sp.id} className="rounded-lg border border-slate-150 overflow-hidden">
-                  {/* Switch Point Header */}
-                  <div className="bg-slate-50 p-4 border-b border-slate-150 flex justify-between items-center">
-                    <div>
-                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Switch Point</span>
-                      <h3 className="text-base font-bold text-slate-950">SP #{sp.switch_point_number}</h3>
-                    </div>
-                    <div className="flex gap-4 text-sm">
-                      <div><span className="text-slate-500">Type:</span> <span className="font-semibold text-slate-700">{sp.switch_point_type || 'N/A'}</span></div>
-                      <div><span className="text-slate-500">Meter:</span> <span className="font-semibold text-slate-700">{sp.meter_exists ? 'Yes' : 'No'}</span></div>
-                      <button 
-                        onClick={() => {
-                          setSelectedDetail({ type: 'switch_point', data: sp });
-                          setFormData({ ...sp });
-                          setIsEditing(false);
-                        }}
-                        className="font-semibold text-primary hover:text-primary-dark"
-                      >
-                        View Details
-                      </button>
-                    </div>
+              {isTgpl ? (
+                <div className="rounded-lg border border-slate-150 overflow-hidden bg-white">
+                  <div className="bg-slate-50 p-4 border-b border-slate-150">
+                    <h3 className="text-base font-bold text-slate-950">Poles List</h3>
                   </div>
-
-                  {/* Poles Table */}
                   <div className="overflow-x-auto">
                     <table className="premium-table text-sm">
                       <thead>
                         <tr>
                           <th>Pole No</th>
                           <th>Type</th>
-                          <th>Condition</th>
+                          <th>CCMS No</th>
+                          <th>DTC No</th>
                           <th>Light Type</th>
                           <th>Status</th>
                           <th>Action</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {sp.poles.map((pole) => (
+                        {details.map((pole) => (
                           <tr key={pole.pole_id}>
                             <td className="font-semibold text-slate-950">{pole.pole_number}</td>
-                            <td>{pole.pole_type}</td>
-                            <td>{pole.pole_condition}</td>
-                            <td>{pole.light_type}</td>
+                            <td>{pole.pole_type || 'N/A'}</td>
+                            <td>{pole.ccms_number || 'N/A'}</td>
+                            <td>{pole.dtc_number || 'N/A'}</td>
+                            <td>{pole.light_type || 'N/A'}</td>
                             <td>
                               <span className={`rounded-full px-2 py-1 text-xs font-semibold ${pole.light_working_status === 'yes' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                                 {pole.light_working_status === 'yes' ? 'Working' : 'Not Working'}
@@ -433,14 +422,89 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                             </td>
                           </tr>
                         ))}
-                        {sp.poles.length === 0 && (
-                          <tr><td colSpan="6" className="text-center text-slate-500">No poles under this switch point.</td></tr>
+                        {details.length === 0 && (
+                          <tr><td colSpan="7" className="text-center text-slate-500">No poles found in this ward.</td></tr>
                         )}
                       </tbody>
                     </table>
                   </div>
                 </div>
-              ))}
+              ) : (
+                Object.values(switchPoints).map((sp) => (
+                  <div key={sp.id} className="rounded-lg border border-slate-150 overflow-hidden">
+                    {/* Switch Point Header */}
+                    <div className="bg-slate-50 p-4 border-b border-slate-150 flex justify-between items-center">
+                      <div>
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Switch Point</span>
+                        <h3 className="text-base font-bold text-slate-950">SP #{sp.switch_point_number}</h3>
+                      </div>
+                      <div className="flex gap-4 text-sm">
+                        <div><span className="text-slate-500">Type:</span> <span className="font-semibold text-slate-700">{sp.switch_point_type || 'N/A'}</span></div>
+                        <div><span className="text-slate-500">Meter:</span> <span className="font-semibold text-slate-700">{sp.meter_exists ? 'Yes' : 'No'}</span></div>
+                        <button 
+                          onClick={() => {
+                            setSelectedDetail({ type: 'switch_point', data: sp });
+                            setFormData({ ...sp });
+                            setIsEditing(false);
+                          }}
+                          className="font-semibold text-primary hover:text-primary-dark"
+                        >
+                          View Details
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Poles Table */}
+                    <div className="overflow-x-auto">
+                      <table className="premium-table text-sm">
+                        <thead>
+                          <tr>
+                            <th>Pole No</th>
+                            <th>Type</th>
+                            <th>Condition</th>
+                            <th>Light Type</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sp.poles.map((pole) => (
+                            <tr key={pole.pole_id}>
+                              <td className="font-semibold text-slate-950">{pole.pole_number}</td>
+                              <td>{pole.pole_type}</td>
+                              <td>{pole.pole_condition}</td>
+                              <td>{pole.light_type}</td>
+                              <td>
+                                <span className={`rounded-full px-2 py-1 text-xs font-semibold ${pole.light_working_status === 'yes' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                  {pole.light_working_status === 'yes' ? 'Working' : 'Not Working'}
+                                </span>
+                              </td>
+                              <td>
+                                <button 
+                                  onClick={() => {
+                                    setSelectedDetail({ type: 'pole', data: pole });
+                                    setFormData({ 
+                                      ...pole,
+                                      pole_number: pole.pole_number || pole.identifier
+                                    });
+                                    setIsEditing(false);
+                                  }}
+                                  className="font-semibold text-primary hover:text-primary-dark"
+                                >
+                                  View Details
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {sp.poles.length === 0 && (
+                            <tr><td colSpan="6" className="text-center text-slate-500">No poles under this switch point.</td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))
+              )}
               {Object.values(switchPoints).length === 0 && (
                 <div className="py-10 text-center text-slate-500">No switch points found in this ward.</div>
               )}
@@ -510,6 +574,42 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                         {renderField('RR Number', 'meter_rr_number', selectedDetail.data.meter_rr_number)}
                         {renderField('Serial Number', 'meter_serial_number', selectedDetail.data.meter_serial_number)}
                         {renderField('Meter Condition', 'meter_condition', selectedDetail.data.meter_condition, ['working', 'not working', 'missing'])}
+                      </>
+                    ) : isTgpl ? (
+                      <>
+                        {renderField('Ward No', 'ward_number', selectedDetail.data.ward_number)}
+                        {renderField('DTC No', 'dtc_number', selectedDetail.data.dtc_number)}
+                        {renderField('DTC Capacity', 'dtc_capacity', selectedDetail.data.dtc_capacity)}
+                        {renderField('CCMS No', 'ccms_number', selectedDetail.data.ccms_number)}
+                        {renderField('Meter Type', 'meter_type', selectedDetail.data.meter_type, ['1P', '3P'])}
+                        {renderField('RR Number', 'meter_rr_number', selectedDetail.data.meter_rr_number)}
+                        {renderField('Serial Number', 'meter_serial_number', selectedDetail.data.meter_serial_number)}
+                        {renderField('Meter Dim. Status', 'meter_dimensional_status', selectedDetail.data.meter_dimensional_status, ['Working', 'not working', 'missing', 'door lock', 'no meter'])}
+                        {renderField('Conductor Type', 'conductor_type', selectedDetail.data.conductor_type, ['ABC', 'ACSR', 'UG'])}
+                        {renderField('Pole No', 'pole_number', selectedDetail.data.pole_number)}
+                        {renderField('Pole Type', 'pole_type', selectedDetail.data.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
+                        {renderField('Height', 'pole_height', selectedDetail.data.pole_height, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                        {renderField('Distance', 'pole_to_pole_distance', selectedDetail.data.pole_to_pole_distance)}
+                        {renderField('ARM Type', 'arm_type', selectedDetail.data.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
+                        {renderField('ARM Status', 'arm_status', selectedDetail.data.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
+                        {renderField('Present ARM No', 'present_arm_no', selectedDetail.data.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
+                        {renderField('Present ARM Length', 'present_arm_length', selectedDetail.data.present_arm_length, ['0', '1', '1.5', '2', '2.5'])}
+                        {renderField('Lights Count', 'how_many_lights_in_pole', selectedDetail.data.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
+                        {renderField('Mounting Height', 'light_mounting_height', selectedDetail.data.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
+                        {renderField('Light Type', 'light_type', selectedDetail.data.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                        {renderField('Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Working', 'light_working_status', selectedDetail.data.light_working_status, ['yes', 'no'])}
+                        {renderField('Road Cat', 'road_category', selectedDetail.data.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
+                        {renderField('Road Type', 'road_type', selectedDetail.data.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
+                        {renderField('Road Width', 'road_width_mtrs', selectedDetail.data.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                        {renderField('Earthing', 'pole_earthing_exists', selectedDetail.data.pole_earthing_exists, ['YES', 'NO'])}
+                        
+                        <div className="col-span-3 border-t pt-2 mt-2 font-semibold text-gray-700">Proposal Form</div>
+                        {renderField('Req ARM No', 'req_arm_number', selectedDetail.data.req_arm_number)}
+                        {renderField('Req ARM Length', 'req_arm_length', selectedDetail.data.req_arm_length)}
+                        {renderField('Req LED Lights No', 'req_led_lights_no', selectedDetail.data.req_led_lights_no)}
+                        {renderField('Req LED Wattage', 'req_led_wattage', selectedDetail.data.req_led_wattage)}
+                        {renderField('Req Dedicated Wire', 'req_dedicated_wire', selectedDetail.data.req_dedicated_wire)}
                       </>
                     ) : (
                       <>

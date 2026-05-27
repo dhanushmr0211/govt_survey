@@ -1,4 +1,16 @@
-const { query } = require('../config/db');
+const { pool, tgplPool } = require('../config/db');
+
+const query = (text, params) => pool.query(text, params);
+
+async function writeQuery(text, params) {
+  const result = await pool.query(text, params);
+  try {
+    await tgplPool.query(text, params);
+  } catch (err) {
+    console.error('[Mirror Write Error] Failed to sync user write to tgplPool:', err.message);
+  }
+  return result;
+}
 
 async function findById(id) {
   const result = await query('SELECT id, name, email, role, phone, is_blocked, avatar_url, created_at, is_deleted FROM users WHERE id = $1 AND is_deleted IS NOT TRUE', [id]);
@@ -11,7 +23,7 @@ async function findByEmail(email) {
 }
 
 async function create(name, email, passwordHash, role, createdBy = null, phone = null) {
-  const result = await query(
+  const result = await writeQuery(
     'INSERT INTO users (name, email, password, role, created_by, phone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, role, phone',
     [name, email, passwordHash, role, createdBy, phone]
   );
@@ -57,7 +69,7 @@ async function findAll(limit, offset) {
 }
 
 async function softDelete(id) {
-  const result = await query(
+  const result = await writeQuery(
     'UPDATE users SET is_deleted = TRUE, deleted_at = NOW() WHERE id = $1 RETURNING id',
     [id]
   );
@@ -77,7 +89,7 @@ async function findMobileUsersByProjects(projectIds) {
 }
 
 async function touch(id) {
-  const result = await query(
+  const result = await writeQuery(
     'UPDATE users SET updated_at = NOW() WHERE id = $1 RETURNING id, updated_at',
     [id]
   );
@@ -111,7 +123,7 @@ async function findByProject(projectId) {
 }
 
 async function changePassword(id, passwordHash) {
-  const result = await query(
+  const result = await writeQuery(
     'UPDATE users SET password = $2, updated_at = NOW() WHERE id = $1 RETURNING id',
     [id, passwordHash]
   );
@@ -119,7 +131,7 @@ async function changePassword(id, passwordHash) {
 }
 
 async function updateAvatar(id, avatarUrl) {
-  const result = await query(
+  const result = await writeQuery(
     'UPDATE users SET avatar_url = $2, updated_at = NOW() WHERE id = $1 RETURNING id, avatar_url',
     [id, avatarUrl]
   );
@@ -135,7 +147,7 @@ async function updateDetails(id, name, email, phone, isBlocked) {
   const finalPhone = phone !== undefined && phone !== null ? phone : existing.phone;
   const finalBlocked = isBlocked !== undefined && isBlocked !== null ? isBlocked : existing.is_blocked;
 
-  const result = await query(
+  const result = await writeQuery(
     'UPDATE users SET name = $2, email = $3, phone = $4, is_blocked = $5, updated_at = NOW() WHERE id = $1 RETURNING id, name, email, phone, is_blocked',
     [id, finalName, finalEmail, finalPhone, finalBlocked]
   );

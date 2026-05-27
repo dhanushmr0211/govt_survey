@@ -13,7 +13,13 @@ const bucket = storage.bucket(env.gcsBucketName);
 function buildObjectName(recordId, originalName) {
   const safeName = path.basename(originalName).replace(/[^a-zA-Z0-9._-]/g, '_');
   const timestamp = Date.now();
-  return `survey-records/${recordId}/${timestamp}-${safeName}`;
+  
+  // Dynamically require db config to avoid circular dependency
+  const { dbStorage, tgplPool } = require('./db');
+  const isTgpl = dbStorage.getStore() === tgplPool;
+  const folder = isTgpl ? 'TGPL-IMAGES' : 'survey-records';
+  
+  return `${folder}/${recordId}/${timestamp}-${safeName}`;
 }
 
 async function uploadBuffer(buffer, objectName, contentType) {

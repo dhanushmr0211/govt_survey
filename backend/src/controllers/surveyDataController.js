@@ -95,7 +95,7 @@ async function createPoleHandler(req, res) {
     data.project_id = Number(projectId);
     data.created_by = req.user?.id;
     
-    if (!data.switch_point_id) {
+    if (Number(projectId) !== 3 && !data.switch_point_id) {
       return res.status(400).json({ error: 'switch_point_id is required' });
     }
 
