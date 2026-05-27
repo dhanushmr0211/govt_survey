@@ -1,6 +1,9 @@
 # Stage 1: Build
 FROM node:20-alpine AS build
 
+# Install git for version tracking
+RUN apk add --no-cache git
+
 WORKDIR /app
 
 # Copy package files and install dependencies
