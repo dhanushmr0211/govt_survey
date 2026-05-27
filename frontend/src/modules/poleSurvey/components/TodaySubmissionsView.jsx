@@ -354,7 +354,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                         setSelectedSubmission(item);
                         setFormData({ 
                           ...item,
-                          pole_number: item.type === 'pole' ? (item.pole_number || item.identifier) : undefined
+                          pole_number: item.pole_number || item.identifier || ''
                         });
                         setIsEditing(false);
                       }}
