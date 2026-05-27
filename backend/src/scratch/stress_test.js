@@ -27,7 +27,7 @@ async function stressTest() {
     console.log(`Starting stress test with ${concurrentUsers} concurrent requests...`);
     const startTime = Date.now();
 
-    const requests = Array.from({ length: concurrentUsers }).map(async (_, i) => {
+    const requests = Array.from({ length: concurrentUsers }).map(async (_) => {
       const start = Date.now();
       try {
         const res = await fetch(endpoint, {
@@ -35,7 +35,7 @@ async function stressTest() {
         });
         const duration = Date.now() - start;
         return { status: res.status, duration, success: res.ok };
-      } catch (error) {
+      } catch {
         return { status: 'error', duration: Date.now() - start, success: false };
       }
     });

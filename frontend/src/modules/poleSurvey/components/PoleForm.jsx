@@ -13,7 +13,7 @@ export const PoleForm = ({ ulb, onBack }) => {
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
 
   const activeProject = useAuthStore((state) => state.activeProject);
-  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY';
+  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
 
   const [formData, setFormData] = useState({
     ward_number: '',

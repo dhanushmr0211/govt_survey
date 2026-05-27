@@ -14,7 +14,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = activeProject?.id;
-  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY';
+  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
   const canEdit = user?.role === 'MASTER_ADMIN' || 
     (activeProject?.section_i && pole?.status === 'pending') || 
     (activeProject?.section_j && pole?.status === 'confirmed');

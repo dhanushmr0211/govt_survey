@@ -1,7 +1,6 @@
 try {
   const { createApp } = require('./app');
   const { env } = require('./config/env');
-  const { pool } = require('./config/db');
   const { startWorker } = require('./jobs/issueEscalator');
 
   const app = createApp();

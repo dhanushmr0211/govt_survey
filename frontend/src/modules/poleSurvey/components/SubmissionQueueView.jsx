@@ -13,7 +13,7 @@ export const SubmissionQueueView = ({ projectId }) => {
   const [activeTab, setActiveTab] = useState('pending');
   const [activeType, setActiveType] = useState('all');
   const activeProject = useAuthStore((state) => state.activeProject);
-  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY';
+  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
 
   useEffect(() => {
     if (isTgpl) {

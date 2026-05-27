@@ -23,7 +23,7 @@ export default function MobileSurvey() {
   const [selectedDate, setSelectedDate] = useState(() => getLocalDateString());
 
   const projectId = activeProject?.id;
-  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY';
+  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
 
   useEffect(() => {
     if (isTgpl && selectedUlb && !view) {

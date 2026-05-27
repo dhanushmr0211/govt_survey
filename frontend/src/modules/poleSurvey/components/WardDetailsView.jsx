@@ -18,7 +18,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const user = useAuthStore((state) => state.user);
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
   const activeProject = useAuthStore((state) => state.activeProject);
-  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY';
+  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
   const canEdit = user?.role === 'MASTER_ADMIN' || activeProject?.section_j;
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
