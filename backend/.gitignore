@@ -9,16 +9,17 @@ coverage
 # Database dumps
 dump.sql
 
-# Migration / seed scripts (local dev only)
-migrate_all.js
-migrate_seed.js
-create_admin.js
-
 # GCP Service Account Keys - NEVER commit these!
 gcp-key.json
 *.json
 !package.json
 !package-lock.json
+
+# Local uploads directory (never commit uploads to Git)
+/uploads/
+
+# Ignore local database migration, helper, and test scripts at the root level
+/*.js
 
 # Temporary scratch and dev helper files
 src/scratch/

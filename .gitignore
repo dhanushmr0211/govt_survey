@@ -1,0 +1,18 @@
+# Python utilities and scripts
+crop_logo.py
+*.py
+__pycache__/
+
+# Editor & OS settings
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment configs
+.env
+.env.*
