@@ -149,7 +149,7 @@ export default function Login() {
           <div className="mt-12 pt-8 border-t border-white/5 text-center">
             <p className="text-[9px] text-white/30 font-black uppercase tracking-[0.3em] leading-relaxed">
               Secure Cloud <br/> 
-              <span className="text-white/10">v2.0.4-Stable</span>
+              <span className="text-white/10">{__APP_VERSION__}</span>
             </p>
           </div>
         </div>
