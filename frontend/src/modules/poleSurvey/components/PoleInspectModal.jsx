@@ -69,7 +69,8 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const isRestricted = !isTgpl && isMobileEditRestricted();
+      const isBallari = (pole?.district_name || '').toLowerCase().includes('ballari');
+      const isRestricted = !isTgpl && !isBallari && isMobileEditRestricted();
       const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
       
       let sanitized = { ...formData };
@@ -283,8 +284,10 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                       {renderField('Present ARM Length', 'present_arm_length', pole.present_arm_length, ['0', '1', '1.5', '2', '2.5'])}
                       {renderField('Lights Count', 'how_many_lights_in_pole', pole.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
                       {renderField('Mounting Height', 'light_mounting_height', pole.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
-                      {renderField('Light Type', 'light_type', pole.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                      {renderField('Capacity', 'light_capacity', pole.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                      {renderField('Light 1 Type', 'light_type', pole.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                      {renderField('Light 1 Capacity', 'light_capacity', pole.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                      {renderField('Light 2 Type', 'light_type_2', pole.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                      {renderField('Light 2 Capacity', 'light_capacity_2', pole.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
                       {renderField('Working', 'light_working_status', pole.light_working_status, ['yes', 'no'])}
                       {renderField('Road Cat', 'road_category', pole.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
                       {renderField('Road Type', 'road_type', pole.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
@@ -314,8 +317,10 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                       {renderField('Present ARM Length', 'present_arm_length_mtrs', pole.present_arm_length_mtrs, ['0', '1', '1.5', '2', '2.5'])}
                       {renderField('Lights in Pole', 'how_many_lights_in_pole', pole.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
                       {renderField('Light Mounting Height', 'light_mounting_height', pole.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
-                      {renderField('Light Type', 'light_type', pole.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                      {renderField('Light Capacity', 'light_capacity', pole.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                      {renderField('Light 1 Type', 'light_type', pole.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                      {renderField('Light 1 Capacity', 'light_capacity', pole.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                      {renderField('Light 2 Type', 'light_type_2', pole.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                      {renderField('Light 2 Capacity', 'light_capacity_2', pole.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
                       {renderField('Light Working Status', 'light_working_status', pole.light_working_status, ['yes', 'no'])}
                       {renderField('Road Category', 'road_category', pole.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
                       {renderField('Road Type', 'road_type', pole.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
@@ -357,7 +362,9 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
             {/* Right Side: Images */}
             <div className={`lg:w-2/3 grid grid-cols-1 ${isTgpl ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
               {(isTgpl ? [0, 1] : [0, 1, 2]).map((index) => {
-                const img = images[index];
+                const imgCol = isTgpl ? pole[`image_url_${index + 1}`] : null;
+                const img = imgCol ? { signed_url: imgCol } : images[index];
+                
                 return (
                   <div key={index} className="bg-gray-50 h-[65vh] rounded-lg flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 overflow-hidden">
                     {loadingImages ? (

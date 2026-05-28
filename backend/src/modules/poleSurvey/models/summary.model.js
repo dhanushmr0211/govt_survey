@@ -188,14 +188,20 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fr
       p.how_many_lights_in_pole,
       p.light_mounting_height,
       p.light_capacity,
+      p.light_type_2,
+      p.light_capacity_2,
       p.road_width_mtrs,
       p.pole_earthing_exists,
       p.confirmed_by as pole_confirmed_by,
       p.confirmed_at as pole_confirmed_at,
       u2.name as pole_confirmed_by_name,
       p.latitude as pole_latitude,
-      p.longitude as pole_longitude
+      p.longitude as pole_longitude,
+      ulb.name as ulb_name,
+      dist.name as district_name
     FROM switch_points sp
+    LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+    LEFT JOIN districts dist ON ulb.district_id = dist.id
     LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted IS NOT TRUE
     LEFT JOIN users u1 ON sp.confirmed_by = u1.id
     LEFT JOIN users u2 ON p.confirmed_by = u2.id
@@ -247,6 +253,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         sp.ward_number,
         sp.switch_point_number::text as identifier,
         ulb.name as ulb_name,
+        dist.name as district_name,
         sp.switch_point_number::text as switch_point_number,
         sp.switch_point_type,
         sp.meter_exists,
@@ -269,6 +276,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         NULL as light_mounting_height,
         NULL as light_type,
         NULL as light_capacity,
+        NULL as light_type_2,
+        NULL as light_capacity_2,
         NULL as light_working_status,
         NULL as road_category,
         NULL as road_type,
@@ -277,6 +286,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       FROM switch_points sp
       JOIN users u ON sp.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+      LEFT JOIN districts dist ON ulb.district_id = dist.id
       WHERE sp.project_id = $1 AND sp.status = 'PENDING' AND sp.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR sp.created_by = $4)
       ${spDateFilter}
@@ -293,6 +303,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         sp.ward_number,
         p.pole_number::text as identifier,
         ulb.name as ulb_name,
+        dist.name as district_name,
         p.switch_point_number::text as switch_point_number,
         NULL as switch_point_type,
         NULL as meter_exists,
@@ -315,6 +326,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         p.light_mounting_height,
         p.light_type,
         p.light_capacity,
+        p.light_type_2,
+        p.light_capacity_2,
         p.light_working_status,
         p.road_category,
         p.road_type,
@@ -324,6 +337,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       JOIN switch_points sp ON p.switch_point_id = sp.id
       JOIN users u ON p.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+      LEFT JOIN districts dist ON ulb.district_id = dist.id
       WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR p.created_by = $4)
       ${pDateFilter}
@@ -360,8 +374,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         NULL as present_arm_length_mtrs,
         NULL as how_many_lights_in_pole,
         NULL as light_mounting_height,
-        NULL as light_type,
-        NULL as light_capacity,
+        NULL as light_type, NULL as light_capacity, NULL as light_type_2, NULL as light_capacity_2,
         NULL as light_working_status,
         NULL as road_category,
         NULL as road_type,
@@ -406,8 +419,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         p.present_arm_length_mtrs,
         p.how_many_lights_in_pole,
         p.light_mounting_height,
-        p.light_type,
-        p.light_capacity,
+        p.light_type, p.light_capacity, p.light_type_2, p.light_capacity_2,
         p.light_working_status,
         p.road_category,
         p.road_type,
@@ -500,8 +512,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         NULL::numeric as present_arm_length_mtrs,
         NULL::text as how_many_lights_in_pole,
         NULL::text as light_mounting_height,
-        NULL::text as light_type,
-        NULL::text as light_capacity,
+        NULL::text as light_type, NULL::text as light_capacity, NULL::text as light_type_2, NULL::text as light_capacity_2,
         NULL::text as light_working_status,
         NULL::text as road_category,
         NULL::text as road_type,
@@ -551,8 +562,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         p.present_arm_length_mtrs,
         p.how_many_lights_in_pole,
         p.light_mounting_height,
-        p.light_type,
-        p.light_capacity,
+        p.light_type, p.light_capacity, p.light_type_2, p.light_capacity_2,
         p.light_working_status,
         p.road_category,
         p.road_type,
@@ -603,8 +613,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         NULL::numeric as present_arm_length_mtrs,
         NULL::text as how_many_lights_in_pole,
         NULL::text as light_mounting_height,
-        NULL::text as light_type,
-        NULL::text as light_capacity,
+        NULL::text as light_type, NULL::text as light_capacity, NULL::text as light_type_2, NULL::text as light_capacity_2,
         NULL::text as light_working_status,
         NULL::text as road_category,
         NULL::text as road_type,
@@ -654,8 +663,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         p.present_arm_length_mtrs,
         p.how_many_lights_in_pole,
         p.light_mounting_height,
-        p.light_type,
-        p.light_capacity,
+        p.light_type, p.light_capacity, p.light_type_2, p.light_capacity_2,
         p.light_working_status,
         p.road_category,
         p.road_type,
@@ -717,6 +725,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         sp.ward_number,
         sp.switch_point_number::text as identifier,
         ulb.name as ulb_name,
+        dist.name as district_name,
         sp.switch_point_number::text as switch_point_number,
         sp.switch_point_type,
         sp.meter_exists,
@@ -737,8 +746,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         NULL as present_arm_length_mtrs,
         NULL as how_many_lights_in_pole,
         NULL as light_mounting_height,
-        NULL as light_type,
-        NULL as light_capacity,
+        NULL as light_type, NULL as light_capacity, NULL as light_type_2, NULL as light_capacity_2,
         NULL as light_working_status,
         NULL as road_category,
         NULL as road_type,
@@ -747,6 +755,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
       FROM switch_points sp
       JOIN users u ON sp.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+      LEFT JOIN districts dist ON ulb.district_id = dist.id
       WHERE sp.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date = $2 AND sp.is_deleted IS NOT TRUE
       AND ($5::int IS NULL OR sp.created_by = $5)
       ${scopeFilter}
@@ -762,6 +771,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         sp.ward_number,
         p.pole_number::text as identifier,
         ulb.name as ulb_name,
+        dist.name as district_name,
         p.switch_point_number::text as switch_point_number,
         NULL as switch_point_type,
         NULL as meter_exists,
@@ -782,8 +792,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         p.present_arm_length_mtrs,
         p.how_many_lights_in_pole,
         p.light_mounting_height,
-        p.light_type,
-        p.light_capacity,
+        p.light_type, p.light_capacity, p.light_type_2, p.light_capacity_2,
         p.light_working_status,
         p.road_category,
         p.road_type,
@@ -793,6 +802,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
       JOIN switch_points sp ON p.switch_point_id = sp.id
       JOIN users u ON p.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+      LEFT JOIN districts dist ON ulb.district_id = dist.id
       WHERE p.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date = $2 AND p.is_deleted IS NOT TRUE
       AND ($5::int IS NULL OR p.created_by = $5)
       ${scopeFilter}

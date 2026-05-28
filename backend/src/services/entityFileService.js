@@ -20,13 +20,12 @@ async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
   // Sync to respective tables
   try {
     if (entityType === 'pole') {
-      const poleRes = await query('SELECT image_url_1, image_url_2, image_url_3 FROM poles WHERE id = $1', [entityId]);
+      const poleRes = await query('SELECT image_url_1, image_url_2 FROM poles WHERE id = $1', [entityId]);
       if (poleRes.rows.length > 0) {
         const pole = poleRes.rows[0];
         let updateCol = null;
         if (!pole.image_url_1) updateCol = 'image_url_1';
         else if (!pole.image_url_2) updateCol = 'image_url_2';
-        else if (!pole.image_url_3) updateCol = 'image_url_3';
         
         if (updateCol) {
           await query(`UPDATE poles SET ${updateCol} = $1 WHERE id = $2`, [publicUrl, entityId]);
@@ -87,8 +86,7 @@ async function deleteFile(fileId) {
         UPDATE poles 
         SET 
           image_url_1 = CASE WHEN image_url_1 = $1 THEN NULL ELSE image_url_1 END,
-          image_url_2 = CASE WHEN image_url_2 = $1 THEN NULL ELSE image_url_2 END,
-          image_url_3 = CASE WHEN image_url_3 = $1 THEN NULL ELSE image_url_3 END
+          image_url_2 = CASE WHEN image_url_2 = $1 THEN NULL ELSE image_url_2 END
         WHERE id = $2
       `, [publicUrl, file.entity_id]);
     } else if (file.entity_type === 'switch_point') {

@@ -61,7 +61,8 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const isRestricted = !isTgpl && isMobileEditRestricted();
+      const isBallari = (ulb?.district_name || '').toLowerCase().includes('ballari');
+      const isRestricted = !isTgpl && !isBallari && isMobileEditRestricted();
       const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
       
       let sanitized = { ...formData };
@@ -387,7 +388,8 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                           <th>Type</th>
                           <th>CCMS No</th>
                           <th>DTC No</th>
-                          <th>Light Type</th>
+                          <th>Light 1 Type</th>
+                          <th>Light 2 Type</th>
                           <th>Status</th>
                           <th>Action</th>
                         </tr>
@@ -400,6 +402,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                             <td>{pole.ccms_number || 'N/A'}</td>
                             <td>{pole.dtc_number || 'N/A'}</td>
                             <td>{pole.light_type || 'N/A'}</td>
+                            <td>{pole.light_type_2 || 'N/A'}</td>
                             <td>
                               <span className={`rounded-full px-2 py-1 text-xs font-semibold ${pole.light_working_status === 'yes' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
                                 {pole.light_working_status === 'yes' ? 'Working' : 'Not Working'}
@@ -596,8 +599,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                         {renderField('Present ARM Length', 'present_arm_length', selectedDetail.data.present_arm_length, ['0', '1', '1.5', '2', '2.5'])}
                         {renderField('Lights Count', 'how_many_lights_in_pole', selectedDetail.data.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
                         {renderField('Mounting Height', 'light_mounting_height', selectedDetail.data.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
-                        {renderField('Light Type', 'light_type', selectedDetail.data.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                        {renderField('Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Light 1 Type', 'light_type', selectedDetail.data.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                        {renderField('Light 1 Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Light 2 Type', 'light_type_2', selectedDetail.data.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                        {renderField('Light 2 Capacity', 'light_capacity_2', selectedDetail.data.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
                         {renderField('Working', 'light_working_status', selectedDetail.data.light_working_status, ['yes', 'no'])}
                         {renderField('Road Cat', 'road_category', selectedDetail.data.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
                         {renderField('Road Type', 'road_type', selectedDetail.data.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
@@ -627,8 +632,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                         {renderField('Present ARM Length', 'present_arm_length_mtrs', selectedDetail.data.present_arm_length_mtrs, ['0', '1', '1.5', '2', '2.5'])}
                         {renderField('Lights Count', 'how_many_lights_in_pole', selectedDetail.data.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
                         {renderField('Mounting Height', 'light_mounting_height', selectedDetail.data.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
-                        {renderField('Light Type', 'light_type', selectedDetail.data.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                        {renderField('Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Light 1 Type', 'light_type', selectedDetail.data.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                        {renderField('Light 1 Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Light 2 Type', 'light_type_2', selectedDetail.data.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                        {renderField('Light 2 Capacity', 'light_capacity_2', selectedDetail.data.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
                         {renderField('Working', 'light_working_status', selectedDetail.data.light_working_status, ['yes', 'no'])}
                         {renderField('Road Cat', 'road_category', selectedDetail.data.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
                         {renderField('Road Type', 'road_type', selectedDetail.data.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
