@@ -6,6 +6,7 @@ import { offlineDb } from '../../../db/offlineDb';
 import { getCurrentLocation } from '../../../shared/utils/geolocation';
 
 export const SwitchPointForm = ({ ulb, onBack }) => {
+  const isBallari = (ulb?.district_name || '').toLowerCase().includes('ballari');
   const [formData, setFormData] = useState({
     ward_number: '',
     switch_point_number: '',
@@ -47,6 +48,17 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
     }
 
     setStatusText('Submitting...');
+
+    // Ballari District: Images are compulsory
+    if (isBallari) {
+      const hasImages = Object.values(photos).some(Boolean);
+      if (!hasImages) {
+        alert('Please capture at least one photo for this switch point (compulsory for Ballari district).');
+        setUploading(false);
+        setStatusText('');
+        return;
+      }
+    }
 
     const isMeterYes = formData.meter_exists === 'yes';
     const payload = {
@@ -197,7 +209,7 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
         )}
 
          <div className="space-y-2">
-          <label className="block text-gray-700 font-medium mb-1">Photos (Optional)</label>
+          <label className="block text-gray-700 font-medium mb-1">Photos {isBallari && '(Compulsory)'}</label>
           
           {[1, 2].map((num) => (
             <div key={num} className="border border-gray-200 p-2 rounded flex flex-col gap-1">

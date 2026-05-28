@@ -200,6 +200,17 @@ export const PoleForm = ({ ulb, onBack }) => {
       }
     }
 
+    // Ballari District: Images are compulsory
+    if (isBallari) {
+      const hasImages = Object.values(photos).some(Boolean);
+      if (!hasImages) {
+        alert('Please capture at least one photo for this pole (compulsory for Ballari district).');
+        setUploading(false);
+        setStatusText('');
+        return;
+      }
+    }
+
     // Build sanitized form data when mobile restrictions are enabled.
     const allowed = MOBILE_ALLOWED;
     const submitForm = { ...formData };
@@ -670,7 +681,7 @@ export const PoleForm = ({ ulb, onBack }) => {
         )}
 
          <div className="space-y-2">
-          <label className="block text-gray-700 font-medium mb-1">Photos (Optional)</label>
+          <label className="block text-gray-700 font-medium mb-1">Photos {isBallari && '(Compulsory)'}</label>
           
           {(isTgpl ? [1, 2] : [1, 2, 3]).map((num) => (
             <div key={num} className="border border-gray-200 p-2 rounded flex flex-col gap-1">
