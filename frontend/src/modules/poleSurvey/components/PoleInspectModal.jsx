@@ -167,10 +167,6 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
     const MOBILE_ALLOWED = new Set(['pole_number', 'latitude', 'longitude', 'is_working', 'is_metered', 'remarks']);
     const isDisabled = isRestricted && !MOBILE_ALLOWED.has(name);
 
-    if (isRestricted && !MOBILE_ALLOWED.has(name)) {
-      return null;
-    }
-
     if (!isEditing) {
       return (
         <div className="flex justify-between border-b border-gray-50 py-1">

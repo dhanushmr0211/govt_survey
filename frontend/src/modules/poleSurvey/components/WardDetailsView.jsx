@@ -252,10 +252,6 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     const MOBILE_ALLOWED = new Set(['pole_number', 'latitude', 'longitude', 'is_working', 'is_metered', 'remarks']);
     const isDisabled = isRestricted && !MOBILE_ALLOWED.has(name);
 
-    if (isRestricted && !MOBILE_ALLOWED.has(name)) {
-      return null;
-    }
-
     if (!isEditing) {
       return (
         <div>
