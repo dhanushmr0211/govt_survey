@@ -247,9 +247,14 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   };
 
   const renderField = (label, name, value, options = null) => {
-    const isRestricted = !isTgpl && isMobileEditRestricted();
-    const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
+    const isBallari = (ulb?.district_name || '').toLowerCase().includes('ballari');
+    const isRestricted = !isTgpl && !isBallari && isMobileEditRestricted();
+    const MOBILE_ALLOWED = new Set(['pole_number', 'latitude', 'longitude', 'is_working', 'is_metered', 'remarks']);
     const isDisabled = isRestricted && !MOBILE_ALLOWED.has(name);
+
+    if (isRestricted && !MOBILE_ALLOWED.has(name)) {
+      return null;
+    }
 
     if (!isEditing) {
       return (

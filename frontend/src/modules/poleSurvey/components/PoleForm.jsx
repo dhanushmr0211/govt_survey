@@ -544,7 +544,7 @@ export const PoleForm = ({ ulb, onBack }) => {
         {!shouldHide('light_type') && (
           <div>
             <label className="block text-gray-700 font-medium mb-1">Light 1 Type</label>
-            <select name="light_type" value={formData.light_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+            <select name="light_type" value={formData.light_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
               <option value="">Select Type</option>
               {['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'].map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
@@ -556,7 +556,7 @@ export const PoleForm = ({ ulb, onBack }) => {
         {!shouldHide('light_capacity') && (
           <div>
             <label className="block text-gray-700 font-medium mb-1">Light 1 Capacity</label>
-            <select name="light_capacity" value={formData.light_capacity} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+            <select name="light_capacity" value={formData.light_capacity} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
               <option value="">Select Capacity</option>
               {['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'].map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
@@ -565,27 +565,29 @@ export const PoleForm = ({ ulb, onBack }) => {
           </div>
         )}
 
-        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">Light 2 Type</label>
-            <select name="light_type_2" value={formData.light_type_2} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-              <option value="">Select Type</option>
-              {['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'].map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
+        {!shouldHide('light_type_2') && (
+          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Light 2 Type</label>
+              <select name="light_type_2" value={formData.light_type_2} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+                <option value="">Select Type</option>
+                {['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'].map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">Light 2 Capacity</label>
-            <select name="light_capacity_2" value={formData.light_capacity_2} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-              <option value="">Select Capacity</option>
-              {['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'].map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Light 2 Capacity</label>
+              <select name="light_capacity_2" value={formData.light_capacity_2} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+                <option value="">Select Capacity</option>
+                {['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'].map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
+        )}
 
         {!shouldHide('light_working_status') && (
           <div>
