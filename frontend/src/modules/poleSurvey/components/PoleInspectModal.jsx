@@ -292,8 +292,8 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                       {renderField('Light 1 Type', 'light_type', pole.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
                       {renderField('Light 1 Capacity', 'light_capacity', pole.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
                       {renderField('Light 2 Type', 'light_type_2', pole.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                      {renderField('Light 2 Capacity', 'light_capacity_2', pole.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
-                      {renderField('Working', 'light_working_status', pole.light_working_status, ['yes', 'no'])}
+                      {renderField('Light 2 Capacity', 'light_capacity_2', pole.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}                      {renderField('Light 2 Type', 'light_type_2', pole.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                      {renderField('Light 2 Capacity', 'light_capacity_2', pole.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}                      {renderField('Working', 'light_working_status', pole.light_working_status, ['yes', 'no'])}
                       {renderField('Road Cat', 'road_category', pole.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
                       {renderField('Road Type', 'road_type', pole.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
                       {renderField('Road Width', 'road_width_mtrs', pole.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
