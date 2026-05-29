@@ -1,16 +1,7 @@
-const { pool, tgplPool } = require('../config/db');
+const { pool } = require('../config/db');
 
 const query = (text, params) => pool.query(text, params);
-
-async function writeQuery(text, params) {
-  const result = await pool.query(text, params);
-  try {
-    await tgplPool.query(text, params);
-  } catch (err) {
-    console.error('[Mirror Write Error] Failed to sync user write to tgplPool:', err.message);
-  }
-  return result;
-}
+const writeQuery = query;
 
 async function findById(id) {
   const result = await query('SELECT id, name, email, role, phone, is_blocked, avatar_url, created_at, is_deleted FROM users WHERE id = $1 AND is_deleted IS NOT TRUE', [id]);

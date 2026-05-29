@@ -183,12 +183,32 @@ async function me(req, res, next) {
   } catch (error) {
     return next(error);
   }
-}
-
-async function listUsers(req, res, next) {
+}async function listUsers(req, res, next) {
   try {
-    const { projectId } = req.query;
+    const { projectId, global } = req.query;
     let users = [];
+    
+    if (global === 'true') {
+      let isAuthorized = req.user.role === ROLES.MASTER_ADMIN;
+      if (!isAuthorized) {
+        const memberProjects = await projectUserModel.getProjectsWithRoles(Number(req.user.sub));
+        isAuthorized = memberProjects.some(p => p.section_d);
+      }
+      
+      if (!isAuthorized) {
+        return res.status(403).json({ message: 'Forbidden: You do not have team management access' });
+      }
+      
+      users = await userService.listAllUsers();
+      const mappedUsers = users.map(u => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        role: u.role
+      }));
+      return res.json({ users: mappedUsers });
+    }
     
     // For now, allow MASTER_ADMIN to see all, others only project specific
     if (req.user.role === ROLES.MASTER_ADMIN) {
@@ -219,7 +239,6 @@ async function listUsers(req, res, next) {
     return next(error);
   }
 }
-
 async function updateAccess(req, res, next) {
   try {
     const { id } = req.params;
@@ -357,8 +376,13 @@ async function updateAccess(req, res, next) {
 async function getUserProjects(req, res, next) {
   try {
     const { id } = req.params;
-    if (req.user.role !== ROLES.MASTER_ADMIN) {
-      return res.status(403).json({ message: 'Forbidden' });
+    let isAuthorized = req.user.role === ROLES.MASTER_ADMIN;
+    if (!isAuthorized) {
+      const memberProjects = await projectUserModel.getProjectsWithRoles(Number(req.user.sub));
+      isAuthorized = memberProjects.some(p => p.section_d);
+    }
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to view user projects' });
     }
     const assignments = await projectUserModel.getProjectsWithRoles(Number(id));
     return res.json({ assignments });
@@ -424,7 +448,7 @@ async function uploadAvatar(req, res, next) {
 
     // Update user's avatar_url in the database
     await userService.updateAvatar(userId, uploaded.url);
-
+ 
     return res.json({ 
       message: 'Profile picture uploaded successfully', 
       avatar_url: uploaded.url 
@@ -434,7 +458,7 @@ async function uploadAvatar(req, res, next) {
     return next(error);
   }
 }
-
+ 
 async function deleteAvatar(req, res, next) {
   try {
     const userId = Number(req.user.sub);
@@ -442,7 +466,7 @@ async function deleteAvatar(req, res, next) {
     if (!user || !user.avatar_url) {
       return res.status(400).json({ message: 'No profile picture to delete' });
     }
-
+ 
     const storageProvider = require('../services/storage/storageProvider');
     try {
       const fileKey = user.avatar_url.split('/').pop();
@@ -450,9 +474,9 @@ async function deleteAvatar(req, res, next) {
     } catch (err) {
       console.error('Failed to delete avatar from storage:', err.message);
     }
-
+ 
     await userService.updateAvatar(userId, null);
-
+ 
     return res.json({ message: 'Profile picture deleted successfully' });
   } catch (error) {
     console.error('Error deleting avatar:', error);
@@ -460,4 +484,99 @@ async function deleteAvatar(req, res, next) {
   }
 }
 
-module.exports = { register, login, me, listUsers, getUserProjects, updateAccess, changePassword, uploadAvatar, deleteAvatar };
+const assignUserProjectsSchema = z.object({
+  projectId: z.number().int().positive(),
+  assigned: z.boolean(),
+  project_role: z.string().trim().max(50).optional(),
+  section_a: z.boolean().optional(),
+  section_b: z.boolean().optional(),
+  section_c: z.boolean().optional(),
+  section_d: z.boolean().optional(),
+  section_e: z.boolean().optional(),
+  section_f: z.boolean().optional(),
+  section_g: z.boolean().optional(),
+  section_h: z.boolean().optional(),
+  section_i: z.boolean().optional(),
+  section_j: z.boolean().optional(),
+  district_scope: z.array(z.number().int()).nullable().optional(),
+  ulb_scope: z.array(z.number().int()).nullable().optional(),
+});
+
+async function assignUserProjects(req, res, next) {
+  try {
+    const { id } = req.params;
+    const data = assignUserProjectsSchema.parse(req.body);
+    const userId = Number(id);
+
+    const targetUser = await userService.findUserById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Role Hierarchy & Authorization
+    const creatorRole = req.user.role; // MASTER_ADMIN or MEMBER
+    if (creatorRole !== ROLES.MASTER_ADMIN) {
+      // Requester must be a member of the target project and have section_d (Team Management)
+      const creatorMembership = await projectUserModel.isMember(Number(req.user.sub), data.projectId);
+      if (!creatorMembership) {
+        return res.status(403).json({ message: `Forbidden: You do not have access to project ID ${data.projectId}` });
+      }
+      if (!creatorMembership.section_d) {
+        return res.status(403).json({ message: `Forbidden: You do not have team management access for project ID ${data.projectId}` });
+      }
+
+      // Check hierarchy if assigning
+      if (data.assigned) {
+        const requestedRole = isKnownRole(data.project_role) ? normalizeRole(data.project_role) : ROLES.MOBILE_USER;
+        if (creatorMembership.project_role === ROLES.CLIENT) {
+          return res.status(403).json({ message: 'Forbidden: Clients cannot assign users to projects' });
+        }
+        if (creatorMembership.project_role === ROLES.EMPLOYEE && requestedRole !== ROLES.MOBILE_USER) {
+          return res.status(403).json({ message: 'Forbidden: Employees can only assign Mobile Users' });
+        }
+
+        // Check permission inheritance: cannot grant permissions the manager doesn't have
+        const sectionsList = ['section_a', 'section_b', 'section_c', 'section_d', 'section_e', 'section_f', 'section_g', 'section_h', 'section_i', 'section_j'];
+        for (const sec of sectionsList) {
+          if (data[sec] === true && !creatorMembership[sec]) {
+            return res.status(403).json({ message: `Forbidden: You cannot grant '${sec.replace('section_', 'section ')}' permission as you do not possess it.` });
+          }
+        }
+      } else {
+        // If unassigning, check if they can manage the user's role
+        const targetMembership = await projectUserModel.isMember(userId, data.projectId);
+        if (targetMembership) {
+          if (creatorMembership.project_role === ROLES.EMPLOYEE && targetMembership.project_role !== ROLES.MOBILE_USER) {
+            return res.status(403).json({ message: 'Forbidden: Employees can only unassign Mobile Users' });
+          }
+        }
+      }
+    }
+
+    if (data.assigned) {
+      const projectRole = isKnownRole(data.project_role) ? normalizeRole(data.project_role) : ROLES.MOBILE_USER;
+      const sections = {
+        section_a: data.section_a, section_b: data.section_b, section_c: data.section_c,
+        section_d: data.section_d, section_e: data.section_e, section_f: data.section_f,
+        section_g: data.section_g, section_h: data.section_h, section_i: data.section_i,
+        section_j: data.section_j,
+        district_scope: data.district_scope,
+        ulb_scope: data.ulb_scope
+      };
+      await projectUserModel.addUserToProject(userId, data.projectId, projectRole, sections);
+    } else {
+      await projectUserModel.removeUserFromProject(userId, data.projectId);
+    }
+
+    // Invalidate project access cached values
+    invalidateProjectAccess(userId);
+    await userService.touch(userId);
+
+    return res.json({ message: 'User project assignment updated successfully' });
+  } catch (error) {
+    console.error('Error in assignUserProjects:', error);
+    return next(error);
+  }
+}
+ 
+module.exports = { register, login, me, listUsers, getUserProjects, updateAccess, changePassword, uploadAvatar, deleteAvatar, assignUserProjects };
