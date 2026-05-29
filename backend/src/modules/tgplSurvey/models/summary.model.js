@@ -1,6 +1,47 @@
 const { query, pool } = require('../../../config/db');
 const { getLocalDateString } = require('../../../utils/date');
 
+async function resolveUserNames(rows) {
+  if (!rows || rows.length === 0) return rows;
+  
+  const userIds = new Set();
+  rows.forEach(row => {
+    if (row.user_id) userIds.add(Number(row.user_id));
+    if (row.confirmed_by) userIds.add(Number(row.confirmed_by));
+    if (row.pole_confirmed_by) userIds.add(Number(row.pole_confirmed_by));
+  });
+  
+  if (userIds.size === 0) return rows;
+  
+  try {
+    const userResult = await pool.query(
+      'SELECT id, name FROM users WHERE id = ANY($1)',
+      [Array.from(userIds)]
+    );
+    
+    const userMap = {};
+    userResult.rows.forEach(u => {
+      userMap[u.id] = u.name;
+    });
+    
+    rows.forEach(row => {
+      if (row.user_id) {
+        row.user_name = userMap[row.user_id] || `User #${row.user_id}`;
+      }
+      if (row.confirmed_by) {
+        row.confirmed_by_name = userMap[row.confirmed_by] || `User #${row.confirmed_by}`;
+      }
+      if (row.pole_confirmed_by) {
+        row.pole_confirmed_by_name = userMap[row.pole_confirmed_by] || `User #${row.pole_confirmed_by}`;
+      }
+    });
+  } catch (err) {
+    console.error('Error resolving user names in TGPL:', err);
+  }
+  
+  return rows;
+}
+
 async function getDistrictSummary(projectId, date = null, mode = 'exact', districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
   let dateFilter = '';
   const tgplParams = [];
@@ -38,7 +79,10 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', distri
       'Wards' as district_name,
       w.id as ulb_id,
       w.name as ulb_name,
-      0 as total_switch_points,
+      COALESCE((
+        SELECT COUNT(DISTINCT p.ccms_number) FROM poles p
+        WHERE p.ward_id = w.id AND p.is_deleted = FALSE AND p.ccms_number IS NOT NULL AND p.ccms_number != '' ${dateFilter}
+      ), 0) as total_ccms,
       COALESCE((
         SELECT COUNT(p.id) FROM poles p
         WHERE p.ward_id = w.id AND p.is_deleted = FALSE ${dateFilter}
@@ -85,7 +129,10 @@ async function getWardSummary(ulbId, date = null, mode = 'exact', ulbScope = nul
   const tgplSql = `
     SELECT 
       w.name as ward_number,
-      0 as total_switch_points,
+      COALESCE((
+        SELECT COUNT(DISTINCT p.ccms_number) FROM poles p
+        WHERE p.ward_id = w.id AND p.is_deleted = FALSE AND p.ccms_number IS NOT NULL AND p.ccms_number != '' ${dateFilter}
+      ), 0) as total_ccms,
       COALESCE((
         SELECT COUNT(p.id) FROM poles p
         WHERE p.ward_id = w.id AND p.is_deleted = FALSE ${dateFilter}
@@ -131,19 +178,12 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', ul
   const tgplSql = `
     SELECT 
       w.name as ward_number,
-      NULL::int as switch_point_id,
-      NULL as switch_point_number,
-      NULL as switch_point_type,
-      NULL::boolean as meter_exists,
+      COALESCE(p.ccms_number, 'NO_CCMS') as ccms_id,
+      p.ccms_number,
       p.meter_type,
-      NULL as meter_condition,
+      p.meter_dimensional_status as meter_condition,
       p.meter_rr_number,
       p.meter_serial_number,
-      NULL::int as sp_confirmed_by,
-      NULL::timestamp as sp_confirmed_at,
-      NULL as sp_confirmed_by_name,
-      NULL::numeric as sp_latitude,
-      NULL::numeric as sp_longitude,
       p.id as pole_id,
       p.pole_number,
       p.pole_type,
@@ -166,7 +206,7 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', ul
       p.pole_earthing_exists,
       p.confirmed_by as pole_confirmed_by,
       p.confirmed_at as pole_confirmed_at,
-      u.name as pole_confirmed_by_name,
+      NULL::text as pole_confirmed_by_name,
       p.latitude as pole_latitude,
       p.longitude as pole_longitude,
       p.image_url_1,
@@ -182,12 +222,11 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', ul
       p.req_dedicated_wire
     FROM poles p
     JOIN wards w ON p.ward_id = w.id
-    LEFT JOIN users u ON p.confirmed_by = u.id
     WHERE p.ward_id = $1 AND p.is_deleted = FALSE ${dateFilter} ${scopeFilter}
     ORDER BY p.id DESC;
   `;
   const result = await query(tgplSql, tgplParams);
-  return result.rows;
+  return resolveUserNames(result.rows);
 }
 
 async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at', type = null) {
@@ -257,7 +296,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         'pole' as type,
         p.id,
         p.created_by as user_id,
-        u.name as user_name,
+        NULL::text as user_name,
         p.created_at,
         w.name as ward_number,
         p.pole_number::text as identifier,
@@ -299,7 +338,6 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         p.req_led_wattage,
         p.req_dedicated_wire
       FROM poles p
-      JOIN users u ON p.created_by = u.id
       JOIN wards w ON p.ward_id = w.id
       WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted = FALSE
       AND ($4::int IS NULL OR p.created_by = $4)
@@ -318,7 +356,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
 
   const result = await query(sql, params);
   const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
-  return { rows: result.rows, total };
+  const rows = await resolveUserNames(result.rows);
+  return { rows, total };
 }
 
 async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at', type = null) {
@@ -382,7 +421,9 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         NULL::text as road_category,
         NULL::text as road_type,
         NULL::numeric as road_width_mtrs,
-        NULL::text as pole_earthing_exists
+        NULL::text as pole_earthing_exists,
+        NULL::text as image_url_1,
+        NULL::text as image_url_2
       LIMIT 0
     `;
   } else {
@@ -391,7 +432,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         'pole' as type,
         p.id,
         p.created_by as user_id,
-        u.name as user_name,
+        NULL::text as user_name,
         p.created_at,
         w.name as ward_number,
         p.pole_number::text as identifier,
@@ -399,7 +440,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         p.ccms_number::text as switch_point_number,
         p.confirmed_by,
         p.confirmed_at,
-        u2.name as confirmed_by_name,
+        NULL::text as confirmed_by_name,
         NULL::text as switch_point_type,
         NULL::boolean as meter_exists,
         p.meter_type,
@@ -434,10 +475,10 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         p.req_arm_length,
         p.req_led_lights_no,
         p.req_led_wattage,
-        p.req_dedicated_wire
+        p.req_dedicated_wire,
+        p.image_url_1,
+        p.image_url_2
       FROM poles p
-      JOIN users u ON p.created_by = u.id
-      JOIN users u2 ON p.confirmed_by = u2.id
       JOIN wards w ON p.ward_id = w.id
       WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
       AND ($4::int IS NULL OR p.created_by = $4)
@@ -457,7 +498,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
 
   const result = await query(sql, params);
   const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
-  return { rows: result.rows, total };
+  const rows = await resolveUserNames(result.rows);
+  return { rows, total };
 }
 
 async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null) {
@@ -479,7 +521,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         'pole' as type,
         p.id,
         p.created_by as user_id,
-        u.name as user_name,
+        NULL::text as user_name,
         p.created_at,
         w.name as ward_number,
         p.pole_number::text as identifier,
@@ -519,9 +561,10 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         p.req_arm_length,
         p.req_led_lights_no,
         p.req_led_wattage,
-        p.req_dedicated_wire
+        p.req_dedicated_wire,
+        p.image_url_1,
+        p.image_url_2
       FROM poles p
-      JOIN users u ON p.created_by = u.id
       JOIN wards w ON p.ward_id = w.id
       WHERE p.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date = $2 AND p.is_deleted = FALSE
       AND ($5::int IS NULL OR p.created_by = $5)
@@ -533,7 +576,8 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
 
   const result = await query(sql, params);
   const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
-  return { rows: result.rows, total };
+  const rows = await resolveUserNames(result.rows);
+  return { rows, total };
 }
 
 async function getMyStats(projectId, userId, date = null) {
@@ -693,12 +737,12 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
   const pSql = `
     SELECT 
       p.*,
-      u.name as user_name,
+      p.created_by as user_id,
+      NULL::text as user_name,
       w.name as ulb_name,
       'Wards' as district_name,
       p.ccms_number as switch_point_number
     FROM poles p
-    JOIN users u ON p.created_by = u.id
     JOIN wards w ON p.ward_id = w.id
     WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
     AND ($2::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $2)
@@ -709,10 +753,11 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
   `;
   
   const pResult = await query(pSql, params);
+  const poles = await resolveUserNames(pResult.rows);
 
   return {
     switchPoints: [],
-    poles: pResult.rows
+    poles
   };
 }
 

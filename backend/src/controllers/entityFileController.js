@@ -50,7 +50,7 @@ async function getFilesHandler(req, res, next) {
 
 async function deleteFileHandler(req, res, next) {
   try {
-    const fileId = Number(req.params.id);
+    const fileId = req.params.id;
     await entityFileService.deleteFile(fileId);
     return res.json({ message: 'File deleted successfully' });
   } catch (error) {

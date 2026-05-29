@@ -4,6 +4,7 @@ const { requireRole } = require('../../../middleware/roleGuard');
 const { ROLES } = require('../../../constants/roles');
 const {
   getPolesHandler,
+  getCcmsListHandler,
   updatePoleHandler,
   confirmPoleHandler
 } = require('../controllers/survey.controller');
@@ -37,6 +38,7 @@ tgplSurveyRouter.get('/ulbs/search', searchUlbsHandler);
 tgplSurveyRouter.post('/pole', createPoleHandler);
 
 // Queue / Inspection
+tgplSurveyRouter.get('/ccms', getCcmsListHandler);
 tgplSurveyRouter.get('/poles', getPolesHandler);
 tgplSurveyRouter.patch('/poles/:id', updatePoleHandler);
 tgplSurveyRouter.post('/poles/:id/confirm', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.EMPLOYEE, ROLES.CLIENT), confirmPoleHandler);
