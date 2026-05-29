@@ -14,13 +14,30 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   const queryClient = useQueryClient();
   const addToast = useToastStore((state) => state.addToast);
 
+  const [ulbs, setUlbs] = useState([]);
+  const activeProject = useAuthStore((state) => state.activeProject);
+  const projectId = propProjectId || activeProject?.id;
+
+  useEffect(() => {
+    const fetchUlbs = async () => {
+      if (!projectId) return;
+      try {
+        const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/structure`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUlbs(res.data.ulbs || []);
+      } catch (err) {
+        console.error("Failed to fetch project structure for ULBs:", err);
+      }
+    };
+    fetchUlbs();
+  }, [projectId, token]);
+
   const [page, setPage] = useState(1);
   const limit = 50;
 
   const user = useAuthStore((state) => state.user);
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
-  const activeProject = useAuthStore((state) => state.activeProject);
-  const projectId = propProjectId || activeProject?.id;
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
 
   const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
@@ -114,6 +131,51 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
       addToast(error.response?.data?.message || 'Error saving changes', 'error');
     }
   });
+
+  const handleSave = async () => {
+    const targetUlbId = formData.ulb_id;
+    const targetWard = formData.ward_number;
+    const targetSpNum = formData.switch_point_number;
+
+    const currentUlbId = selectedSubmission.ulb_id || ulbs.find(u => u.name === selectedSubmission.ulb_name)?.id;
+    const currentWard = selectedSubmission.ward_number;
+    const currentSpNum = selectedSubmission.switch_point_number;
+
+    const locationChanged =
+      Number(targetUlbId) !== Number(currentUlbId) ||
+      targetWard !== currentWard ||
+      targetSpNum !== currentSpNum;
+
+    if (locationChanged) {
+      try {
+        const res = await axios.post(
+          `${API_BASE_URL}/projects/${projectId}/pole-survey/validate-move`,
+          {
+            type: selectedSubmission.type,
+            id: selectedSubmission.id,
+            ulb_id: targetUlbId,
+            ward_number: targetWard,
+            switch_point_number: targetSpNum
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+
+        if (res.data.shouldWarn) {
+          if (!window.confirm(res.data.message)) {
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Move validation failed:", err);
+        addToast(err.response?.data?.message || 'Move validation failed. Please try again.', 'error');
+        return;
+      }
+    }
+
+    saveMutation.mutate();
+  };
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -355,6 +417,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                         setSelectedSubmission(item);
                         setFormData({ 
                           ...item,
+                          ulb_id: item.ulb_id || ulbs.find(u => u.name === item.ulb_name)?.id || '',
                           pole_number: item.pole_number || item.identifier || ''
                         });
                         setIsEditing(false);
@@ -423,7 +486,32 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
               {/* Left Side: Technical Details */}
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-lg">
-                  <div><p className="text-gray-500 text-xs">ULB</p><p className="font-medium">{selectedSubmission.ulb_name || 'N/A'}</p></div>
+                  <div>
+                    <p className="text-gray-500 text-xs">ULB</p>
+                    {isEditing ? (
+                      <select
+                        name="ulb_id"
+                        value={formData.ulb_id || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const selectedUlb = ulbs.find(u => String(u.id) === String(val));
+                          setFormData(prev => ({
+                            ...prev,
+                            ulb_id: val ? Number(val) : '',
+                            ulb_name: selectedUlb ? selectedUlb.name : ''
+                          }));
+                        }}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
+                      >
+                        <option value="">Select ULB...</option>
+                        {ulbs.map(u => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className="font-medium">{selectedSubmission.ulb_name || 'N/A'}</p>
+                    )}
+                  </div>
                   <div><p className="text-gray-500 text-xs">Ward Number</p><p className="font-medium">{selectedSubmission.ward_number}</p></div>
                   <div><p className="text-gray-500 text-xs">Identifier</p><p className="font-medium">{selectedSubmission.identifier}</p></div>
                   <div><p className="text-gray-500 text-xs">{activeTab === 'confirmed' ? 'Confirmed Time' : 'Time'}</p><p className="font-medium">{new Date(activeTab === 'confirmed' ? (selectedSubmission.confirmed_at || selectedSubmission.created_at) : selectedSubmission.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</p></div>
@@ -582,7 +670,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
               </button>
               {isEditing ? (
                 <button
-                  onClick={() => saveMutation.mutate()}
+                  onClick={handleSave}
                   disabled={saveMutation.isLoading}
                   className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 font-medium"
                 >

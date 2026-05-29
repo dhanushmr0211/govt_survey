@@ -24,6 +24,22 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
+  const [ulbs, setUlbs] = useState([]);
+
+  useEffect(() => {
+    const fetchUlbs = async () => {
+      if (!projectId) return;
+      try {
+        const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/structure`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUlbs(res.data.ulbs || []);
+      } catch (err) {
+        console.error("Failed to fetch project structure for ULBs:", err);
+      }
+    };
+    fetchUlbs();
+  }, [projectId, token]);
 
   const { data: wards = [], isLoading: isLoadingWards } = useQuery({
     queryKey: ['wardSummary', ulb.ulb_id, date, mode, fromDate, toDate],
@@ -105,6 +121,52 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
       addToast(error.response?.data?.message || 'Error saving changes', 'error');
     }
   });
+
+  const handleSave = async () => {
+    const targetUlbId = formData.ulb_id;
+    const targetWard = formData.ward_number;
+    const targetSpNum = formData.switch_point_number;
+
+    const currentUlbId = ulb.ulb_id;
+    const currentWard = selectedDetail.data.ward_number;
+    const currentSpNum = selectedDetail.data.switch_point_number;
+
+    const locationChanged =
+      Number(targetUlbId) !== Number(currentUlbId) ||
+      targetWard !== currentWard ||
+      targetSpNum !== currentSpNum;
+
+    if (locationChanged) {
+      try {
+        const id = selectedDetail.type === 'switch_point' ? selectedDetail.data.id : selectedDetail.data.pole_id;
+        const res = await axios.post(
+          `${API_BASE_URL}/projects/${projectId}/pole-survey/validate-move`,
+          {
+            type: selectedDetail.type,
+            id: id,
+            ulb_id: targetUlbId,
+            ward_number: targetWard,
+            switch_point_number: targetSpNum
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+
+        if (res.data.shouldWarn) {
+          if (!window.confirm(res.data.message)) {
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Move validation failed:", err);
+        addToast(err.response?.data?.message || 'Move validation failed. Please try again.', 'error');
+        return;
+      }
+    }
+
+    saveMutation.mutate();
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -415,6 +477,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                                   setSelectedDetail({ type: 'pole', data: pole });
                                   setFormData({ 
                                     ...pole,
+                                    ulb_id: ulb.ulb_id,
                                     pole_number: pole.pole_number || pole.identifier
                                   });
                                   setIsEditing(false);
@@ -448,7 +511,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                         <button 
                           onClick={() => {
                             setSelectedDetail({ type: 'switch_point', data: sp });
-                            setFormData({ ...sp });
+                            setFormData({ 
+                              ...sp,
+                              ulb_id: ulb.ulb_id
+                            });
                             setIsEditing(false);
                           }}
                           className="font-semibold text-primary hover:text-primary-dark"
@@ -489,6 +555,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                                     setSelectedDetail({ type: 'pole', data: pole });
                                     setFormData({ 
                                       ...pole,
+                                      ulb_id: ulb.ulb_id,
                                       pole_number: pole.pole_number || pole.identifier
                                     });
                                     setIsEditing(false);
@@ -545,7 +612,29 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <p className="text-gray-500 text-xs">ULB</p>
-                    <p className="font-medium">{ulb?.ulb_name || ulb?.name || 'N/A'}</p>
+                    {isEditing ? (
+                      <select
+                        name="ulb_id"
+                        value={formData.ulb_id || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const selectedUlb = ulbs.find(u => String(u.id) === String(val));
+                          setFormData(prev => ({
+                            ...prev,
+                            ulb_id: val ? Number(val) : '',
+                            ulb_name: selectedUlb ? selectedUlb.name : ''
+                          }));
+                        }}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
+                      >
+                        <option value="">Select ULB...</option>
+                        {ulbs.map(u => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className="font-medium">{ulb?.ulb_name || ulb?.name || 'N/A'}</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-gray-500 text-xs">Confirmed By</p>
@@ -743,7 +832,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
               </button>
               {isEditing && (
                 <button
-                  onClick={() => saveMutation.mutate()}
+                  onClick={handleSave}
                   disabled={saveMutation.isLoading}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
                 >

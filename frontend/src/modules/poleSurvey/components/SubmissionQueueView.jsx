@@ -14,6 +14,22 @@ export const SubmissionQueueView = ({ projectId }) => {
   const [activeType, setActiveType] = useState('all');
   const activeProject = useAuthStore((state) => state.activeProject);
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
+  const [ulbs, setUlbs] = useState([]);
+
+  useEffect(() => {
+    const fetchUlbs = async () => {
+      if (!projectId) return;
+      try {
+        const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/structure`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUlbs(res.data.ulbs || []);
+      } catch (err) {
+        console.error("Failed to fetch project structure for ULBs:", err);
+      }
+    };
+    fetchUlbs();
+  }, [projectId, token]);
 
   useEffect(() => {
     if (isTgpl) {
@@ -125,6 +141,51 @@ export const SubmissionQueueView = ({ projectId }) => {
       addToast(error.response?.data?.message || 'Error saving changes', 'error');
     }
   });
+
+  const handleSave = async () => {
+    const targetUlbId = formData.ulb_id;
+    const targetWard = formData.ward_number;
+    const targetSpNum = formData.switch_point_number;
+
+    const currentUlbId = selectedSubmission.ulb_id || ulbs.find(u => u.name === selectedSubmission.ulb_name)?.id;
+    const currentWard = selectedSubmission.ward_number;
+    const currentSpNum = selectedSubmission.switch_point_number;
+
+    const locationChanged =
+      Number(targetUlbId) !== Number(currentUlbId) ||
+      targetWard !== currentWard ||
+      targetSpNum !== currentSpNum;
+
+    if (locationChanged) {
+      try {
+        const res = await axios.post(
+          `${API_BASE_URL}/projects/${projectId}/pole-survey/validate-move`,
+          {
+            type: selectedSubmission.type,
+            id: selectedSubmission.id,
+            ulb_id: targetUlbId,
+            ward_number: targetWard,
+            switch_point_number: targetSpNum
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+
+        if (res.data.shouldWarn) {
+          if (!window.confirm(res.data.message)) {
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Move validation failed:", err);
+        addToast(err.response?.data?.message || 'Move validation failed. Please try again.', 'error');
+        return;
+      }
+    }
+
+    saveMutation.mutate();
+  };
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -459,6 +520,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         setSelectedSubmission(item);
                         setFormData({ 
                           ...item,
+                          ulb_id: item.ulb_id || ulbs.find(u => u.name === item.ulb_name)?.id || '',
                           pole_number: item.pole_number || item.identifier || ''
                         });
                         setIsEditing(false);
@@ -566,7 +628,29 @@ export const SubmissionQueueView = ({ projectId }) => {
                   </div>
                   <div>
                     <p className="text-gray-500 text-xs">ULB</p>
-                    <p className="font-medium">{selectedSubmission.ulb_name || 'N/A'}</p>
+                    {isEditing ? (
+                      <select
+                        name="ulb_id"
+                        value={formData.ulb_id || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const selectedUlb = ulbs.find(u => String(u.id) === String(val));
+                          setFormData(prev => ({
+                            ...prev,
+                            ulb_id: val ? Number(val) : '',
+                            ulb_name: selectedUlb ? selectedUlb.name : ''
+                          }));
+                        }}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
+                      >
+                        <option value="">Select ULB...</option>
+                        {ulbs.map(u => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className="font-medium">{selectedSubmission.ulb_name || 'N/A'}</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-gray-500 text-xs">Identifier</p>
@@ -751,7 +835,7 @@ export const SubmissionQueueView = ({ projectId }) => {
               </button>
               {isEditing ? (
                 <button
-                  onClick={() => saveMutation.mutate()}
+                  onClick={handleSave}
                   disabled={saveMutation.isLoading}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
                 >
