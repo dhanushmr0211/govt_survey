@@ -164,13 +164,13 @@ export default function MobileSurvey() {
           <>
             {!selectedUlb ? (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Enter Taluk / ULB Name</label>
+                <label className="text-sm font-medium text-gray-700">{isTgpl ? 'Enter Ward' : 'Enter Taluk / ULB Name'}</label>
                 <div className="relative">
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="e.g. CMC RANIBENNURU"
+                    placeholder={isTgpl ? "e.g. Ward 1" : "e.g. CMC RANIBENNURU"}
                     className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                   />
                   {ulbs.length > 0 && (
@@ -195,7 +195,7 @@ export default function MobileSurvey() {
               <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm space-y-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-xs text-gray-500">Selected ULB</p>
+                    <p className="text-xs text-gray-500">{isTgpl ? 'Selected Ward' : 'Selected ULB'}</p>
                     <p className="font-semibold text-gray-900">{selectedUlb.name}</p>
                   </div>
                   <button

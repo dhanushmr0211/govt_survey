@@ -393,7 +393,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
             <tr>
               <th className="px-4 py-2">Type</th>
               <th className="px-4 py-2">Ward</th>
-              <th className="px-4 py-2">ULB</th>
+              <th className="px-4 py-2">{isTgpl ? 'CCMS' : 'ULB'}</th>
               <th className="px-4 py-2">Time</th>
               <th className="px-4 py-2">Action</th>
             </tr>
@@ -410,8 +410,8 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                     </span>
                   </td>
                   <td className="px-4 py-2">{item.ward_number}</td>
-                  <td className="px-4 py-2">{item.ulb_name || 'N/A'}</td>
-                   <td className="px-4 py-2">{date ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>
+                  <td className="px-4 py-2">{isTgpl ? (item.ccms_number || item.switch_point_number || 'N/A') : (item.ulb_name || 'N/A')}</td>
+                  <td className="px-4 py-2">{date ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>
                   <td className="px-4 py-2">
                     <button
                       onClick={() => {

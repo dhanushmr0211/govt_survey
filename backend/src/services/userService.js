@@ -40,4 +40,8 @@ async function updateDetails(id, name, email, phone, isBlocked) {
   return userModel.updateDetails(id, name, email, phone, isBlocked);
 }
 
-module.exports = { findUserById, findUserByEmail, createUser, listAllUsers, listMobileUsersByProjects, touch, listUsersByProject, changePassword, updateAvatar, updateDetails };
+async function listAllUsersWithProjectDetails(projectId) {
+  return userModel.findAllWithProjectDetails(projectId);
+}
+
+module.exports = { findUserById, findUserByEmail, createUser, listAllUsers, listMobileUsersByProjects, touch, listUsersByProject, changePassword, updateAvatar, updateDetails, listAllUsersWithProjectDetails };

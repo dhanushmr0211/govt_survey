@@ -213,7 +213,7 @@ async function me(req, res, next) {
     // For now, allow MASTER_ADMIN to see all, others only project specific
     if (req.user.role === ROLES.MASTER_ADMIN) {
       if (projectId) {
-        users = await userService.listUsersByProject(Number(projectId));
+        users = await userService.listAllUsersWithProjectDetails(Number(projectId));
       } else {
         users = await userService.listAllUsers();
       }
@@ -231,9 +231,20 @@ async function me(req, res, next) {
       if (!member.section_d) {
         return res.status(403).json({ message: 'Forbidden: You do not have permission to access team management' });
       }
-      users = await userService.listUsersByProject(Number(projectId));
+      
+      const projectRole = member.project_role;
+      if (projectRole === ROLES.ADMIN) {
+        // ADMIN project role: see all users globally with their current project-user mapping
+        users = await userService.listAllUsersWithProjectDetails(Number(projectId));
+      } else if (projectRole === ROLES.EMPLOYEE) {
+        // EMPLOYEE project role: only see MOBILE_USER of this project
+        const projectUsers = await userService.listUsersByProject(Number(projectId));
+        users = projectUsers.filter(u => u.project_role === ROLES.MOBILE_USER);
+      } else {
+        // Other roles like CLIENT or MOBILE_USER: not authorized
+        return res.status(403).json({ message: 'Forbidden' });
+      }
     }
-    
     return res.json({ users });
   } catch (error) {
     return next(error);

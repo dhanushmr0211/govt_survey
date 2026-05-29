@@ -145,4 +145,27 @@ async function updateDetails(id, name, email, phone, isBlocked) {
   return result.rows[0] || null;
 }
 
-module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, touch, findByProject, changePassword, updateAvatar, updateDetails };
+async function findAllWithProjectDetails(projectId) {
+  const result = await query(
+    `SELECT u.id, u.name, u.email, u.role, u.phone, u.is_blocked AS is_blocked, u.created_at,
+            pu.project_role AS project_role,
+            COALESCE(pu.section_a, false) AS section_a,
+            COALESCE(pu.section_b, false) AS section_b,
+            COALESCE(pu.section_c, false) AS section_c,
+            COALESCE(pu.section_d, false) AS section_d,
+            COALESCE(pu.section_e, false) AS section_e,
+            COALESCE(pu.section_f, false) AS section_f,
+            COALESCE(pu.section_g, false) AS section_g,
+            COALESCE(pu.section_h, false) AS section_h,
+            COALESCE(pu.section_i, false) AS section_i,
+            COALESCE(pu.section_j, false) AS section_j
+     FROM users u
+     LEFT JOIN project_users pu ON u.id = pu.user_id AND pu.project_id = $1
+     WHERE u.is_deleted IS NOT TRUE
+     ORDER BY u.id DESC`,
+    [projectId]
+  );
+  return result.rows;
+}
+
+module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, touch, findByProject, changePassword, updateAvatar, updateDetails, findAllWithProjectDetails };
