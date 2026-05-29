@@ -13,7 +13,7 @@ export const SubmissionQueueView = ({ projectId }) => {
   const [activeTab, setActiveTab] = useState('pending');
   const [activeType, setActiveType] = useState('all');
   const activeProject = useAuthStore((state) => state.activeProject);
-  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
+  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
   const [ulbs, setUlbs] = useState([]);
 
   useEffect(() => {
@@ -409,28 +409,30 @@ export const SubmissionQueueView = ({ projectId }) => {
             </div>
 
             {/* Type Tabs */}
-            {!isTgpl && (
-              <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
-                <button
-                  className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                  onClick={() => { setActiveType('all'); setPage(1); }}
-                >
-                  All
-                </button>
-                <button
-                  className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'switch_point' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                  onClick={() => { setActiveType('switch_point'); setPage(1); }}
-                >
-                  Switch Points
-                </button>
-                <button
-                  className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'pole' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                  onClick={() => { setActiveType('pole'); setPage(1); }}
-                >
-                  Poles
-                </button>
-              </div>
-            )}
+            <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
+              {!isTgpl && (
+                <>
+                  <button
+                    className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                    onClick={() => { setActiveType('all'); setPage(1); }}
+                  >
+                    All
+                  </button>
+                  <button
+                    className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'switch_point' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                    onClick={() => { setActiveType('switch_point'); setPage(1); }}
+                  >
+                    Switch Points
+                  </button>
+                </>
+              )}
+              <button
+                className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'pole' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                onClick={() => { setActiveType('pole'); setPage(1); }}
+              >
+                Poles
+              </button>
+            </div>
           </div>
         </div>
 

@@ -38,7 +38,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
 
   const user = useAuthStore((state) => state.user);
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
-  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
+  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
 
   const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
 
