@@ -6,7 +6,8 @@ const {
   getPolesHandler,
   getCcmsListHandler,
   updatePoleHandler,
-  confirmPoleHandler
+  confirmPoleHandler,
+  validateMoveHandler
 } = require('../controllers/survey.controller');
 
 const { 
@@ -42,6 +43,7 @@ tgplSurveyRouter.get('/ccms', getCcmsListHandler);
 tgplSurveyRouter.get('/poles', getPolesHandler);
 tgplSurveyRouter.patch('/poles/:id', updatePoleHandler);
 tgplSurveyRouter.post('/poles/:id/confirm', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.EMPLOYEE, ROLES.CLIENT), confirmPoleHandler);
+tgplSurveyRouter.post('/validate-move', validateMoveHandler);
 
 // Reports / Summary
 tgplSurveyRouter.get('/my-stats', getMyStatsHandler);

@@ -145,11 +145,11 @@ export const SubmissionQueueView = ({ projectId }) => {
   const handleSave = async () => {
     const targetUlbId = formData.ulb_id;
     const targetWard = formData.ward_number;
-    const targetSpNum = formData.switch_point_number;
+    const targetSpNum = isTgpl ? formData.ccms_number : formData.switch_point_number;
 
     const currentUlbId = selectedSubmission.ulb_id || ulbs.find(u => u.name === selectedSubmission.ulb_name)?.id;
     const currentWard = selectedSubmission.ward_number;
-    const currentSpNum = selectedSubmission.switch_point_number;
+    const currentSpNum = isTgpl ? selectedSubmission.ccms_number : selectedSubmission.switch_point_number;
 
     const locationChanged =
       Number(targetUlbId) !== Number(currentUlbId) ||
@@ -165,7 +165,8 @@ export const SubmissionQueueView = ({ projectId }) => {
             id: selectedSubmission.id,
             ulb_id: targetUlbId,
             ward_number: targetWard,
-            switch_point_number: targetSpNum
+            switch_point_number: targetSpNum,
+            ccms_number: isTgpl ? targetSpNum : undefined
           },
           {
             headers: { Authorization: `Bearer ${token}` }
@@ -638,7 +639,9 @@ export const SubmissionQueueView = ({ projectId }) => {
                           setFormData(prev => ({
                             ...prev,
                             ulb_id: val ? Number(val) : '',
-                            ulb_name: selectedUlb ? selectedUlb.name : ''
+                            ulb_name: selectedUlb ? selectedUlb.name : '',
+                            ward_id: isTgpl && val ? Number(val) : prev.ward_id,
+                            ward_number: isTgpl && selectedUlb ? selectedUlb.name : prev.ward_number
                           }));
                         }}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"

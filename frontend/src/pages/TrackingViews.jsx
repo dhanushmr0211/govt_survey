@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useEmployeeTracking } from '../shared/hooks/useEmployeeTracking';
 import { useMobileUserTracking } from '../shared/hooks/useMobileUserTracking';
 import { getLocalDateString } from '../shared/utils/date';
+import { PoleInspectModal } from '../modules/poleSurvey/components/PoleInspectModal';
 
 export function EmployeeTrackingView({ projectId }) {
   const { data: tracking = [], isLoading } = useEmployeeTracking(projectId);
@@ -246,6 +247,7 @@ export function MobileUserTrackingView({ projectId }) {
 
 function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate = null, toDate = null, dateField = 'created_at' }) {
   const token = localStorage.getItem('token');
+  const queryClient = useQueryClient();
   const endpoint = status === 'PENDING' ? 'queue/pending' : 'queue/confirmed';
   const [selectedSub, setSelectedSub] = useState(null);
   const [images, setImages] = useState([]);
@@ -405,7 +407,18 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
         <div className="py-12 text-center text-slate-500">No submissions found.</div>
       )}
 
-      {selectedSub && (
+      {selectedSub && selectedSub.type === 'pole' && (
+        <PoleInspectModal
+          pole={selectedSub}
+          onClose={() => setSelectedSub(null)}
+          onSuccess={() => {
+            setSelectedSub(null);
+            queryClient.invalidateQueries(['user-submissions']);
+          }}
+        />
+      )}
+
+      {selectedSub && selectedSub.type === 'switch_point' && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60]">
           <div className="bg-white p-8 rounded-2xl max-w-4xl w-full mx-4 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
@@ -459,27 +472,14 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
                 <div>
                    <p className="font-bold text-slate-900 mb-3 border-b border-slate-100 pb-2">Technical Specifications</p>
                    <div className="grid grid-cols-2 gap-y-2 text-sm">
-                      {selectedSub.type === 'switch_point' ? (
-                        <>
-                          <span className="text-slate-500">Ward No</span><span className="font-semibold text-right">{selectedSub.ward_number || 'N/A'}</span>
-                          <span className="text-slate-500">Switch Point No</span><span className="font-semibold text-right">{selectedSub.switch_point_number || 'N/A'}</span>
-                          <span className="text-slate-500">Type</span><span className="font-semibold text-right">{selectedSub.switch_point_type || 'N/A'}</span>
-                          <span className="text-slate-500">Meter Exists</span><span className="font-semibold text-right">{selectedSub.meter_exists ? 'Yes' : 'No'}</span>
-                          <span className="text-slate-500">Meter Type</span><span className="font-semibold text-right">{selectedSub.meter_type || 'N/A'}</span>
-                          <span className="text-slate-500">RR Number</span><span className="font-semibold text-right">{selectedSub.meter_rr_number || 'N/A'}</span>
-                          <span className="text-slate-500">Serial Number</span><span className="font-semibold text-right">{selectedSub.meter_serial_number || 'N/A'}</span>
-                          <span className="text-slate-500">Meter Condition</span><span className="font-semibold text-right">{selectedSub.meter_condition || 'N/A'}</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-slate-500">Ward No</span><span className="font-semibold text-right">{selectedSub.ward_number || 'N/A'}</span>
-                          <span className="text-slate-500">Switch Point No</span><span className="font-semibold text-right">{selectedSub.switch_point_number || 'N/A'}</span>
-                          <span className="text-slate-500">Pole No</span><span className="font-semibold text-right">{selectedSub.identifier || 'N/A'}</span>
-                          <span className="text-slate-500">Pole Type</span><span className="font-semibold text-right">{selectedSub.pole_type || 'N/A'}</span>
-                          <span className="text-slate-500">Height</span><span className="font-semibold text-right">{selectedSub.pole_height_mtrs ? `${selectedSub.pole_height_mtrs} m` : 'N/A'}</span>
-                          <span className="text-slate-500">Condition</span><span className="font-semibold text-right">{selectedSub.pole_condition || 'N/A'}</span>
-                        </>
-                      )}
+                      <span className="text-slate-500">Ward No</span><span className="font-semibold text-right">{selectedSub.ward_number || 'N/A'}</span>
+                      <span className="text-slate-500">Switch Point No</span><span className="font-semibold text-right">{selectedSub.switch_point_number || 'N/A'}</span>
+                      <span className="text-slate-500">Type</span><span className="font-semibold text-right">{selectedSub.switch_point_type || 'N/A'}</span>
+                      <span className="text-slate-500">Meter Exists</span><span className="font-semibold text-right">{selectedSub.meter_exists ? 'Yes' : 'No'}</span>
+                      <span className="text-slate-500">Meter Type</span><span className="font-semibold text-right">{selectedSub.meter_type || 'N/A'}</span>
+                      <span className="text-slate-500">RR Number</span><span className="font-semibold text-right">{selectedSub.meter_rr_number || 'N/A'}</span>
+                      <span className="text-slate-500">Serial Number</span><span className="font-semibold text-right">{selectedSub.meter_serial_number || 'N/A'}</span>
+                      <span className="text-slate-500">Meter Condition</span><span className="font-semibold text-right">{selectedSub.meter_condition || 'N/A'}</span>
                    </div>
                 </div>
 
