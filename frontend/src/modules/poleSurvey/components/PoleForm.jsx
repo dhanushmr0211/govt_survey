@@ -390,8 +390,7 @@ export const PoleForm = ({ ulb, onBack }) => {
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">CCMS No#</label>
-              <div className="flex gap-2">
-                <select 
+              <select 
                   value={switchPoints.some(sp => (isTgpl ? sp.ccms_number : sp.switch_point_number) === formData.ccms_number) ? formData.ccms_number : ''} 
                   onChange={(e) => {
                     const val = e.target.value;
@@ -401,32 +400,16 @@ export const PoleForm = ({ ulb, onBack }) => {
                       switch_point_number: val
                     }));
                   }} 
-                  className="w-1/2 p-2 border border-gray-200 rounded text-sm bg-white"
+                  className="w-full p-2 border border-gray-200 rounded text-sm bg-white"
+                  required
                 >
-                  <option value="">Select Existing CCMS</option>
+                  <option value="">Select CCMS No#</option>
                   {switchPoints.map((sp) => (
                     <option key={sp.id} value={isTgpl ? sp.ccms_number : sp.switch_point_number}>
                       {isTgpl ? sp.ccms_number : sp.switch_point_number}
                     </option>
                   ))}
                 </select>
-                <input 
-                  type="text" 
-                  name="ccms_number" 
-                  placeholder="Or enter new CCMS No#" 
-                  value={formData.ccms_number || ''} 
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setFormData(prev => ({
-                      ...prev,
-                      ccms_number: val,
-                      switch_point_number: val
-                    }));
-                  }} 
-                  className="w-1/2 p-2 border border-gray-200 rounded text-sm"
-                  required
-                />
-              </div>
               {switchPoints.length > 0 && (
                 <p className="text-xs text-green-600 mt-1">Latest CCMS No# auto-selected.</p>
               )}
@@ -700,19 +683,31 @@ export const PoleForm = ({ ulb, onBack }) => {
             <h3 className="font-bold text-primary text-base">Proposal Form</h3>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Req ARM No#</label>
-              <input type="text" name="req_arm_number" value={formData.req_arm_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" />
+              <select name="req_arm_number" value={formData.req_arm_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+                <option value="">Select...</option>
+                {['0', '1', '2', '3', '4'].map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Req ARM Length</label>
-              <input type="text" name="req_arm_length" value={formData.req_arm_length} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" />
+              <select name="req_arm_length" value={formData.req_arm_length} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+                <option value="">Select...</option>
+                {['0', '1', '1.5', '2', '2.5'].map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Req LED Lights No#</label>
-              <input type="text" name="req_led_lights_no" value={formData.req_led_lights_no} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" />
+              <select name="req_led_lights_no" value={formData.req_led_lights_no} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+                <option value="">Select...</option>
+                {['0', '1', '2', '3', '4'].map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Req LED Wattage</label>
-              <input type="text" name="req_led_wattage" value={formData.req_led_wattage} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" />
+              <select name="req_led_wattage" value={formData.req_led_wattage} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+                <option value="">Select...</option>
+                {['18W', '24W', '40W', '60W', '80W', '90W', '120W', '150W', '200W'].map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Req Dedicated Wire</label>

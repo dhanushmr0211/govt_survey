@@ -296,10 +296,10 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                       {renderField('Earthing', 'pole_earthing_exists', pole.pole_earthing_exists, ['YES', 'NO'])}
                       
                       <div className="border-b pb-1 mt-3 mb-2 font-bold text-primary text-sm">Proposal Form</div>
-                      {renderField('Req ARM No', 'req_arm_number', pole.req_arm_number)}
-                      {renderField('Req ARM Length', 'req_arm_length', pole.req_arm_length)}
-                      {renderField('Req LED Lights No', 'req_led_lights_no', pole.req_led_lights_no)}
-                      {renderField('Req LED Wattage', 'req_led_wattage', pole.req_led_wattage)}
+                      {renderField('Req ARM No', 'req_arm_number', pole.req_arm_number, ['0', '1', '2', '3', '4'])}
+                      {renderField('Req ARM Length', 'req_arm_length', pole.req_arm_length, ['0', '1', '1.5', '2', '2.5'])}
+                      {renderField('Req LED Lights No', 'req_led_lights_no', pole.req_led_lights_no, ['0', '1', '2', '3', '4'])}
+                      {renderField('Req LED Wattage', 'req_led_wattage', pole.req_led_wattage, ['18W', '24W', '40W', '60W', '80W', '90W', '120W', '150W', '200W'])}
                       {renderField('Req Dedicated Wire', 'req_dedicated_wire', pole.req_dedicated_wire)}
                     </>
                   ) : (
