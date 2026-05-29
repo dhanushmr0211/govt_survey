@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Edit2, Save } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import { useToastStore } from '../../../store/toastStore';
@@ -12,6 +12,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const token = localStorage.getItem('token');
   const [selectedWard, setSelectedWard] = useState(null);
   const [selectedDetail, setSelectedDetail] = useState(null); // { type: 'switch_point' | 'pole', data: ... }
+  const [selectedCcmsId, setSelectedCcmsId] = useState(null);
   const queryClient = useQueryClient();
   const addToast = useToastStore((state) => state.addToast);
 
@@ -360,36 +361,51 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   };
 
   // Group details by switch point / CCMS
-  const switchPoints = details.reduce((acc, item) => {
-    const spId = isTgpl ? item.ccms_id : item.switch_point_id;
-    if (!spId) return acc;
-    if (!acc[spId]) {
-      acc[spId] = {
-        id: spId,
-        switch_point_number: isTgpl ? item.ccms_number : item.switch_point_number,
-        switch_point_type: isTgpl ? 'CCMS' : item.switch_point_type,
-        meter_exists: item.meter_exists,
-        meter_type: item.meter_type,
-        meter_rr_number: item.meter_rr_number,
-        meter_serial_number: item.meter_serial_number,
-        meter_condition: item.meter_condition,
-        ward_number: item.ward_number,
-        sp_confirmed_by_name: item.sp_confirmed_by_name,
-        sp_confirmed_at: item.sp_confirmed_at,
-        latitude: item.sp_latitude,
-        longitude: item.sp_longitude,
-        poles: [],
-      };
+  const switchPoints = useMemo(() => {
+    return details.reduce((acc, item) => {
+      const spId = isTgpl ? item.ccms_id : item.switch_point_id;
+      if (!spId) return acc;
+      if (!acc[spId]) {
+        acc[spId] = {
+          id: spId,
+          switch_point_number: isTgpl ? item.ccms_number : item.switch_point_number,
+          switch_point_type: isTgpl ? 'CCMS' : item.switch_point_type,
+          meter_exists: item.meter_exists,
+          meter_type: item.meter_type,
+          meter_rr_number: item.meter_rr_number,
+          meter_serial_number: item.meter_serial_number,
+          meter_condition: item.meter_condition,
+          ward_number: item.ward_number,
+          sp_confirmed_by_name: item.sp_confirmed_by_name,
+          sp_confirmed_at: item.sp_confirmed_at,
+          latitude: item.sp_latitude,
+          longitude: item.sp_longitude,
+          poles: [],
+        };
+      }
+      if (item.pole_id) {
+        acc[spId].poles.push({
+          ...item,
+          latitude: item.pole_latitude,
+          longitude: item.pole_longitude,
+        });
+      }
+      return acc;
+    }, {});
+  }, [details, isTgpl]);
+
+  useEffect(() => {
+    if (isTgpl) {
+      const spList = Object.values(switchPoints);
+      if (spList.length > 0) {
+        if (!selectedCcmsId || !switchPoints[selectedCcmsId]) {
+          setSelectedCcmsId(spList[0].id);
+        }
+      } else {
+        setSelectedCcmsId(null);
+      }
     }
-    if (item.pole_id) {
-      acc[spId].poles.push({
-        ...item,
-        latitude: item.pole_latitude,
-        longitude: item.pole_longitude,
-      });
-    }
-    return acc;
-  }, {});
+  }, [isTgpl, switchPoints, selectedCcmsId]);
 
   return (
     <div className="premium-panel overflow-hidden">
@@ -406,24 +422,48 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
         </div>
       </div>
 
-      {/* Ward List */}
+      {/* CCMS List (for TGPL) or Ward List (for standard) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 p-5 border-b border-slate-100 bg-slate-50">
-        {isLoadingWards ? (
-          [...Array(8)].map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-lg bg-white"></div>
-          ))
+        {isTgpl ? (
+          isLoadingDetails ? (
+            [...Array(4)].map((_, i) => (
+              <div key={i} className="h-16 animate-pulse rounded-lg bg-white"></div>
+            ))
+          ) : Object.values(switchPoints).length === 0 ? (
+            <div className="col-span-full py-4 text-center text-slate-500 text-sm">No CCMS units found in this ward.</div>
+          ) : (
+            Object.values(switchPoints).map((sp) => (
+              <button
+                key={sp.id}
+                onClick={() => setSelectedCcmsId(sp.id)}
+                className={`rounded-lg border p-3 text-center transition ${selectedCcmsId === sp.id ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+              >
+                <p className="text-xs text-slate-500">CCMS</p>
+                <p className="text-base font-bold truncate max-w-full" title={sp.switch_point_number || 'No CCMS'}>
+                  {sp.switch_point_number || 'No CCMS'}
+                </p>
+                <p className="text-xs text-slate-500">{sp.poles.length} Poles</p>
+              </button>
+            ))
+          )
         ) : (
-          wards.map((ward) => (
-            <button
-              key={ward.ward_number}
-              onClick={() => setSelectedWard(ward.ward_number)}
-              className={`rounded-lg border p-3 text-center transition ${selectedWard === ward.ward_number ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
-            >
-              <p className="text-xs text-slate-500">Ward</p>
-              <p className="text-lg font-bold">{ward.ward_number}</p>
-              <p className="text-xs text-slate-500">{ward.total_poles} Poles</p>
-            </button>
-          ))
+          isLoadingWards ? (
+            [...Array(8)].map((_, i) => (
+              <div key={i} className="h-16 animate-pulse rounded-lg bg-white"></div>
+            ))
+          ) : (
+            wards.map((ward) => (
+              <button
+                key={ward.ward_number}
+                onClick={() => setSelectedWard(ward.ward_number)}
+                className={`rounded-lg border p-3 text-center transition ${selectedWard === ward.ward_number ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+              >
+                <p className="text-xs text-slate-500">Ward</p>
+                <p className="text-lg font-bold">{ward.ward_number}</p>
+                <p className="text-xs text-slate-500">{ward.total_poles} Poles</p>
+              </button>
+            ))
+          )
         )}
       </div>
 
@@ -441,67 +481,77 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
           ) : (
             <div className="space-y-6">
               {isTgpl ? (
-                Object.values(switchPoints).map((sp) => (
-                  <div key={sp.id} className="rounded-lg border border-slate-150 overflow-hidden mb-6 bg-white shadow-sm">
-                    {/* CCMS Header */}
-                    <div className="bg-slate-50 p-4 border-b border-slate-150 flex justify-between items-center">
-                      <div>
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">CCMS Unit</span>
-                        <h3 className="text-base font-bold text-slate-950">CCMS No: {sp.switch_point_number || 'No CCMS'}</h3>
+                (() => {
+                  const sp = switchPoints[selectedCcmsId];
+                  if (!sp) {
+                    return (
+                      <div className="py-20 text-center text-slate-500">
+                        {isLoadingDetails ? 'Loading details...' : 'Select a CCMS card to view poles'}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={sp.id} className="rounded-lg border border-slate-150 overflow-hidden mb-6 bg-white shadow-sm">
+                      {/* CCMS Header */}
+                      <div className="bg-slate-50 p-4 border-b border-slate-150 flex justify-between items-center">
+                        <div>
+                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">CCMS Unit</span>
+                          <h3 className="text-base font-bold text-slate-950">CCMS No: {sp.switch_point_number || 'No CCMS'}</h3>
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="premium-table text-sm">
+                          <thead>
+                            <tr>
+                              <th>Pole No</th>
+                              <th>Type</th>
+                              <th>DTC No</th>
+                              <th>Light 1 Type</th>
+                              <th>Light 2 Type</th>
+                              <th>Status</th>
+                              <th>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sp.poles.map((pole) => (
+                              <tr key={pole.pole_id}>
+                                <td className="font-semibold text-slate-950">{pole.pole_number}</td>
+                                <td>{pole.pole_type || 'N/A'}</td>
+                                <td>{pole.dtc_number || 'N/A'}</td>
+                                <td>{pole.light_type || 'N/A'}</td>
+                                <td>{pole.light_type_2 || 'N/A'}</td>
+                                <td>
+                                  <span className={`rounded-full px-2 py-1 text-xs font-semibold ${pole.light_working_status === 'yes' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                    {pole.light_working_status === 'yes' ? 'Working' : 'Not Working'}
+                                  </span>
+                                </td>
+                                <td>
+                                  <button 
+                                    onClick={() => {
+                                      setSelectedDetail({ type: 'pole', data: pole });
+                                      setFormData({ 
+                                        ...pole,
+                                        ulb_id: ulb.ulb_id,
+                                        pole_number: pole.pole_number || pole.identifier
+                                      });
+                                      setIsEditing(false);
+                                    }}
+                                    className="font-semibold text-primary hover:text-primary-dark"
+                                  >
+                                    View Details
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                            {sp.poles.length === 0 && (
+                              <tr><td colSpan="7" className="text-center text-slate-500">No poles under this CCMS.</td></tr>
+                            )}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="premium-table text-sm">
-                        <thead>
-                          <tr>
-                            <th>Pole No</th>
-                            <th>Type</th>
-                            <th>DTC No</th>
-                            <th>Light 1 Type</th>
-                            <th>Light 2 Type</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sp.poles.map((pole) => (
-                            <tr key={pole.pole_id}>
-                              <td className="font-semibold text-slate-950">{pole.pole_number}</td>
-                              <td>{pole.pole_type || 'N/A'}</td>
-                              <td>{pole.dtc_number || 'N/A'}</td>
-                              <td>{pole.light_type || 'N/A'}</td>
-                              <td>{pole.light_type_2 || 'N/A'}</td>
-                              <td>
-                                <span className={`rounded-full px-2 py-1 text-xs font-semibold ${pole.light_working_status === 'yes' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                                  {pole.light_working_status === 'yes' ? 'Working' : 'Not Working'}
-                                </span>
-                              </td>
-                              <td>
-                                <button 
-                                  onClick={() => {
-                                    setSelectedDetail({ type: 'pole', data: pole });
-                                    setFormData({ 
-                                      ...pole,
-                                      ulb_id: ulb.ulb_id,
-                                      pole_number: pole.pole_number || pole.identifier
-                                    });
-                                    setIsEditing(false);
-                                  }}
-                                  className="font-semibold text-primary hover:text-primary-dark"
-                                >
-                                  View Details
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                          {sp.poles.length === 0 && (
-                            <tr><td colSpan="7" className="text-center text-slate-500">No poles under this CCMS.</td></tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))
+                  );
+                })()
               ) : (
                 Object.values(switchPoints).map((sp) => (
                   <div key={sp.id} className="rounded-lg border border-slate-150 overflow-hidden">
