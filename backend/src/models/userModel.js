@@ -28,19 +28,8 @@ async function countAll() {
 
 async function findAll(limit, offset) {
   let sql = `
-    SELECT u.id, u.name, u.email, u.role, u.phone, u.is_blocked AS is_blocked, u.created_at,
-           COALESCE(asa.section_a, false) AS section_a,
-           COALESCE(asa.section_b, false) AS section_b,
-           COALESCE(asa.section_c, false) AS section_c,
-           COALESCE(asa.section_d, false) AS section_d,
-           COALESCE(asa.section_e, false) AS section_e,
-           COALESCE(asa.section_f, false) AS section_f,
-           COALESCE(asa.section_g, false) AS section_g,
-           COALESCE(asa.section_h, false) AS section_h,
-           COALESCE(asa.section_i, false) AS section_i,
-           COALESCE(asa.section_j, false) AS section_j
+    SELECT u.id, u.name, u.email, u.role, u.phone, u.is_blocked AS is_blocked, u.created_at
     FROM users u
-    LEFT JOIN admin_section_access asa ON u.id = asa.admin_id
     WHERE u.is_deleted IS NOT TRUE
     ORDER BY u.id DESC
   `;
