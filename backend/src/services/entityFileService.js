@@ -63,43 +63,39 @@ async function getFilesForEntity(projectId, entityType, entityId) {
 
   // Fallback for TGPL poles where images are stored in poles table columns
   if (String(projectId) === '3' && entityType === 'pole') {
-    try {
-      const poleRes = await query('SELECT image_url_1, image_url_2, created_at FROM poles WHERE id = $1', [entityId]);
-      if (poleRes.rows.length > 0) {
-        const pole = poleRes.rows[0];
-        const extraFiles = [];
-        if (pole.image_url_1) {
-          extraFiles.push({
-            id: `fallback-tgpl-${entityId}-1`,
-            project_id: Number(projectId),
-            entity_type: 'pole',
-            entity_id: entityId,
-            url: pole.image_url_1,
-            signed_url: pole.image_url_1,
-            uploaded_at: pole.created_at || new Date()
-          });
-        }
-        if (pole.image_url_2) {
-          extraFiles.push({
-            id: `fallback-tgpl-${entityId}-2`,
-            project_id: Number(projectId),
-            entity_type: 'pole',
-            entity_id: entityId,
-            url: pole.image_url_2,
-            signed_url: pole.image_url_2,
-            uploaded_at: pole.created_at || new Date()
-          });
-        }
-        // Deduplicate if already present in entity_files
-        const existingUrls = new Set(filesWithUrls.map(f => f.url));
-        extraFiles.forEach(f => {
-          if (!existingUrls.has(f.url)) {
-            filesWithUrls.push(f);
-          }
+    const poleRes = await query('SELECT image_url_1, image_url_2, created_at FROM poles WHERE id = $1', [entityId]);
+    if (poleRes.rows.length > 0) {
+      const pole = poleRes.rows[0];
+      const extraFiles = [];
+      if (pole.image_url_1) {
+        extraFiles.push({
+          id: `fallback-tgpl-${entityId}-1`,
+          project_id: Number(projectId),
+          entity_type: 'pole',
+          entity_id: entityId,
+          url: pole.image_url_1,
+          signed_url: pole.image_url_1,
+          uploaded_at: pole.created_at || new Date()
         });
       }
-    } catch (err) {
-      console.error('Error fetching pole images as fallback files:', err);
+      if (pole.image_url_2) {
+        extraFiles.push({
+          id: `fallback-tgpl-${entityId}-2`,
+          project_id: Number(projectId),
+          entity_type: 'pole',
+          entity_id: entityId,
+          url: pole.image_url_2,
+          signed_url: pole.image_url_2,
+          uploaded_at: pole.created_at || new Date()
+        });
+      }
+      // Deduplicate if already present in entity_files (comparing compatible signed_url formats)
+      const existingUrls = new Set(filesWithUrls.map(f => f.signed_url));
+      extraFiles.forEach(f => {
+        if (!existingUrls.has(f.signed_url)) {
+          filesWithUrls.push(f);
+        }
+      });
     }
   }
 
@@ -112,27 +108,27 @@ async function deleteFile(fileId) {
     const parts = fileIdStr.split('-');
     const entityId = Number(parts[2]);
     const index = Number(parts[3]);
-    const updateCol = index === 1 ? 'image_url_1' : 'image_url_2';
-    try {
-      const poleRes = await query(`SELECT ${updateCol} FROM poles WHERE id = $1`, [entityId]);
-      if (poleRes.rows.length > 0 && poleRes.rows[0][updateCol]) {
-        const url = poleRes.rows[0][updateCol];
-        const prefix = `https://storage.googleapis.com/${env.gcsBucketName}/`;
-        if (url.startsWith(prefix)) {
-          const objectName = url.slice(prefix.length);
-          try {
-            await deleteObject(objectName);
-          } catch (gcsErr) {
-            console.error('Error deleting fallback object from GCS:', gcsErr);
-          }
+    
+    if (isNaN(index) || (index !== 1 && index !== 2)) {
+      throw new Error('Invalid fallback image slot index');
+    }
+    
+    const updateCol = `image_url_${index}`;
+    const poleRes = await query(`SELECT ${updateCol} FROM poles WHERE id = $1`, [entityId]);
+    if (poleRes.rows.length > 0 && poleRes.rows[0][updateCol]) {
+      const url = poleRes.rows[0][updateCol];
+      const prefix = `https://storage.googleapis.com/${env.gcsBucketName}/`;
+      if (url.startsWith(prefix)) {
+        const objectName = url.slice(prefix.length);
+        try {
+          await deleteObject(objectName);
+        } catch (gcsErr) {
+          console.error('Error deleting fallback object from GCS:', gcsErr);
         }
       }
-      await query(`UPDATE poles SET ${updateCol} = NULL WHERE id = $1`, [entityId]);
-      return true;
-    } catch (err) {
-      console.error('Error deleting fallback image column from poles table:', err);
-      throw err;
     }
+    await query(`UPDATE poles SET ${updateCol} = NULL WHERE id = $1`, [entityId]);
+    return true;
   }
 
   const file = await entityFileModel.getFileById(Number(fileId));

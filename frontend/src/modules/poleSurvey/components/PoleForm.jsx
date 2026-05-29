@@ -392,7 +392,7 @@ export const PoleForm = ({ ulb, onBack }) => {
               <label className="block text-gray-700 font-medium mb-1">CCMS No#</label>
               <div className="flex gap-2">
                 <select 
-                  value={formData.ccms_number || ''} 
+                  value={switchPoints.some(sp => (isTgpl ? sp.ccms_number : sp.switch_point_number) === formData.ccms_number) ? formData.ccms_number : ''} 
                   onChange={(e) => {
                     const val = e.target.value;
                     setFormData(prev => ({

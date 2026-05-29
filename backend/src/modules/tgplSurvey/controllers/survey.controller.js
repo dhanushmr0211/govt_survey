@@ -17,6 +17,13 @@ async function getCcmsListHandler(req, res, next) {
     const { projectId } = req.params;
     const { ulb_id } = req.query; // ulb_id is the ward_id in TGPL context
 
+    if (!ulb_id) {
+      return res.status(400).json({ message: 'ulb_id is required' });
+    }
+    if (isNaN(Number(ulb_id))) {
+      return res.status(400).json({ message: 'ulb_id must be a valid number' });
+    }
+
     const result = await query(
       `SELECT ccms_number, MAX(id) as id 
        FROM poles 

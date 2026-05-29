@@ -6,38 +6,34 @@ async function resolveUserNames(rows) {
   
   const userIds = new Set();
   rows.forEach(row => {
-    if (row.user_id) userIds.add(Number(row.user_id));
-    if (row.confirmed_by) userIds.add(Number(row.confirmed_by));
-    if (row.pole_confirmed_by) userIds.add(Number(row.pole_confirmed_by));
+    if (row.user_id && !isNaN(Number(row.user_id))) userIds.add(Number(row.user_id));
+    if (row.confirmed_by && !isNaN(Number(row.confirmed_by))) userIds.add(Number(row.confirmed_by));
+    if (row.pole_confirmed_by && !isNaN(Number(row.pole_confirmed_by))) userIds.add(Number(row.pole_confirmed_by));
   });
   
   if (userIds.size === 0) return rows;
   
-  try {
-    const userResult = await pool.query(
-      'SELECT id, name FROM users WHERE id = ANY($1)',
-      [Array.from(userIds)]
-    );
-    
-    const userMap = {};
-    userResult.rows.forEach(u => {
-      userMap[u.id] = u.name;
-    });
-    
-    rows.forEach(row => {
-      if (row.user_id) {
-        row.user_name = userMap[row.user_id] || `User #${row.user_id}`;
-      }
-      if (row.confirmed_by) {
-        row.confirmed_by_name = userMap[row.confirmed_by] || `User #${row.confirmed_by}`;
-      }
-      if (row.pole_confirmed_by) {
-        row.pole_confirmed_by_name = userMap[row.pole_confirmed_by] || `User #${row.pole_confirmed_by}`;
-      }
-    });
-  } catch (err) {
-    console.error('Error resolving user names in TGPL:', err);
-  }
+  const userResult = await pool.query(
+    'SELECT id, name FROM users WHERE id = ANY($1)',
+    [Array.from(userIds)]
+  );
+  
+  const userMap = {};
+  userResult.rows.forEach(u => {
+    userMap[u.id] = u.name;
+  });
+  
+  rows.forEach(row => {
+    if (row.user_id) {
+      row.user_name = userMap[row.user_id] || `User #${row.user_id}`;
+    }
+    if (row.confirmed_by) {
+      row.confirmed_by_name = userMap[row.confirmed_by] || `User #${row.confirmed_by}`;
+    }
+    if (row.pole_confirmed_by) {
+      row.pole_confirmed_by_name = userMap[row.pole_confirmed_by] || `User #${row.pole_confirmed_by}`;
+    }
+  });
   
   return rows;
 }
