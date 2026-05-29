@@ -57,7 +57,21 @@ function createApp() {
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_led_lights_no TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_led_wattage TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_dedicated_wire TEXT;',
-    'CREATE TABLE IF NOT EXISTS wards (id SERIAL PRIMARY KEY, name TEXT NOT NULL, is_deleted BOOLEAN DEFAULT FALSE);'
+    'CREATE TABLE IF NOT EXISTS wards (id SERIAL PRIMARY KEY, name TEXT NOT NULL, is_deleted BOOLEAN DEFAULT FALSE);',
+    `CREATE TABLE IF NOT EXISTS admin_section_access (
+      id SERIAL PRIMARY KEY,
+      admin_id INT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      section_a BOOLEAN NOT NULL DEFAULT FALSE,
+      section_b BOOLEAN NOT NULL DEFAULT FALSE,
+      section_c BOOLEAN NOT NULL DEFAULT FALSE,
+      section_d BOOLEAN NOT NULL DEFAULT FALSE,
+      section_e BOOLEAN NOT NULL DEFAULT FALSE,
+      section_f BOOLEAN NOT NULL DEFAULT FALSE,
+      section_g BOOLEAN NOT NULL DEFAULT FALSE,
+      section_h BOOLEAN NOT NULL DEFAULT FALSE,
+      section_i BOOLEAN NOT NULL DEFAULT FALSE,
+      section_j BOOLEAN NOT NULL DEFAULT FALSE
+    );`
   ];
 
   (async () => {
