@@ -5,12 +5,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
 
-const loginApi = async (email, password) => {
+const loginApi = async (email, password, acceptedTerms) => {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, accepted_terms: acceptedTerms })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || `Login failed: ${res.status}`);
@@ -30,6 +30,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [acceptedConsent, setAcceptedConsent] = useState(true);
+  const showConsentCheckbox = localStorage.getItem('has_accepted_legal') !== 'true';
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const setUser = useAuthStore((state) => state.setUser);
@@ -52,9 +55,14 @@ export default function Login() {
     setError('');
     
     try {
-      const data = await loginApi(email, password);
+      const data = await loginApi(email, password, acceptedConsent);
       setUser(data.user);
       setToken(data.token);
+
+      if (acceptedConsent) {
+        localStorage.setItem('has_accepted_legal', 'true');
+      }
+
       // Clear React Query cache to force fresh data from server
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       navigate('/dashboard');
@@ -129,10 +137,29 @@ export default function Login() {
               </div>
             </div>
 
+            {showConsentCheckbox && (
+              <div className="flex items-start gap-3 select-none ml-1 mt-6">
+                <input 
+                  type="checkbox" 
+                  id="consent_checkbox" 
+                  checked={acceptedConsent} 
+                  onChange={(e) => setAcceptedConsent(e.target.checked)} 
+                  required
+                  className="w-4 h-4 rounded border-white/20 bg-transparent text-primary focus:ring-primary/20 accent-primary cursor-pointer mt-0.5"
+                />
+                <label htmlFor="consent_checkbox" className="text-xs text-white/60 leading-normal cursor-pointer">
+                  I have read and agree to the{' '}
+                  <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-white hover:underline font-bold">Privacy Policy</a>
+                  {' '}and{' '}
+                  <a href="/terms-conditions" target="_blank" rel="noopener noreferrer" className="text-white hover:underline font-bold">Terms & Conditions</a>.
+                </label>
+              </div>
+            )}
+
             <button 
               type="submit" 
               className="w-full bg-white/[0.04] border border-white/20 text-white font-black py-4.5 rounded-2xl shadow-xl hover:bg-white/10 hover:border-white/40 transition-all active:scale-[0.96] flex items-center justify-center gap-3 mt-6 text-sm uppercase tracking-widest disabled:opacity-50"
-              disabled={loading}
+              disabled={loading || (showConsentCheckbox && !acceptedConsent)}
             >
               {loading ? (
                 <Loader2 className="animate-spin" size={24} />
@@ -149,6 +176,18 @@ export default function Login() {
             </p>
           </div>
         </div>
+
+        {/* Footer */}
+        <footer className="mt-8 text-center text-xs text-white/40 space-y-2 select-none w-full">
+          <div className="flex justify-center gap-3">
+            <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Privacy Policy</a>
+            <span>|</span>
+            <a href="/terms-conditions" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Terms & Conditions</a>
+            <span>|</span>
+            <a href="/contact-us" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Contact Us</a>
+          </div>
+          <p>© {new Date().getFullYear()} PR Electricals. All rights reserved.</p>
+        </footer>
       </div>
     </div>
   )

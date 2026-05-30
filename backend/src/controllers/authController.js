@@ -87,6 +87,7 @@ const updateAccessSchema = z.object({
 const loginSchema = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(1).max(128),
+  accepted_terms: z.boolean().optional(),
 });
 
 async function register(req, res, next) {
@@ -195,6 +196,10 @@ async function login(req, res, next) {
 
     // Invalidate cached project access on login to ensure fresh data
     invalidateProjectAccess(user.id);
+
+    if (data.accepted_terms) {
+      await pool.query('UPDATE users SET accepted_terms_at = NOW() WHERE id = $1', [user.id]);
+    }
 
     return res.json({
       token,

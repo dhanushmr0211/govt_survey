@@ -23,6 +23,7 @@ function createApp() {
   const migrations = [
     'ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;',
     'ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE;',
+    'ALTER TABLE users ADD COLUMN IF NOT EXISTS accepted_terms_at TIMESTAMP;',
     'ALTER TABLE project_users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE;',
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email) WHERE is_deleted IS NOT TRUE;',
     'CREATE INDEX IF NOT EXISTS idx_users_role_id ON users (role, id DESC) WHERE is_deleted IS NOT TRUE;',
