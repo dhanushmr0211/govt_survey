@@ -41,7 +41,6 @@ export default function Dashboard() {
           return val1 !== val2;
         });
         if (hasDiff) {
-          console.log('[DEBUG] Dynamic sync activeProject permissions:', updatedProject);
           setActiveProject(updatedProject);
         }
       }

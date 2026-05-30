@@ -5,6 +5,13 @@ import App from './App.jsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import axios from 'axios'
 
+if (import.meta.env.PROD) {
+  console.log = () => {};
+  console.debug = () => {};
+  console.info = () => {};
+  console.warn = () => {};
+}
+
 import { useAuthStore } from './store/authStore'
 
 axios.interceptors.request.use(

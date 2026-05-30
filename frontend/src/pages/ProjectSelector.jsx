@@ -5,7 +5,6 @@ import { FolderKanban, LogOut, ShieldCheck, User, Users } from 'lucide-react';
 export default function ProjectSelector() {
   const { user, setActiveProject, logout } = useAuthStore();
   const { data: projects = [], isLoading } = useProjects();
-  console.log('[DEBUG] ProjectSelector projects:', projects, typeof projects, Array.isArray(projects));
 
   const handleSelect = (project) => {
     setActiveProject(project);

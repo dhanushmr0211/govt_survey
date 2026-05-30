@@ -40,7 +40,6 @@ export default function Login() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(registrations => {
         registrations.forEach(reg => {
-          console.log('[Login] Unregistering old service worker:', reg);
           reg.unregister();
         });
       });
@@ -53,14 +52,11 @@ export default function Login() {
     setError('');
     
     try {
-      console.log('[Login] Attempting login with:', email);
       const data = await loginApi(email, password);
-      console.log('[Login] Login successful, setting user:', data.user);
       setUser(data.user);
       setToken(data.token);
       // Clear React Query cache to force fresh data from server
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      console.log('[Login] Navigating to dashboard');
       navigate('/dashboard');
     } catch (err) {
       console.error('[Login] Error:', err.message);
