@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Loader2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
@@ -31,7 +31,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [acceptedConsent, setAcceptedConsent] = useState(true);
-  const showConsentCheckbox = localStorage.getItem('has_accepted_legal') !== 'true';
+  const showConsentCheckbox = true;
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -149,9 +149,9 @@ export default function Login() {
                 />
                 <label htmlFor="consent_checkbox" className="text-xs text-white/60 leading-normal cursor-pointer">
                   I have read and agree to the{' '}
-                  <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-white hover:underline font-bold">Privacy Policy</a>
+                  <Link to="/privacy-policy" className="text-white hover:underline font-bold">Privacy Policy</Link>
                   {' '}and{' '}
-                  <a href="/terms-conditions" target="_blank" rel="noopener noreferrer" className="text-white hover:underline font-bold">Terms & Conditions</a>.
+                  <Link to="/terms-conditions" className="text-white hover:underline font-bold">Terms & Conditions</Link>.
                 </label>
               </div>
             )}
@@ -180,11 +180,11 @@ export default function Login() {
         {/* Footer */}
         <footer className="mt-8 text-center text-xs text-white/40 space-y-2 select-none w-full">
           <div className="flex justify-center gap-3">
-            <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Privacy Policy</a>
+            <Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <span>|</span>
-            <a href="/terms-conditions" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Terms & Conditions</a>
+            <Link to="/terms-conditions" className="hover:text-white transition-colors">Terms & Conditions</Link>
             <span>|</span>
-            <a href="/contact-us" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Contact Us</a>
+            <Link to="/contact-us" className="hover:text-white transition-colors">Contact Us</Link>
           </div>
           <p>© {new Date().getFullYear()} PR Electricals. All rights reserved.</p>
         </footer>

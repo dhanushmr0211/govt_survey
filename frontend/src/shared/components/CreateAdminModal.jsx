@@ -60,6 +60,7 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
   const [scopeType, setScopeType] = useState('all'); // 'all', 'districts', 'ulbs'
   const [structure, setStructure] = useState({ districts: [], ulbs: [] });
   const [loadingStructure, setLoadingStructure] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleItem = (listName, id) => {
     setFormData(prev => {
@@ -226,61 +227,60 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
  
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     const dScopeToSend = scopeType === 'districts' ? formData.district_scope : null;
     const uScopeToSend = scopeType === 'ulbs' ? formData.ulb_scope : null;
 
-    if (selectedUser) {
-      const isAssignedToPresent = formData.projects.includes(currentPid);
-      
-      const payload = {
-        projectId: currentPid,
-        assigned: isAssignedToPresent,
-        project_role: formData.project_role,
-        section_a: formData.section_a,
-        section_b: formData.section_b,
-        section_c: formData.section_c,
-        section_d: formData.section_d,
-        section_e: formData.section_e,
-        section_f: formData.section_f,
-        section_g: formData.section_g,
-        section_h: formData.section_h,
-        section_i: formData.section_i,
-        section_j: formData.section_j,
-        district_scope: dScopeToSend,
-        ulb_scope: uScopeToSend
-      };
-      
-      try {
+    try {
+      if (selectedUser) {
+        const isAssignedToPresent = formData.projects.includes(currentPid);
+        
+        const payload = {
+          projectId: currentPid,
+          assigned: isAssignedToPresent,
+          project_role: formData.project_role,
+          section_a: formData.section_a,
+          section_b: formData.section_b,
+          section_c: formData.section_c,
+          section_d: formData.section_d,
+          section_e: formData.section_e,
+          section_f: formData.section_f,
+          section_g: formData.section_g,
+          section_h: formData.section_h,
+          section_i: formData.section_i,
+          section_j: formData.section_j,
+          district_scope: dScopeToSend,
+          ulb_scope: uScopeToSend
+        };
+        
         await axios.post(`${API_BASE_URL}/auth/users/${selectedUser.id}/projects`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         onClose();
-      } catch (error) {
-        console.error('Error assigning user to project:', error);
-        alert(error.response?.data?.message || 'Error assigning user to project');
-      }
-    } else {
-      if (!formData.projects || formData.projects.length === 0) {
-        alert('Please assign at least one project to the user.');
-        return;
-      }
- 
-      const registerPayload = {
-        ...formData,
-        district_scope: dScopeToSend,
-        ulb_scope: uScopeToSend
-      };
+      } else {
+        if (!formData.projects || formData.projects.length === 0) {
+          alert('Please assign at least one project to the user.');
+          setIsSubmitting(false);
+          return;
+        }
+   
+        const registerPayload = {
+          ...formData,
+          district_scope: dScopeToSend,
+          ulb_scope: uScopeToSend
+        };
 
-      try {
         await axios.post(`${API_BASE_URL}/auth/register`, registerPayload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         onClose();
-      } catch (error) {
-        console.error('Error creating user:', error);
-        alert(error.response?.data?.message || 'Error creating user');
       }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      alert(error.response?.data?.message || 'Error submitting form');
+    } finally {
+      setIsSubmitting(false);
     }
   };
  
@@ -298,7 +298,7 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white p-6 rounded-xl w-full max-w-md max-h-[90vh] flex flex-col space-y-4 shadow-2xl border border-slate-200">
         <div className="flex justify-between items-center pb-2">
-          <h2 className="text-xl font-bold text-slate-900">Create {targetRoleName}</h2>
+          <h2 className="text-xl font-bold text-slate-900">Create Team Member</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">✕</button>
         </div>
         
@@ -348,7 +348,10 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
                         <button
                           key={u.id}
                           type="button"
-                          onClick={() => handleSelectUser(u)}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSelectUser(u);
+                          }}
                           className="w-full text-left px-4 py-2.5 hover:bg-slate-100/80 transition-colors text-slate-700 hover:text-slate-950 border-b border-slate-50 last:border-b-0 flex flex-col"
                         >
                           <span className="font-bold text-sm">{u.name}</span>
@@ -580,9 +583,17 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
           )}
  
           <div className="flex justify-end gap-3 mt-6">
-            <button type="button" onClick={onClose} className="px-5 py-2.5 border border-slate-200 rounded-lg text-slate-600 font-semibold hover:bg-slate-50 transition-colors">Cancel</button>
-            <button type="submit" className="px-5 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all">
-              {presentAssignment ? 'Update' : (selectedUser ? 'Save Assignment' : `Create ${getRoleName(formData.project_role)}`)}
+            <button type="button" onClick={onClose} disabled={isSubmitting} className="px-5 py-2.5 border border-slate-200 rounded-lg text-slate-600 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50">Cancel</button>
+            <button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className="px-5 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                presentAssignment ? 'Updating...' : (selectedUser ? 'Saving...' : 'Creating...')
+              ) : (
+                presentAssignment ? 'Update' : (selectedUser ? 'Save Assignment' : `Create ${getRoleName(formData.project_role)}`)
+              )}
             </button>
           </div>
         </form>

@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { useAuthStore } from '../../store/authStore';
@@ -17,11 +17,11 @@ export const DashboardLayout = () => {
           </div>
           <footer className="mt-8 py-4 border-t border-slate-200/60 text-center text-xs text-slate-400">
             <div className="flex justify-center gap-4">
-              <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Privacy Policy</a>
+              <Link to="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link>
               <span>|</span>
-              <a href="/terms-conditions" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Terms & Conditions</a>
+              <Link to="/terms-conditions" className="hover:text-primary transition-colors">Terms & Conditions</Link>
               <span>|</span>
-              <a href="/contact-us" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Contact Us</a>
+              <Link to="/contact-us" className="hover:text-primary transition-colors">Contact Us</Link>
             </div>
             <p className="mt-2">© {new Date().getFullYear()} PR Electricals. All rights reserved.</p>
           </footer>

@@ -1,6 +1,20 @@
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function ContactUs() {
+  const navigate = useNavigate();
+
+  const handleClose = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      window.close();
+      setTimeout(() => {
+        navigate('/');
+      }, 100);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-xl mx-auto bg-white p-8 sm:p-10 rounded-2xl shadow-sm border border-slate-200">
@@ -51,10 +65,10 @@ export default function ContactUs() {
         <div className="mt-10 pt-6 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
           <p>© {new Date().getFullYear()} PR Electricals. All rights reserved.</p>
           <button 
-            onClick={() => window.close()} 
-            className="text-primary hover:underline font-bold"
+            onClick={handleClose} 
+            className="text-primary hover:underline font-bold text-sm"
           >
-            Close Tab
+            Close Page
           </button>
         </div>
       </div>

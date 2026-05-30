@@ -50,6 +50,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
   const [scopeType, setScopeType] = useState('all'); // 'all', 'districts', 'ulbs'
   const [structure, setStructure] = useState({ districts: [], ulbs: [] });
   const [loadingStructure, setLoadingStructure] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isOpen && user) {
@@ -114,6 +115,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSaving(true);
     const token = localStorage.getItem('token');
     
     // Clean up scopes based on scopeType
@@ -143,6 +145,8 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
         setScopeType(nextState.scopeType);
       }
       alert(error.response?.data?.message || 'Error updating access');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -366,8 +370,14 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
           </section>
 
           <div className="flex justify-end gap-3 pt-6 sticky bottom-0 bg-white">
-            <button type="button" onClick={onClose} className="px-6 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-all">Cancel</button>
-            <button type="submit" className="px-6 py-2.5 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 shadow-lg shadow-orange-500/20 transition-all">Save Changes</button>
+            <button type="button" onClick={onClose} disabled={isSaving} className="px-6 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-all disabled:opacity-50">Cancel</button>
+            <button 
+              type="submit" 
+              disabled={isSaving} 
+              className="px-6 py-2.5 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 shadow-lg shadow-orange-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
           </div>
         </form>
       </div>
