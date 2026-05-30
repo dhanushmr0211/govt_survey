@@ -19,8 +19,8 @@ export default function ContactUs() {
               <Mail className="text-primary w-5 h-5 mt-0.5" />
               <div>
                 <h4 className="font-bold text-slate-900">Email Support</h4>
-                <p className="text-slate-600 mt-0.5">support@prelectricals.com</p>
-                <p className="text-xs text-slate-400 mt-1">Response time: Within 24 business hours</p>
+                <p className="text-slate-600 mt-0.5">prelectricals01@gmail.com</p>
+                <p className="text-xs text-slate-400 mt-1">Response time: Within 5 business days</p>
               </div>
             </div>
 
@@ -28,7 +28,7 @@ export default function ContactUs() {
               <Phone className="text-primary w-5 h-5 mt-0.5" />
               <div>
                 <h4 className="font-bold text-slate-900">Phone Support</h4>
-                <p className="text-slate-600 mt-0.5">+91 98765 43210</p>
+                <p className="text-slate-600 mt-0.5">+91 87226 17252</p>
                 <p className="text-xs text-slate-400 mt-1">Available: 9:00 AM - 6:00 PM (Mon-Sat)</p>
               </div>
             </div>
@@ -39,8 +39,9 @@ export default function ContactUs() {
                 <h4 className="font-bold text-slate-900">Registered Address</h4>
                 <p className="text-slate-600 mt-0.5">
                   PR Electricals Ltd,<br />
-                  First Floor, Operations Hub,<br />
-                  Industrial Area, Bengaluru, Karnataka, India
+                  NO# 304 13 TH CROSS,GOVINDRAJ NAGARA ,VIJAY NAGAR,
+                  BANGLORE, PIN - 560040,
+                  Karnataka, India
                 </p>
               </div>
             </div>
