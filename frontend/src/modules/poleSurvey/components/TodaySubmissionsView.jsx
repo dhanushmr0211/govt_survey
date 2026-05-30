@@ -553,8 +553,10 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                         {renderField('Present ARM Length', 'present_arm_length', selectedSubmission.present_arm_length, ['0', '1', '1.5', '2', '2.5'])}
                         {renderField('Lights Count', 'how_many_lights_in_pole', selectedSubmission.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
                         {renderField('Mounting Height', 'light_mounting_height', selectedSubmission.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
-                        {renderField('Light Type', 'light_type', selectedSubmission.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                        {renderField('Capacity', 'light_capacity', selectedSubmission.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Light 1 Type', 'light_type', selectedSubmission.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                        {renderField('Light 1 Capacity', 'light_capacity', selectedSubmission.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Light 2 Type', 'light_type_2', selectedSubmission.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                        {renderField('Light 2 Capacity', 'light_capacity_2', selectedSubmission.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
                         {renderField('Working', 'light_working_status', selectedSubmission.light_working_status, ['yes', 'no'])}
                         {renderField('Road Cat', 'road_category', selectedSubmission.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
                         {renderField('Road Type', 'road_type', selectedSubmission.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
@@ -562,11 +564,11 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                         {renderField('Earthing', 'pole_earthing_exists', selectedSubmission.pole_earthing_exists, ['YES', 'NO'])}
                         
                         <div className="col-span-2 border-t pt-2 mt-2 font-semibold text-gray-700">Proposal Form</div>
-                        {renderField('Req ARM No', 'req_arm_number', selectedSubmission.req_arm_number, ['0', '1', '2', '3', '4'])}
-                        {renderField('Req ARM Length', 'req_arm_length', selectedSubmission.req_arm_length, ['0', '1', '1.5', '2', '2.5'])}
-                        {renderField('Req LED Lights No', 'req_led_lights_no', selectedSubmission.req_led_lights_no, ['0', '1', '2', '3', '4'])}
-                        {renderField('Req LED Wattage', 'req_led_wattage', selectedSubmission.req_led_wattage, ['18W', '24W', '40W', '60W', '80W', '90W', '120W', '150W', '200W'])}
-                        {renderField('Req Dedicated Wire', 'req_dedicated_wire', selectedSubmission.req_dedicated_wire)}
+                        {renderField('Req ARM No', 'req_arm_number', selectedSubmission.req_arm_number, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
+                        {renderField('Req ARM Length', 'req_arm_length', selectedSubmission.req_arm_length, ['0', '1.0', '1.5', '2', '2.5'])}
+                        {renderField('Req LED Lights No', 'req_led_lights_no', selectedSubmission.req_led_lights_no, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
+                        {renderField('Req LED Wattage', 'req_led_wattage', selectedSubmission.req_led_wattage, ['400W', '250W', '200W', '150W', '120W', '90W', '65W', '40W', '5-25W', '0W'])}
+                        {renderField('Req Dedicated Wire', 'req_dedicated_wire', selectedSubmission.req_dedicated_wire, ['yes', 'no'])}
                       </>
                     ) : (
                       <>
@@ -583,8 +585,10 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                         {renderField('ARM Length (m)', 'present_arm_length_mtrs', selectedSubmission.present_arm_length_mtrs, ['0', '1', '1.5', '2', '2.5'])}
                         {renderField('Lights Count', 'how_many_lights_in_pole', selectedSubmission.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
                         {renderField('Mounting Height', 'light_mounting_height', selectedSubmission.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
-                        {renderField('Light Type', 'light_type', selectedSubmission.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                        {renderField('Capacity', 'light_capacity', selectedSubmission.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Light 1 Type', 'light_type', selectedSubmission.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                        {renderField('Light 1 Capacity', 'light_capacity', selectedSubmission.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Light 2 Type', 'light_type_2', selectedSubmission.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                        {renderField('Light 2 Capacity', 'light_capacity_2', selectedSubmission.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
                         {renderField('Working', 'light_working_status', selectedSubmission.light_working_status, ['yes', 'no'])}
                         {renderField('Road Cat', 'road_category', selectedSubmission.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
                         {renderField('Road Type', 'road_type', selectedSubmission.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}

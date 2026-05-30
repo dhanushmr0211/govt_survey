@@ -277,24 +277,41 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
             </h3>
             
             <div className="flex gap-2 p-1 bg-slate-100 rounded-lg mb-6 w-fit">
-              {[
-                { id: 'all', label: 'All Districts' },
-                { id: 'districts', label: 'Specific Districts' },
-                { id: 'ulbs', label: 'Specific ULBs' }
-              ].map(type => (
-                <button
-                  key={type.id}
-                  type="button"
-                  disabled={!canEditPermissions}
-                  onClick={() => setScopeType(type.id)}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${scopeType === type.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'} disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {type.label}
-                </button>
-              ))}
+              {Number(projectId) === 3 ? (
+                [
+                  { id: 'all', label: 'All Wards' },
+                  { id: 'ulbs', label: 'Ward wise' }
+                ].map(type => (
+                  <button
+                    key={type.id}
+                    type="button"
+                    disabled={!canEditPermissions}
+                    onClick={() => setScopeType(type.id)}
+                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${scopeType === type.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {type.label}
+                  </button>
+                ))
+              ) : (
+                [
+                  { id: 'all', label: 'All Districts' },
+                  { id: 'districts', label: 'Specific Districts' },
+                  { id: 'ulbs', label: 'Specific ULBs' }
+                ].map(type => (
+                  <button
+                    key={type.id}
+                    type="button"
+                    disabled={!canEditPermissions}
+                    onClick={() => setScopeType(type.id)}
+                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${scopeType === type.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {type.label}
+                  </button>
+                ))
+              )}
             </div>
 
-            {scopeType === 'districts' && (
+            {scopeType === 'districts' && Number(projectId) !== 3 && (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2 animate-in fade-in slide-in-from-top-2">
                 {structure.districts.map(d => (
                   <button
@@ -317,7 +334,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
                   if (districtUlbs.length === 0) return null;
                   return (
                     <div key={d.id} className="space-y-2">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{d.name}</p>
+                      {Number(projectId) !== 3 && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{d.name}</p>}
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                         {districtUlbs.map(u => (
                           <button
@@ -339,7 +356,11 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
 
             {scopeType === 'all' && (
               <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl text-blue-700 text-sm">
-                User will have access to data across <strong>all districts and ULBs</strong> in this project.
+                {Number(projectId) === 3 ? (
+                  <span>User will have access to data across <strong>all wards</strong> in this project.</span>
+                ) : (
+                  <span>User will have access to data across <strong>all districts and ULBs</strong> in this project.</span>
+                )}
               </div>
             )}
           </section>

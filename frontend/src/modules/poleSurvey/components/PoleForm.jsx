@@ -685,33 +685,36 @@ export const PoleForm = ({ ulb, onBack }) => {
               <label className="block text-gray-700 font-medium mb-1">Req ARM No#</label>
               <select name="req_arm_number" value={formData.req_arm_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
                 <option value="">Select...</option>
-                {['0', '1', '2', '3', '4'].map(o => <option key={o} value={o}>{o}</option>)}
+                {['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'].map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Req ARM Length</label>
               <select name="req_arm_length" value={formData.req_arm_length} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
                 <option value="">Select...</option>
-                {['0', '1', '1.5', '2', '2.5'].map(o => <option key={o} value={o}>{o}</option>)}
+                {['0', '1.0', '1.5', '2', '2.5'].map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Req LED Lights No#</label>
               <select name="req_led_lights_no" value={formData.req_led_lights_no} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
                 <option value="">Select...</option>
-                {['0', '1', '2', '3', '4'].map(o => <option key={o} value={o}>{o}</option>)}
+                {['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'].map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Req LED Wattage</label>
               <select name="req_led_wattage" value={formData.req_led_wattage} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
                 <option value="">Select...</option>
-                {['18W', '24W', '40W', '60W', '80W', '90W', '120W', '150W', '200W'].map(o => <option key={o} value={o}>{o}</option>)}
+                {['400W', '250W', '200W', '150W', '120W', '90W', '65W', '40W', '5-25W', '0W'].map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Req Dedicated Wire</label>
-              <input type="text" name="req_dedicated_wire" value={formData.req_dedicated_wire} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" />
+              <select name="req_dedicated_wire" value={formData.req_dedicated_wire} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+                <option value="">Select...</option>
+                {['yes', 'no'].map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
             </div>
           </div>
         )}

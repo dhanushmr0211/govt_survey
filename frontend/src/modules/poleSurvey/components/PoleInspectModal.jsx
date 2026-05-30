@@ -288,19 +288,19 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                       {renderField('Light 1 Type', 'light_type', pole.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
                       {renderField('Light 1 Capacity', 'light_capacity', pole.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
                       {renderField('Light 2 Type', 'light_type_2', pole.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                      {renderField('Light 2 Capacity', 'light_capacity_2', pole.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}                      {renderField('Light 2 Type', 'light_type_2', pole.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                      {renderField('Light 2 Capacity', 'light_capacity_2', pole.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}                      {renderField('Working', 'light_working_status', pole.light_working_status, ['yes', 'no'])}
+                      {renderField('Light 2 Capacity', 'light_capacity_2', pole.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                      {renderField('Working', 'light_working_status', pole.light_working_status, ['yes', 'no'])}
                       {renderField('Road Cat', 'road_category', pole.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
                       {renderField('Road Type', 'road_type', pole.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
                       {renderField('Road Width', 'road_width_mtrs', pole.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
                       {renderField('Earthing', 'pole_earthing_exists', pole.pole_earthing_exists, ['YES', 'NO'])}
                       
                       <div className="border-b pb-1 mt-3 mb-2 font-bold text-primary text-sm">Proposal Form</div>
-                      {renderField('Req ARM No', 'req_arm_number', pole.req_arm_number, ['0', '1', '2', '3', '4'])}
-                      {renderField('Req ARM Length', 'req_arm_length', pole.req_arm_length, ['0', '1', '1.5', '2', '2.5'])}
-                      {renderField('Req LED Lights No', 'req_led_lights_no', pole.req_led_lights_no, ['0', '1', '2', '3', '4'])}
-                      {renderField('Req LED Wattage', 'req_led_wattage', pole.req_led_wattage, ['18W', '24W', '40W', '60W', '80W', '90W', '120W', '150W', '200W'])}
-                      {renderField('Req Dedicated Wire', 'req_dedicated_wire', pole.req_dedicated_wire)}
+                      {renderField('Req ARM No', 'req_arm_number', pole.req_arm_number, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
+                      {renderField('Req ARM Length', 'req_arm_length', pole.req_arm_length, ['0', '1.0', '1.5', '2', '2.5'])}
+                      {renderField('Req LED Lights No', 'req_led_lights_no', pole.req_led_lights_no, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
+                      {renderField('Req LED Wattage', 'req_led_wattage', pole.req_led_wattage, ['400W', '250W', '200W', '150W', '120W', '90W', '65W', '40W', '5-25W', '0W'])}
+                      {renderField('Req Dedicated Wire', 'req_dedicated_wire', pole.req_dedicated_wire, ['yes', 'no'])}
                     </>
                   ) : (
                     <>

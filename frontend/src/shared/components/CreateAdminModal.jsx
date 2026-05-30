@@ -28,6 +28,8 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
   };
   const targetRoleName = getRoleName(targetRole);
  
+  const canEditPermissions = loggedInUser?.role === 'MASTER_ADMIN' || !!activeProject?.section_h;
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -44,13 +46,30 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
     section_g: false,
     section_h: false,
     section_i: false,
-    section_j: false
+    section_j: false,
+    district_scope: [],
+    ulb_scope: []
   });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [assignedProjectIds, setAssignedProjectIds] = useState([]);
+  const [presentAssignment, setPresentAssignment] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [scopeType, setScopeType] = useState('all'); // 'all', 'districts', 'ulbs'
+  const [structure, setStructure] = useState({ districts: [], ulbs: [] });
+  const [loadingStructure, setLoadingStructure] = useState(false);
+
+  const toggleItem = (listName, id) => {
+    setFormData(prev => {
+      const current = prev[listName] || [];
+      if (current.includes(id)) {
+        return { ...prev, [listName]: current.filter(item => item !== id) };
+      } else {
+        return { ...prev, [listName]: [...current, id] };
+      }
+    });
+  };
  
   // Fetch global users list
   const token = localStorage.getItem('token');
@@ -74,6 +93,28 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
       handleClearUser();
     }
   }, [isOpen]);
+
+  // Fetch project structure for active project
+  useEffect(() => {
+    const fetchStructure = async () => {
+      const currentPid = Number(defaultProjectId || activeProject?.id);
+      if (isOpen && currentPid) {
+        setLoadingStructure(true);
+        try {
+          const token = localStorage.getItem('token');
+          const res = await axios.get(`${API_BASE_URL}/projects/${currentPid}/structure`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setStructure(res.data || { districts: [], ulbs: [] });
+        } catch (err) {
+          console.error("Failed to fetch project structure:", err);
+        } finally {
+          setLoadingStructure(false);
+        }
+      }
+    };
+    fetchStructure();
+  }, [isOpen, defaultProjectId, activeProject?.id]);
  
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -117,27 +158,38 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
 
       // Check if user is already assigned to the present project
       const currentPid = Number(defaultProjectId || activeProject?.id);
-      const presentAssignment = assignments.find(a => a.id === currentPid);
+      const userAssignmentObj = assignments.find(a => a.id === currentPid);
+      setPresentAssignment(userAssignmentObj || null);
       
+      const dScope = Array.isArray(userAssignmentObj?.district_scope) ? userAssignmentObj.district_scope.map(Number) : [];
+      const uScope = Array.isArray(userAssignmentObj?.ulb_scope) ? userAssignmentObj.ulb_scope.map(Number) : [];
+
+      let initialScopeType = 'all';
+      if (uScope.length > 0) initialScopeType = 'ulbs';
+      else if (dScope.length > 0) initialScopeType = 'districts';
+      setScopeType(initialScopeType);
+
       setFormData(prev => {
-        const updatedProjects = presentAssignment 
+        const updatedProjects = userAssignmentObj 
           ? (prev.projects.includes(currentPid) ? prev.projects : [...prev.projects, currentPid])
           : prev.projects.filter(id => id !== currentPid);
           
         return {
           ...prev,
           projects: updatedProjects,
-          project_role: presentAssignment ? presentAssignment.project_role : targetRole,
-          section_a: presentAssignment ? presentAssignment.section_a : false,
-          section_b: presentAssignment ? presentAssignment.section_b : false,
-          section_c: presentAssignment ? presentAssignment.section_c : false,
-          section_d: presentAssignment ? presentAssignment.section_d : false,
-          section_e: presentAssignment ? presentAssignment.section_e : false,
-          section_f: presentAssignment ? presentAssignment.section_f : false,
-          section_g: presentAssignment ? presentAssignment.section_g : false,
-          section_h: presentAssignment ? presentAssignment.section_h : false,
-          section_i: presentAssignment ? presentAssignment.section_i : false,
-          section_j: presentAssignment ? presentAssignment.section_j : false
+          project_role: userAssignmentObj ? userAssignmentObj.project_role : targetRole,
+          section_a: userAssignmentObj ? userAssignmentObj.section_a : false,
+          section_b: userAssignmentObj ? userAssignmentObj.section_b : false,
+          section_c: userAssignmentObj ? userAssignmentObj.section_c : false,
+          section_d: userAssignmentObj ? userAssignmentObj.section_d : false,
+          section_e: userAssignmentObj ? userAssignmentObj.section_e : false,
+          section_f: userAssignmentObj ? userAssignmentObj.section_f : false,
+          section_g: userAssignmentObj ? userAssignmentObj.section_g : false,
+          section_h: userAssignmentObj ? userAssignmentObj.section_h : false,
+          section_i: userAssignmentObj ? userAssignmentObj.section_i : false,
+          section_j: userAssignmentObj ? userAssignmentObj.section_j : false,
+          district_scope: dScope,
+          ulb_scope: uScope
         };
       });
     } catch (err) {
@@ -149,6 +201,8 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
     setSelectedUser(null);
     setSearchQuery('');
     setAssignedProjectIds([]);
+    setPresentAssignment(null);
+    setScopeType('all');
     setFormData({
       name: '',
       email: '',
@@ -165,13 +219,18 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
       section_g: false,
       section_h: false,
       section_i: false,
-      section_j: false
+      section_j: false,
+      district_scope: [],
+      ulb_scope: []
     });
   };
  
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    const dScopeToSend = scopeType === 'districts' ? formData.district_scope : null;
+    const uScopeToSend = scopeType === 'ulbs' ? formData.ulb_scope : null;
+
     if (selectedUser) {
       const currentPid = Number(defaultProjectId || activeProject?.id);
       const isAssignedToPresent = formData.projects.includes(currentPid);
@@ -189,7 +248,9 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
         section_g: formData.section_g,
         section_h: formData.section_h,
         section_i: formData.section_i,
-        section_j: formData.section_j
+        section_j: formData.section_j,
+        district_scope: dScopeToSend,
+        ulb_scope: uScopeToSend
       };
       
       try {
@@ -207,8 +268,14 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
         return;
       }
  
+      const registerPayload = {
+        ...formData,
+        district_scope: dScopeToSend,
+        ulb_scope: uScopeToSend
+      };
+
       try {
-        await axios.post(`${API_BASE_URL}/auth/register`, formData, {
+        await axios.post(`${API_BASE_URL}/auth/register`, registerPayload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         onClose();
@@ -230,30 +297,37 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
       );
  
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-xl w-full max-w-md space-y-4 shadow-2xl border border-slate-200">
-        <div className="flex justify-between items-center">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white p-6 rounded-xl w-full max-w-md max-h-[90vh] flex flex-col space-y-4 shadow-2xl border border-slate-200">
+        <div className="flex justify-between items-center pb-2">
           <h2 className="text-xl font-bold text-slate-900">Create {targetRoleName}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">✕</button>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-4 text-sm">
+        <form onSubmit={handleSubmit} className="space-y-4 text-sm flex-1 overflow-y-auto pr-1">
           {/* Global User Selection Dropdown */}
           <div className="relative">
             {selectedUser ? (
-              <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Selected Existing User</span>
-                  <span className="text-sm font-semibold text-emerald-950">{selectedUser.name}</span>
-                  <span className="text-xs text-emerald-700/80">{selectedUser.email}</span>
+              <div>
+                <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
+                  <div className="flex flex-col text-left">
+                    <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Selected Existing User</span>
+                    <span className="text-sm font-semibold text-emerald-950">{selectedUser.name}</span>
+                    <span className="text-xs text-emerald-700/80">{selectedUser.email}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearUser}
+                    className="px-2.5 py-1 text-xs font-bold text-emerald-700 hover:text-emerald-950 hover:bg-emerald-100 rounded transition-colors"
+                  >
+                    Clear / New
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleClearUser}
-                  className="px-2.5 py-1 text-xs font-bold text-emerald-700 hover:text-emerald-950 hover:bg-emerald-100 rounded transition-colors"
-                >
-                  Clear / New
-                </button>
+                {presentAssignment && (
+                  <div className="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-xs font-semibold text-left">
+                    user already assigned to this project as "{presentAssignment.project_role}"
+                  </div>
+                )}
               </div>
             ) : (
               <div>
@@ -413,11 +487,105 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
               </div>
             </div>
           )}
+
+          {formData.projects.length > 0 && (
+            <div className="space-y-4 pt-4 border-t border-slate-100">
+              <label className="block text-slate-700 font-semibold mb-1">Data Visibility Scope</label>
+              
+              <div className="flex gap-2 p-1 bg-slate-100 rounded-lg mb-3 w-fit">
+                {currentPid === 3 ? (
+                  [
+                    { id: 'all', label: 'All Wards' },
+                    { id: 'ulbs', label: 'Ward wise' }
+                  ].map(type => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      disabled={!canEditPermissions}
+                      onClick={() => setScopeType(type.id)}
+                      className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${scopeType === type.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {type.label}
+                    </button>
+                  ))
+                ) : (
+                  [
+                    { id: 'all', label: 'All Districts' },
+                    { id: 'districts', label: 'Specific Districts' },
+                    { id: 'ulbs', label: 'Specific ULBs' }
+                  ].map(type => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      disabled={!canEditPermissions}
+                      onClick={() => setScopeType(type.id)}
+                      className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${scopeType === type.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'} disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {type.label}
+                    </button>
+                  ))
+                )}
+              </div>
+
+              {scopeType === 'districts' && currentPid !== 3 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 animate-in fade-in slide-in-from-top-2">
+                  {structure.districts.map(d => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      disabled={!canEditPermissions}
+                      onClick={() => toggleItem('district_scope', d.id)}
+                      className={`p-2 py-1.5 text-left text-xs font-semibold rounded-lg border transition-all ${formData.district_scope?.includes(d.id) ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'} disabled:opacity-70 disabled:cursor-not-allowed`}
+                    >
+                      {d.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {scopeType === 'ulbs' && (
+                <div className="space-y-3 max-h-48 overflow-y-auto border border-slate-100 p-2.5 rounded-lg bg-slate-50 animate-in fade-in slide-in-from-top-2">
+                  {structure.districts.map(d => {
+                    const districtUlbs = structure.ulbs.filter(u => u.district_id === d.id);
+                    if (districtUlbs.length === 0) return null;
+                    return (
+                      <div key={d.id} className="space-y-1">
+                        {currentPid !== 3 && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{d.name}</p>}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {districtUlbs.map(u => (
+                            <button
+                              key={u.id}
+                              type="button"
+                              disabled={!canEditPermissions}
+                              onClick={() => toggleItem('ulb_scope', u.id)}
+                              className={`p-2 py-1.5 text-left text-xs font-semibold rounded-lg border transition-all ${formData.ulb_scope?.includes(u.id) ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-300'} disabled:opacity-70 disabled:cursor-not-allowed`}
+                            >
+                              {u.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {scopeType === 'all' && (
+                <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg text-blue-700 text-xs">
+                  {currentPid === 3 ? (
+                    <span>User will have access to data across <strong>all wards</strong> in this project.</span>
+                  ) : (
+                    <span>User will have access to data across <strong>all districts and ULBs</strong> in this project.</span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
  
           <div className="flex justify-end gap-3 mt-6">
             <button type="button" onClick={onClose} className="px-5 py-2.5 border border-slate-200 rounded-lg text-slate-600 font-semibold hover:bg-slate-50 transition-colors">Cancel</button>
             <button type="submit" className="px-5 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all">
-              {selectedUser ? 'Save Assignment' : `Create ${getRoleName(formData.project_role)}`}
+              {presentAssignment ? 'Update' : (selectedUser ? 'Save Assignment' : `Create ${getRoleName(formData.project_role)}`)}
             </button>
           </div>
         </form>
