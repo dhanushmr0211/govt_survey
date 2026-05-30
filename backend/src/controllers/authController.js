@@ -3,10 +3,45 @@ const jwt = require('jsonwebtoken');
 const { z } = require('zod');
 
 const { env } = require('../config/env');
+const { pool } = require('../config/db');
 const userService = require('../services/userService');
 const projectUserModel = require('../models/projectUserModel');
 const { ROLES, normalizeRole, isKnownRole } = require('../constants/roles');
 const { invalidateProjectAccess } = require('../middleware/projectAccess');
+
+async function syncUserGlobalBlockedStatus(userId) {
+  const result = await pool.query(
+    'SELECT is_blocked FROM project_users WHERE user_id = $1',
+    [userId]
+  );
+  
+  const userResult = await pool.query('SELECT role, is_blocked FROM users WHERE id = $1', [userId]);
+  if (userResult.rows.length === 0) return;
+  const user = userResult.rows[0];
+  
+  if (user.role === 'MASTER_ADMIN') {
+    if (user.is_blocked) {
+      await pool.query('UPDATE users SET is_blocked = FALSE, updated_at = NOW() WHERE id = $1', [userId]);
+    }
+    return;
+  }
+
+  const assignments = result.rows;
+  if (assignments.length === 0) {
+    if (user.is_blocked) {
+      await pool.query('UPDATE users SET is_blocked = FALSE, updated_at = NOW() WHERE id = $1', [userId]);
+    }
+    return;
+  }
+
+  const allBlocked = assignments.every(a => a.is_blocked === true);
+  if (user.is_blocked !== allBlocked) {
+    await pool.query(
+      'UPDATE users SET is_blocked = $2, updated_at = NOW() WHERE id = $1',
+      [userId, allBlocked]
+    );
+  }
+}
 
 const registerSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -116,6 +151,7 @@ async function register(req, res, next) {
       }
       // Invalidate cache since user's projects have changed
       invalidateProjectAccess(user.id);
+      await syncUserGlobalBlockedStatus(user.id);
     }
 
     return res.status(201).json({ user });
@@ -207,7 +243,7 @@ async function listUsers(req, res, next) {
       let isAuthorized = req.user.role === ROLES.MASTER_ADMIN;
       let callerProjectRole = null;
       if (!isAuthorized) {
-        const memberProjects = await projectUserModel.getProjectsWithRoles(Number(req.user.sub));
+        const memberProjects = (await projectUserModel.getProjectsWithRoles(Number(req.user.sub))).filter(p => !p.is_blocked);
         isAuthorized = memberProjects.some(p => p.section_d);
         // Determine the caller's highest project role for filtering
         if (isAuthorized) {
@@ -247,7 +283,8 @@ async function listUsers(req, res, next) {
         name: u.name,
         email: u.email,
         phone: u.phone,
-        role: u.role
+        role: u.role,
+        is_blocked: u.is_blocked
       }));
       return res.json({ users: mappedUsers });
     }
@@ -342,7 +379,7 @@ async function updateAccess(req, res, next) {
         (data.name !== undefined && data.name !== targetUser.name) ||
         (data.email !== undefined && data.email !== targetUser.email) ||
         (data.phone !== undefined && data.phone !== targetUser.phone) ||
-        (data.is_blocked !== undefined && data.is_blocked !== targetUser.is_blocked);
+        (data.is_blocked !== undefined && data.is_blocked !== existingMember.is_blocked);
 
       if (wantsToEditDetails && !membership.section_d) {
         return res.status(403).json({ message: 'Forbidden: You do not have permission to edit user details (requires Team Management access)' });
@@ -390,9 +427,8 @@ async function updateAccess(req, res, next) {
     const updatedName = data.name !== undefined ? data.name : targetUser.name;
     const updatedEmail = data.email !== undefined ? data.email : targetUser.email;
     const updatedPhone = data.phone !== undefined ? data.phone : targetUser.phone;
-    const updatedBlocked = data.is_blocked !== undefined ? data.is_blocked : targetUser.is_blocked;
     
-    await userService.updateDetails(Number(id), updatedName, updatedEmail, updatedPhone, updatedBlocked);
+    await userService.updateDetails(Number(id), updatedName, updatedEmail, updatedPhone, undefined);
 
     // Update project section/scopes access in project_users table
     await projectUserModel.addUserToProject(
@@ -411,12 +447,14 @@ async function updateAccess(req, res, next) {
         section_i: data.section_i ?? existingMember.section_i,
         section_j: data.section_j ?? existingMember.section_j,
         district_scope: data.district_scope !== undefined ? data.district_scope : existingMember.district_scope,
-        ulb_scope: data.ulb_scope !== undefined ? data.ulb_scope : existingMember.ulb_scope
+        ulb_scope: data.ulb_scope !== undefined ? data.ulb_scope : existingMember.ulb_scope,
+        is_blocked: data.is_blocked !== undefined ? data.is_blocked : existingMember.is_blocked
       }
     );
 
     // Invalidate cache since user's project access has changed
     invalidateProjectAccess(Number(id));
+    await syncUserGlobalBlockedStatus(Number(id));
 
     await userService.touch(Number(id));
 
@@ -431,7 +469,7 @@ async function getUserProjects(req, res, next) {
     const { id } = req.params;
     let isAuthorized = req.user.role === ROLES.MASTER_ADMIN;
     if (!isAuthorized) {
-      const memberProjects = await projectUserModel.getProjectsWithRoles(Number(req.user.sub));
+      const memberProjects = (await projectUserModel.getProjectsWithRoles(Number(req.user.sub))).filter(p => !p.is_blocked);
       isAuthorized = memberProjects.some(p => p.section_d);
     }
     if (!isAuthorized) {
@@ -571,7 +609,7 @@ async function assignUserProjects(req, res, next) {
     if (creatorRole !== ROLES.MASTER_ADMIN) {
       // Requester must be a member of the target project and have section_d (Team Management)
       const creatorMembership = await projectUserModel.isMember(Number(req.user.sub), data.projectId);
-      if (!creatorMembership) {
+      if (!creatorMembership || creatorMembership.is_blocked) {
         return res.status(403).json({ message: `Forbidden: You do not have access to project ID ${data.projectId}` });
       }
       if (!creatorMembership.section_d) {
@@ -611,13 +649,17 @@ async function assignUserProjects(req, res, next) {
 
     if (data.assigned) {
       const projectRole = isKnownRole(data.project_role) ? normalizeRole(data.project_role) : ROLES.MOBILE_USER;
+      const existingMembership = await projectUserModel.isMember(userId, data.projectId);
+      const isBlocked = existingMembership ? existingMembership.is_blocked : false;
+
       const sections = {
         section_a: data.section_a, section_b: data.section_b, section_c: data.section_c,
         section_d: data.section_d, section_e: data.section_e, section_f: data.section_f,
         section_g: data.section_g, section_h: data.section_h, section_i: data.section_i,
         section_j: data.section_j,
         district_scope: data.district_scope,
-        ulb_scope: data.ulb_scope
+        ulb_scope: data.ulb_scope,
+        is_blocked: isBlocked
       };
       await projectUserModel.addUserToProject(userId, data.projectId, projectRole, sections);
     } else {
@@ -626,6 +668,7 @@ async function assignUserProjects(req, res, next) {
 
     // Invalidate project access cached values
     invalidateProjectAccess(userId);
+    await syncUserGlobalBlockedStatus(userId);
     await userService.touch(userId);
 
     return res.json({ message: 'User project assignment updated successfully' });

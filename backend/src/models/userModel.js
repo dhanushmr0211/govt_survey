@@ -58,7 +58,7 @@ async function softDelete(id) {
 
 async function findMobileUsersByProjects(projectIds) {
   const result = await query(
-    `SELECT DISTINCT u.id, u.name, u.email, u.role, u.phone, u.created_at 
+    `SELECT DISTINCT ON (u.id) u.id, u.name, u.email, u.role, u.phone, COALESCE(pu.is_blocked, false) AS is_blocked, u.created_at 
      FROM users u
      JOIN project_users pu ON pu.user_id = u.id
      WHERE pu.project_role = 'MOBILE_USER' AND pu.project_id = ANY($1) AND u.is_deleted IS NOT TRUE
@@ -70,7 +70,7 @@ async function findMobileUsersByProjects(projectIds) {
 
 async function findUsersByProjects(projectIds) {
   const result = await query(
-    `SELECT DISTINCT ON (u.id) u.id, u.name, u.email, u.role, u.phone, u.created_at,
+    `SELECT DISTINCT ON (u.id) u.id, u.name, u.email, u.role, u.phone, COALESCE(pu.is_blocked, false) AS is_blocked, u.created_at,
             pu.project_role AS project_role
      FROM users u
      JOIN project_users pu ON pu.user_id = u.id
@@ -91,7 +91,7 @@ async function touch(id) {
 
 async function findByProject(projectId) {
   const result = await query(
-    `SELECT u.id, u.name, u.email, u.role, u.phone, u.is_blocked AS is_blocked, u.created_at,
+    `SELECT u.id, u.name, u.email, u.role, u.phone, COALESCE(pu.is_blocked, false) AS is_blocked, u.created_at,
             pu.project_role AS project_role,
             COALESCE(pu.section_a, false) AS section_a,
             COALESCE(pu.section_b, false) AS section_b,
@@ -149,7 +149,7 @@ async function updateDetails(id, name, email, phone, isBlocked) {
 
 async function findAllWithProjectDetails(projectId) {
   const result = await query(
-    `SELECT u.id, u.name, u.email, u.role, u.phone, u.is_blocked AS is_blocked, u.created_at,
+    `SELECT u.id, u.name, u.email, u.role, u.phone, COALESCE(pu.is_blocked, false) AS is_blocked, u.created_at,
             pu.project_role AS project_role,
             COALESCE(pu.section_a, false) AS section_a,
             COALESCE(pu.section_b, false) AS section_b,

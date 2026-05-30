@@ -34,8 +34,9 @@ async function listProjects(req, res, next) {
       console.log(`[listProjects] MASTER_ADMIN found ${projects.length} projects`);
     } else {
       console.log(`[listProjects] User is ${userRole}, fetching assigned projects from project_users`);
-      projects = await projectUserModel.getProjectsWithRoles(userId);
-      console.log(`[listProjects] Query returned ${projects.length} projects for user ${userId}`);
+      const allProjects = await projectUserModel.getProjectsWithRoles(userId);
+      projects = allProjects.filter(p => !p.is_blocked);
+      console.log(`[listProjects] Query returned ${projects.length} active projects for user ${userId} (out of ${allProjects.length} total)`);
       if (projects.length > 0) {
         console.log('[listProjects] Project data:', JSON.stringify(projects, null, 2));
       }

@@ -33,9 +33,9 @@ function requireRole(...roles) {
       // Check project-specific role
       const membership = await projectUserModel.isMember(req.user.id, projectId);
       
-      if (!membership) {
-        console.warn(`[RoleGuard] Access denied: User ${req.user.id} is not a member of project ${projectId}`);
-        return res.status(403).json({ message: 'Forbidden: You are not a member of this project' });
+      if (!membership || membership.is_blocked) {
+        console.warn(`[RoleGuard] Access denied: User ${req.user.id} is not an active member of project ${projectId} (membership exists: ${!!membership}, blocked: ${membership?.is_blocked})`);
+        return res.status(403).json({ message: 'Forbidden: You do not have active access to this project' });
       }
 
       const userProjectRole = normalizeRole(membership.project_role);
