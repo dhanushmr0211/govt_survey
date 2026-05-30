@@ -20,7 +20,7 @@ const { TGPL_PROJECT_ID } = require('./constants/projects');
 
 function createApp() {
   // Startup database migrations and performance indexing
-  const migrations = [
+  const commonMigrations = [
     'ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;',
     'ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE;',
     'ALTER TABLE users ADD COLUMN IF NOT EXISTS accepted_terms_at TIMESTAMP;',
@@ -44,21 +44,6 @@ function createApp() {
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS image_url_1 TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS image_url_2 TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS image_url_3 TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS dtc_number TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS dtc_capacity TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS ccms_number TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS meter_type TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS meter_rr_number TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS meter_serial_number TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS meter_dimensional_status TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS pole_height TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS pole_to_pole_distance TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS present_arm_length TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_arm_number TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_arm_length TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_led_lights_no TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_led_wattage TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_dedicated_wire TEXT;',
     'CREATE TABLE IF NOT EXISTS wards (id SERIAL PRIMARY KEY, name TEXT NOT NULL, is_deleted BOOLEAN DEFAULT FALSE);',
     `CREATE TABLE IF NOT EXISTS admin_section_access (
       id SERIAL PRIMARY KEY,
@@ -76,9 +61,27 @@ function createApp() {
     );`
   ];
 
+  const tgplMigrations = [
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS dtc_number TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS dtc_capacity TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS ccms_number TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS meter_type TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS meter_rr_number TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS meter_serial_number TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS meter_dimensional_status TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS pole_height TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS pole_to_pole_distance TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS present_arm_length TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_arm_number TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_arm_length TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_led_lights_no TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_led_wattage TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_dedicated_wire TEXT;'
+  ];
+
   (async () => {
     // Migrations for Default Pool
-    for (const q of migrations) {
+    for (const q of commonMigrations) {
       try {
         await pool.query(q);
       } catch (err) {
@@ -87,7 +90,7 @@ function createApp() {
     }
 
     // Migrations for TGPL Pool
-    for (const q of migrations) {
+    for (const q of [...commonMigrations, ...tgplMigrations]) {
       try {
         await tgplPool.query(q);
       } catch (err) {
