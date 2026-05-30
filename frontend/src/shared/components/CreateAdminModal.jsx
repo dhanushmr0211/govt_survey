@@ -7,6 +7,7 @@ import { useProjects } from '../hooks/useProjects';
  
 export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole }) => {
   const { user: loggedInUser, activeProject } = useAuthStore();
+  const currentPid = Number(defaultProjectId || activeProject?.id);
   // Determine the caller's project role
   const callerProjectRole = activeProject?.project_role;
   
@@ -97,7 +98,6 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
   // Fetch project structure for active project
   useEffect(() => {
     const fetchStructure = async () => {
-      const currentPid = Number(defaultProjectId || activeProject?.id);
       if (isOpen && currentPid) {
         setLoadingStructure(true);
         try {
@@ -114,7 +114,7 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
       }
     };
     fetchStructure();
-  }, [isOpen, defaultProjectId, activeProject?.id]);
+  }, [isOpen, currentPid]);
  
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -157,7 +157,6 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
       setAssignedProjectIds(projectIds);
 
       // Check if user is already assigned to the present project
-      const currentPid = Number(defaultProjectId || activeProject?.id);
       const userAssignmentObj = assignments.find(a => a.id === currentPid);
       setPresentAssignment(userAssignmentObj || null);
       
@@ -232,7 +231,6 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
     const uScopeToSend = scopeType === 'ulbs' ? formData.ulb_scope : null;
 
     if (selectedUser) {
-      const currentPid = Number(defaultProjectId || activeProject?.id);
       const isAssignedToPresent = formData.projects.includes(currentPid);
       
       const payload = {
@@ -429,7 +427,6 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
                 <p className="text-xs text-slate-500">No projects available.</p>
               ) : (
                 projects.map((p) => {
-                  const currentPid = Number(defaultProjectId || activeProject?.id);
                   const isPresentProject = p.id === currentPid;
                   const isAssignedToOtherProject = assignedProjectIds.includes(p.id) && !isPresentProject;
                   
