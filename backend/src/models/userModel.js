@@ -58,10 +58,23 @@ async function softDelete(id) {
 
 async function findMobileUsersByProjects(projectIds) {
   const result = await query(
-    `SELECT DISTINCT u.id, u.name, u.email, u.role, u.created_at 
+    `SELECT DISTINCT u.id, u.name, u.email, u.role, u.phone, u.created_at 
      FROM users u
      JOIN project_users pu ON pu.user_id = u.id
-     WHERE u.role = 'MOBILE_USER' AND pu.project_id = ANY($1) AND u.is_deleted IS NOT TRUE
+     WHERE pu.project_role = 'MOBILE_USER' AND pu.project_id = ANY($1) AND u.is_deleted IS NOT TRUE
+     ORDER BY u.id DESC`,
+    [projectIds]
+  );
+  return result.rows;
+}
+
+async function findUsersByProjects(projectIds) {
+  const result = await query(
+    `SELECT DISTINCT ON (u.id) u.id, u.name, u.email, u.role, u.phone, u.created_at,
+            pu.project_role AS project_role
+     FROM users u
+     JOIN project_users pu ON pu.user_id = u.id
+     WHERE pu.project_id = ANY($1) AND u.is_deleted IS NOT TRUE
      ORDER BY u.id DESC`,
     [projectIds]
   );
@@ -157,4 +170,4 @@ async function findAllWithProjectDetails(projectId) {
   return result.rows;
 }
 
-module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, touch, findByProject, changePassword, updateAvatar, updateDetails, findAllWithProjectDetails };
+module.exports = { findById, findByEmail, create, findAll, countAll, softDelete, findMobileUsersByProjects, findUsersByProjects, touch, findByProject, changePassword, updateAvatar, updateDetails, findAllWithProjectDetails };

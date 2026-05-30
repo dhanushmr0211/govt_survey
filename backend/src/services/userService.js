@@ -28,6 +28,10 @@ async function listUsersByProject(projectId) {
   return userModel.findByProject(projectId);
 }
 
+async function listUsersByProjects(projectIds) {
+  return userModel.findUsersByProjects(projectIds);
+}
+
 async function changePassword(id, passwordHash) {
   return userModel.changePassword(id, passwordHash);
 }
@@ -44,4 +48,4 @@ async function listAllUsersWithProjectDetails(projectId) {
   return userModel.findAllWithProjectDetails(projectId);
 }
 
-module.exports = { findUserById, findUserByEmail, createUser, listAllUsers, listMobileUsersByProjects, touch, listUsersByProject, changePassword, updateAvatar, updateDetails, listAllUsersWithProjectDetails };
+module.exports = { findUserById, findUserByEmail, createUser, listAllUsers, listMobileUsersByProjects, listUsersByProjects, touch, listUsersByProject, changePassword, updateAvatar, updateDetails, listAllUsersWithProjectDetails };

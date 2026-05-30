@@ -7,9 +7,26 @@ import { useProjects } from '../hooks/useProjects';
  
 export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole }) => {
   const { user: loggedInUser, activeProject } = useAuthStore();
+  // Determine the caller's project role
+  const callerProjectRole = activeProject?.project_role;
   
-  const targetRole = fixedRole || (loggedInUser?.role === 'MASTER_ADMIN' ? 'ADMIN' : loggedInUser?.role === 'ADMIN' ? 'EMPLOYEE' : 'MOBILE_USER');
-  const targetRoleName = fixedRole === 'MOBILE_USER' ? 'Mobile User' : (loggedInUser?.role === 'MASTER_ADMIN' || loggedInUser?.role === 'ADMIN') ? 'User' : 'Mobile User';
+  // Determine which roles can be created
+  const getAllowedRoles = () => {
+    if (fixedRole) return [fixedRole];
+    if (loggedInUser?.role === 'MASTER_ADMIN') return ['ADMIN', 'CLIENT', 'EMPLOYEE', 'MOBILE_USER'];
+    if (callerProjectRole === 'ADMIN') return ['EMPLOYEE', 'CLIENT', 'MOBILE_USER'];
+    if (callerProjectRole === 'CLIENT') return ['EMPLOYEE', 'MOBILE_USER'];
+    if (callerProjectRole === 'EMPLOYEE') return ['MOBILE_USER'];
+    return ['MOBILE_USER'];
+  };
+  const allowedRoles = getAllowedRoles();
+  
+  const targetRole = fixedRole || allowedRoles[0];
+  const getRoleName = (role) => {
+    const map = { ADMIN: 'Admin', CLIENT: 'Client', EMPLOYEE: 'Employee', MOBILE_USER: 'Mobile User' };
+    return map[role] || role;
+  };
+  const targetRoleName = getRoleName(targetRole);
  
   const [formData, setFormData] = useState({
     name: '',
@@ -320,30 +337,12 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
               name="project_role" 
               value={formData.project_role} 
               onChange={handleChange} 
-              disabled={!!fixedRole}
+              disabled={!!fixedRole || allowedRoles.length === 1}
               className="w-full p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-slate-50 disabled:opacity-75"
             >
-              {fixedRole ? (
-                <option value={fixedRole}>{fixedRole === 'MOBILE_USER' ? 'Mobile User' : fixedRole}</option>
-              ) : (
-                <>
-                  {loggedInUser?.role === 'MASTER_ADMIN' && (
-                    <>
-                      <option value="ADMIN">Admin</option>
-                      <option value="CLIENT">Client</option>
-                      <option value="EMPLOYEE">Employee</option>
-                      <option value="MOBILE_USER">Mobile User</option>
-                    </>
-                  )}
-                  {loggedInUser?.role === 'MEMBER' && (
-                    <>
-                      <option value="EMPLOYEE">Employee</option>
-                      <option value="CLIENT">Client</option>
-                      <option value="MOBILE_USER">Mobile User</option>
-                    </>
-                  )}
-                </>
-              )}
+              {allowedRoles.map(role => (
+                <option key={role} value={role}>{getRoleName(role)}</option>
+              ))}
             </select>
           </div>
  
@@ -418,7 +417,7 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
           <div className="flex justify-end gap-3 mt-6">
             <button type="button" onClick={onClose} className="px-5 py-2.5 border border-slate-200 rounded-lg text-slate-600 font-semibold hover:bg-slate-50 transition-colors">Cancel</button>
             <button type="submit" className="px-5 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all">
-              {selectedUser ? 'Save Assignment' : `Create ${targetRoleName}`}
+              {selectedUser ? 'Save Assignment' : `Create ${getRoleName(formData.project_role)}`}
             </button>
           </div>
         </form>

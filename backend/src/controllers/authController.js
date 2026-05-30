@@ -74,6 +74,19 @@ async function register(req, res, next) {
         if (!creatorMembership) {
           return res.status(403).json({ message: `Forbidden: You do not have access to project ID ${pid}` });
         }
+
+        // Role hierarchy enforcement
+        const callerProjectRole = creatorMembership.project_role;
+        if (callerProjectRole === ROLES.CLIENT && ![ROLES.EMPLOYEE, ROLES.MOBILE_USER].includes(projectRole)) {
+          return res.status(403).json({ message: 'Forbidden: Clients can only create Employee or Mobile User roles' });
+        }
+        if (callerProjectRole === ROLES.EMPLOYEE && projectRole !== ROLES.MOBILE_USER) {
+          return res.status(403).json({ message: 'Forbidden: Employees can only create Mobile Users' });
+        }
+        if (callerProjectRole === ROLES.MOBILE_USER) {
+          return res.status(403).json({ message: 'Forbidden: Mobile Users cannot create other users' });
+        }
+
         for (const sec of sectionsList) {
           if (data[sec] === true && !creatorMembership[sec]) {
             return res.status(403).json({ message: `Forbidden: You cannot grant '${sec.replace('section_', 'section ')}' permission as you do not possess it.` });
@@ -183,23 +196,52 @@ async function me(req, res, next) {
   } catch (error) {
     return next(error);
   }
-}async function listUsers(req, res, next) {
+}
+
+async function listUsers(req, res, next) {
   try {
     const { projectId, global } = req.query;
     let users = [];
     
     if (global === 'true') {
       let isAuthorized = req.user.role === ROLES.MASTER_ADMIN;
+      let callerProjectRole = null;
       if (!isAuthorized) {
         const memberProjects = await projectUserModel.getProjectsWithRoles(Number(req.user.sub));
         isAuthorized = memberProjects.some(p => p.section_d);
+        // Determine the caller's highest project role for filtering
+        if (isAuthorized) {
+          const roleHierarchy = { ADMIN: 4, CLIENT: 3, EMPLOYEE: 2, MOBILE_USER: 1 };
+          for (const p of memberProjects) {
+            if (p.section_d) {
+              const rank = roleHierarchy[p.project_role] || 0;
+              if (!callerProjectRole || rank > (roleHierarchy[callerProjectRole] || 0)) {
+                callerProjectRole = p.project_role;
+              }
+            }
+          }
+        }
       }
       
       if (!isAuthorized) {
         return res.status(403).json({ message: 'Forbidden: You do not have team management access' });
       }
       
-      users = await userService.listAllUsers();
+      // Filter based on caller's role
+      if (callerProjectRole === ROLES.EMPLOYEE) {
+        // Employee: only see MOBILE_USER in their projects
+        const callerProjectIds = await projectUserModel.getProjectIds(Number(req.user.sub));
+        users = await userService.listMobileUsersByProjects(callerProjectIds);
+      } else if (callerProjectRole === ROLES.CLIENT) {
+        // Client: see EMPLOYEE and MOBILE_USER across all projects they belong to
+        const callerProjectIds = await projectUserModel.getProjectIds(Number(req.user.sub));
+        const projectUsers = await userService.listUsersByProjects(callerProjectIds);
+        users = projectUsers.filter(u => [ROLES.EMPLOYEE, ROLES.MOBILE_USER].includes(u.project_role));
+      } else {
+        // MASTER_ADMIN or ADMIN: see all
+        users = await userService.listAllUsers();
+      }
+      
       const mappedUsers = users.map(u => ({
         id: u.id,
         name: u.name,
@@ -539,11 +581,14 @@ async function assignUserProjects(req, res, next) {
       // Check hierarchy if assigning
       if (data.assigned) {
         const requestedRole = isKnownRole(data.project_role) ? normalizeRole(data.project_role) : ROLES.MOBILE_USER;
-        if (creatorMembership.project_role === ROLES.CLIENT) {
-          return res.status(403).json({ message: 'Forbidden: Clients cannot assign users to projects' });
+        if (creatorMembership.project_role === ROLES.CLIENT && ![ROLES.EMPLOYEE, ROLES.MOBILE_USER].includes(requestedRole)) {
+          return res.status(403).json({ message: 'Forbidden: Clients can only assign Employee or Mobile User roles' });
         }
         if (creatorMembership.project_role === ROLES.EMPLOYEE && requestedRole !== ROLES.MOBILE_USER) {
           return res.status(403).json({ message: 'Forbidden: Employees can only assign Mobile Users' });
+        }
+        if (creatorMembership.project_role === ROLES.MOBILE_USER) {
+          return res.status(403).json({ message: 'Forbidden: Mobile Users cannot assign users' });
         }
 
         // Check permission inheritance: cannot grant permissions the manager doesn't have
