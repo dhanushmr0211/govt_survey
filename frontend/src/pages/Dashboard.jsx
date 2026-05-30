@@ -25,30 +25,28 @@ export default function Dashboard() {
     if (activeProject && freshProjects.length > 0) {
       const updatedProject = freshProjects.find(p => p.id === activeProject.id);
       if (updatedProject) {
-        // Compare values by stringifying to avoid infinite render loops
-        const currentStr = JSON.stringify(activeProject);
-        const nextStr = JSON.stringify(updatedProject);
-        if (currentStr !== nextStr) {
+        // Compare only critical permission fields to avoid infinite render loops
+        const keysToCompare = [
+          'id', 'name', 'project_type', 'project_role',
+          'section_a', 'section_b', 'section_c', 'section_d',
+          'section_e', 'section_f', 'section_g', 'section_h',
+          'section_i', 'section_j', 'district_scope', 'ulb_scope', 'is_blocked'
+        ];
+        const hasDiff = keysToCompare.some(k => {
+          const val1 = activeProject[k];
+          const val2 = updatedProject[k];
+          if (Array.isArray(val1) || Array.isArray(val2)) {
+            return JSON.stringify(val1) !== JSON.stringify(val2);
+          }
+          return val1 !== val2;
+        });
+        if (hasDiff) {
           console.log('[DEBUG] Dynamic sync activeProject permissions:', updatedProject);
           setActiveProject(updatedProject);
         }
       }
     }
   }, [freshProjects, activeProject, setActiveProject]);
-
-  // Refresh projects on component mount and on window focus to trigger refetch
-  useEffect(() => {
-    const handleFocus = async () => {
-      await queryClient.invalidateQueries({ queryKey: ['projects'] });
-    };
-
-    window.addEventListener('focus', handleFocus);
-    
-    // Trigger initial refetch to guarantee we fetch the freshest permissions
-    queryClient.invalidateQueries({ queryKey: ['projects'] });
-    
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [queryClient]);
   
   if (!user) return null;
 
