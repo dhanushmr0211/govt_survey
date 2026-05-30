@@ -231,41 +231,43 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
           </section>
 
           {/* Project Section Access */}
-          <section className="pt-6 border-t border-slate-100">
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-6 bg-orange-500 rounded-full"></span>
-              Project Section Access
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {[
-                { id: 'section_a', label: 'Summary & Dashboard' },
-                { id: 'section_b', label: "Today's Summary" },
-                { id: 'section_c', label: 'Issues & Approval' },
-                { id: 'section_d', label: 'Team Management' },
-                { id: 'section_e', label: 'Employee Tracking' },
-                { id: 'section_f', label: 'Mobile User Tracking' },
-                { id: 'section_g', label: 'Download Reports' },
-                { id: 'section_h', label: 'Edit User Permissions' },
-                { id: 'section_i', label: 'Edit Survey Data (Images/Records)' },
-                { id: 'section_j', label: 'Edit Confirmed Data' },
-              ].map(sec => {
-                const allowed = canEditPermissions && (loggedInUser?.role === 'MASTER_ADMIN' || !!activeProject?.[sec.id]);
-                return (
-                  <label key={sec.id} className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-all ${!allowed ? 'opacity-40 cursor-not-allowed' : formData[sec.id] ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-100 hover:bg-white hover:border-slate-200'}`}>
-                    <input 
-                      type="checkbox" 
-                      name={sec.id} 
-                      checked={formData[sec.id]} 
-                      onChange={handleChange} 
-                      disabled={!allowed}
-                      className="rounded text-orange-500 focus:ring-orange-500 w-4 h-4 disabled:opacity-50" 
-                    />
-                    <span className={`text-sm font-medium ${formData[sec.id] ? 'text-orange-900' : 'text-slate-600'}`}>{sec.label}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </section>
+          {user?.project_role !== 'MOBILE_USER' && (
+            <section className="pt-6 border-t border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-orange-500 rounded-full"></span>
+                Project Section Access
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[
+                  { id: 'section_a', label: 'Summary & Dashboard' },
+                  { id: 'section_b', label: "Today's Summary" },
+                  { id: 'section_c', label: 'Issues & Approval' },
+                  { id: 'section_d', label: 'Team Management' },
+                  { id: 'section_e', label: 'Employee Tracking' },
+                  { id: 'section_f', label: 'Mobile User Tracking' },
+                  { id: 'section_g', label: 'Download Reports' },
+                  { id: 'section_h', label: 'Edit User Permissions' },
+                  { id: 'section_i', label: 'Edit Survey Data (Images/Records)' },
+                  { id: 'section_j', label: 'Edit Confirmed Data' },
+                ].map(sec => {
+                  const allowed = canEditPermissions && (loggedInUser?.role === 'MASTER_ADMIN' || !!activeProject?.[sec.id]);
+                  return (
+                    <label key={sec.id} className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-all ${!allowed ? 'opacity-40 cursor-not-allowed' : formData[sec.id] ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-100 hover:bg-white hover:border-slate-200'}`}>
+                      <input 
+                        type="checkbox" 
+                        name={sec.id} 
+                        checked={formData[sec.id]} 
+                        onChange={handleChange} 
+                        disabled={!allowed}
+                        className="rounded text-orange-500 focus:ring-orange-500 w-4 h-4 disabled:opacity-50" 
+                      />
+                      <span className={`text-sm font-medium ${formData[sec.id] ? 'text-orange-900' : 'text-slate-600'}`}>{sec.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           {/* Data Scoping */}
           <section className="pt-6 border-t border-slate-100">
