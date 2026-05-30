@@ -386,30 +386,44 @@ export const PoleForm = ({ ulb, onBack }) => {
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">DTC Capacity</label>
-              <input type="text" name="dtc_capacity" value={formData.dtc_capacity} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" />
+              <select 
+                name="dtc_capacity" 
+                value={formData.dtc_capacity} 
+                onChange={handleChange} 
+                className="w-full p-2 border border-gray-200 rounded"
+              >
+                <option value="">Select DTC Capacity</option>
+                {['25 KVA', '63 KVA', '100 KVA', '250 KVA', '500 KVA'].map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">CCMS No#</label>
-              <select 
-                  value={switchPoints.some(sp => (isTgpl ? sp.ccms_number : sp.switch_point_number) === formData.ccms_number) ? formData.ccms_number : ''} 
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setFormData(prev => ({
-                      ...prev,
-                      ccms_number: val,
-                      switch_point_number: val
-                    }));
-                  }} 
-                  className="w-full p-2 border border-gray-200 rounded text-sm bg-white"
-                  required
-                >
-                  <option value="">Select CCMS No#</option>
-                  {switchPoints.map((sp) => (
-                    <option key={sp.id} value={isTgpl ? sp.ccms_number : sp.switch_point_number}>
-                      {isTgpl ? sp.ccms_number : sp.switch_point_number}
-                    </option>
-                  ))}
-                </select>
+              <input 
+                type="text" 
+                name="ccms_number" 
+                value={formData.ccms_number || ''} 
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData(prev => ({
+                    ...prev,
+                    ccms_number: val,
+                    switch_point_number: val
+                  }));
+                }} 
+                list="ccms-options"
+                className="w-full p-2 border border-gray-200 rounded text-sm bg-white"
+                placeholder="Enter or select CCMS No#"
+                required
+              />
+              <datalist id="ccms-options">
+                {switchPoints.map((sp) => (
+                  <option key={sp.id} value={isTgpl ? sp.ccms_number : sp.switch_point_number}>
+                    {isTgpl ? sp.ccms_number : sp.switch_point_number}
+                  </option>
+                ))}
+              </datalist>
               {switchPoints.length > 0 && (
                 <p className="text-xs text-green-600 mt-1">Latest CCMS No# auto-selected.</p>
               )}
@@ -420,6 +434,7 @@ export const PoleForm = ({ ulb, onBack }) => {
                 <option value="">Select Meter Type</option>
                 <option value="1P">1P</option>
                 <option value="3P">3P</option>
+                <option value="NOT PRESENT">NOT PRESENT</option>
               </select>
             </div>
             <div>
@@ -431,12 +446,11 @@ export const PoleForm = ({ ulb, onBack }) => {
               <input type="text" name="meter_serial_number" value={formData.meter_serial_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" />
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Meter Dimensional Status</label>
+              <label className="block text-gray-700 font-medium mb-1">Meter Dismantal Status</label>
               <select name="meter_dimensional_status" value={formData.meter_dimensional_status} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
                 <option value="">Select Status</option>
-                {['Working', 'not working', 'missing', 'door lock', 'no meter'].map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
+                <option value="YES">YES</option>
+                <option value="NO">NO</option>
               </select>
             </div>
           </>
@@ -509,7 +523,7 @@ export const PoleForm = ({ ulb, onBack }) => {
             <label className="block text-gray-700 font-medium mb-1">ARM Type</label>
             <select name="arm_type" value={formData.arm_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
               <option value="">Select ARM Type</option>
-              {['single', 'double', 'multiple', 'multiply', 'empty/not present'].map((opt) => (
+              {['single', 'double', 'multiple', 'empty/not present'].map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
@@ -533,7 +547,7 @@ export const PoleForm = ({ ulb, onBack }) => {
             <label className="block text-gray-700 font-medium mb-1">Present ARM No#</label>
             <select name="present_arm_no" value={formData.present_arm_no} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
               <option value="">Select ARM No#</option>
-              {Array.from({ length: 12 }, (_, i) => i).map((opt) => (
+              {Array.from({ length: 13 }, (_, i) => i).map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
