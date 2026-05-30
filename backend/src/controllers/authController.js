@@ -292,7 +292,7 @@ async function listUsers(req, res, next) {
     // For now, allow MASTER_ADMIN to see all, others only project specific
     if (req.user.role === ROLES.MASTER_ADMIN) {
       if (projectId) {
-        users = await userService.listAllUsersWithProjectDetails(Number(projectId));
+        users = await userService.listUsersByProject(Number(projectId));
       } else {
         users = await userService.listAllUsers();
       }
@@ -313,8 +313,7 @@ async function listUsers(req, res, next) {
       
       const projectRole = member.project_role;
       if (projectRole === ROLES.ADMIN) {
-        // ADMIN project role: see all users globally with their current project-user mapping
-        users = await userService.listAllUsersWithProjectDetails(Number(projectId));
+        users = await userService.listUsersByProject(Number(projectId));
       } else if (projectRole === ROLES.EMPLOYEE) {
         // EMPLOYEE project role: only see MOBILE_USER of this project
         const projectUsers = await userService.listUsersByProject(Number(projectId));
