@@ -58,6 +58,7 @@ export const PoleForm = ({ ulb, onBack }) => {
   const [compressing, setCompressing] = useState({ image1: false, image2: false, image3: false });
   const [uploading, setUploading] = useState(false);
   const [statusText, setStatusText] = useState('');
+  const [isCustomCcms, setIsCustomCcms] = useState(false);
 
   const isCompressing = compressing.image1 || compressing.image2 || compressing.image3;
 
@@ -106,6 +107,7 @@ export const PoleForm = ({ ulb, onBack }) => {
           switch_point_number: isTgpl ? switchPoints[0].ccms_number : switchPoints[0].switch_point_number,
           ccms_number: isTgpl ? switchPoints[0].ccms_number : prev.ccms_number
         }));
+        setIsCustomCcms(false);
       }, 0);
       return () => clearTimeout(timer);
     }
@@ -400,31 +402,59 @@ export const PoleForm = ({ ulb, onBack }) => {
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">CCMS No#</label>
-              <input 
-                type="text" 
-                name="ccms_number" 
-                value={formData.ccms_number || ''} 
+              <select 
+                value={isCustomCcms ? 'CUSTOM' : (formData.ccms_number || '')} 
                 onChange={(e) => {
                   const val = e.target.value;
-                  setFormData(prev => ({
-                    ...prev,
-                    ccms_number: val,
-                    switch_point_number: val
-                  }));
+                  if (val === 'CUSTOM') {
+                    setIsCustomCcms(true);
+                    setFormData(prev => ({
+                      ...prev,
+                      ccms_number: '',
+                      switch_point_number: ''
+                    }));
+                  } else {
+                    setIsCustomCcms(false);
+                    setFormData(prev => ({
+                      ...prev,
+                      ccms_number: val,
+                      switch_point_number: val
+                    }));
+                  }
                 }} 
-                list="ccms-options"
                 className="w-full p-2 border border-gray-200 rounded text-sm bg-white"
-                placeholder="Enter or select CCMS No#"
                 required
-              />
-              <datalist id="ccms-options">
+              >
+                <option value="">Select CCMS No#</option>
                 {switchPoints.map((sp) => (
                   <option key={sp.id} value={isTgpl ? sp.ccms_number : sp.switch_point_number}>
                     {isTgpl ? sp.ccms_number : sp.switch_point_number}
                   </option>
                 ))}
-              </datalist>
-              {switchPoints.length > 0 && (
+                <option value="CUSTOM">+ Enter Custom CCMS No#</option>
+              </select>
+
+              {isCustomCcms && (
+                <div className="mt-2">
+                  <label className="block text-gray-600 text-xs font-medium mb-1">Custom CCMS No#</label>
+                  <input 
+                    type="text" 
+                    placeholder="Type custom CCMS number"
+                    value={formData.ccms_number || ''} 
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        ccms_number: val,
+                        switch_point_number: val
+                      }));
+                    }} 
+                    className="w-full p-2 border border-gray-200 rounded text-sm bg-white"
+                    required
+                  />
+                </div>
+              )}
+              {switchPoints.length > 0 && !isCustomCcms && (
                 <p className="text-xs text-green-600 mt-1">Latest CCMS No# auto-selected.</p>
               )}
             </div>

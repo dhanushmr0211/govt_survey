@@ -10,6 +10,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
   const user = useAuthStore((state) => state.user);
   const isMasterAdmin = user?.role === 'MASTER_ADMIN';
   const today = getLocalDateString();
+  const isTgpl = String(projectId) === '3';
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const [districtId, setDistrictId] = useState('');
@@ -108,36 +109,54 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
         </div>
 
         <div className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Select District</label>
-            <select
-              value={districtId}
-              onChange={(e) => {
-                setDistrictId(e.target.value);
-                setUlbId('');
-              }}
-              className="w-full rounded-lg border border-gray-300 p-2 text-sm"
-            >
-              <option value="">All Districts</option>
-              {districtOptions.map((district) => (
-                <option key={district.id} value={district.id}>{district.name}</option>
-              ))}
-            </select>
-          </div>
+          {isTgpl ? (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Select Ward</label>
+              <select
+                value={ulbId}
+                onChange={(e) => setUlbId(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+              >
+                <option value="">All Wards</option>
+                {ulbOptions.map((ward) => (
+                  <option key={ward.id} value={ward.id}>{ward.name}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Select District</label>
+                <select
+                  value={districtId}
+                  onChange={(e) => {
+                    setDistrictId(e.target.value);
+                    setUlbId('');
+                  }}
+                  className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+                >
+                  <option value="">All Districts</option>
+                  {districtOptions.map((district) => (
+                    <option key={district.id} value={district.id}>{district.name}</option>
+                  ))}
+                </select>
+              </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Select ULB</label>
-            <select
-              value={ulbId}
-              onChange={(e) => setUlbId(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2 text-sm"
-            >
-              <option value="">All Accessible ULBs</option>
-              {ulbOptions.map((ulb) => (
-                <option key={ulb.id} value={ulb.id}>{ulb.name}</option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Select ULB</label>
+                <select
+                  value={ulbId}
+                  onChange={(e) => setUlbId(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+                >
+                  <option value="">All Accessible ULBs</option>
+                  {ulbOptions.map((ulb) => (
+                    <option key={ulb.id} value={ulb.id}>{ulb.name}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>

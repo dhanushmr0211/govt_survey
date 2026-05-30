@@ -289,7 +289,7 @@ async function downloadReportHandler(req, res, next) {
     // Switch Points Sheet
     const spSheet = workbook.addWorksheet('Switch Points');
     spSheet.columns = [
-      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Sl#', key: 'sl_no', width: 10 },
       { header: 'Number', key: 'switch_point_number', width: 15 },
       { header: 'District', key: 'district_name', width: 15 },
       { header: 'ULB', key: 'ulb_name', width: 15 },
@@ -334,18 +334,19 @@ async function downloadReportHandler(req, res, next) {
 
     styleHeaderRow(spSheet);
     
-    data.switchPoints.forEach(sp => {
+    data.switchPoints.forEach((sp, idx) => {
       spSheet.addRow({
         ...sp,
+        sl_no: idx + 1,
         meter_exists: sp.meter_exists ? 'Yes' : 'No',
-        created_at: new Date(sp.created_at).toLocaleString()
+        created_at: new Date(sp.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
       });
     });
     
     // Poles Sheet
     const pSheet = workbook.addWorksheet('Poles');
     pSheet.columns = [
-      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Sl#', key: 'sl_no', width: 10 },
       { header: 'Number', key: 'pole_number', width: 15 },
       { header: 'Switch Point', key: 'switch_point_number', width: 15 },
       { header: 'District', key: 'district_name', width: 15 },
@@ -383,10 +384,11 @@ async function downloadReportHandler(req, res, next) {
 
     styleHeaderRow(pSheet);
     
-    data.poles.forEach(p => {
+    data.poles.forEach((p, idx) => {
       pSheet.addRow({
         ...p,
-        created_at: new Date(p.created_at).toLocaleString()
+        sl_no: idx + 1,
+        created_at: new Date(p.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
       });
     });
     

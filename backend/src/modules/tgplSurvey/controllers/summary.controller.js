@@ -295,48 +295,40 @@ async function downloadReportHandler(req, res, next) {
     // Poles Sheet (TGPL only has Poles, no Switch Points)
     const pSheet = workbook.addWorksheet('Poles');
     pSheet.columns = [
-      { header: 'ID', key: 'id', width: 10 },
-      { header: 'Number', key: 'pole_number', width: 15 },
-      { header: 'District', key: 'district_name', width: 15 },
-      { header: 'Ward / ULB Name', key: 'ulb_name', width: 15 },
-      { header: 'DTC Number', key: 'dtc_number', width: 15 },
+      { header: 'Sl#', key: 'sl_no', width: 10 },
+      { header: 'Ward No#', key: 'ward_number', width: 15 },
+      { header: 'DTC No#', key: 'dtc_number', width: 15 },
       { header: 'DTC Capacity', key: 'dtc_capacity', width: 15 },
-      { header: 'CCMS Number', key: 'ccms_number', width: 15 },
-      { header: 'Meter Type', key: 'meter_type', width: 15 },
-      { header: 'Meter RR Number', key: 'meter_rr_number', width: 15 },
-      { header: 'Meter Serial Number', key: 'meter_serial_number', width: 20 },
-      { header: 'Meter Dimensional Status', key: 'meter_dimensional_status', width: 20 },
+      { header: 'CCMS No#', key: 'ccms_number', width: 15 },
+      { header: 'Meter Phase', key: 'meter_type', width: 15 },
+      { header: 'Meter RR#', key: 'meter_rr_number', width: 15 },
+      { header: 'Meter Sl#', key: 'meter_serial_number', width: 20 },
+      { header: 'Meter Dismantle Status', key: 'meter_dimensional_status', width: 22 },
       { header: 'Conductor Type', key: 'conductor_type', width: 15 },
-      { header: 'Type', key: 'pole_type', width: 15 },
-      { header: 'Height', key: 'pole_height', width: 12 },
-      { header: 'Distance', key: 'pole_to_pole_distance', width: 15 },
-      { header: 'Arm Type', key: 'arm_type', width: 15 },
-      { header: 'Arm Status', key: 'arm_status', width: 15 },
-      { header: 'Present Arm No', key: 'present_arm_no', width: 15 },
-      { header: 'Present Arm Length', key: 'present_arm_length', width: 15 },
-      { header: 'How Many Lights in Pole', key: 'how_many_lights_in_pole', width: 15 },
-      { header: 'Light Mounting Height', key: 'light_mounting_height', width: 15 },
-      { header: 'Light 1 Type', key: 'light_type', width: 15 },
-      { header: 'Light 1 Capacity', key: 'light_capacity', width: 15 },
-      { header: 'Light 2 Type', key: 'light_type_2', width: 15 },
-      { header: 'Light 2 Capacity', key: 'light_capacity_2', width: 15 },
-      { header: 'Light Working Status', key: 'light_working_status', width: 15 },
+      { header: 'Pole No#', key: 'pole_number', width: 15 },
+      { header: 'Pole Type', key: 'pole_type', width: 15 },
+      { header: 'Pole Height', key: 'pole_height', width: 12 },
+      { header: 'Pole-Pole Distance (mtrs)', key: 'pole_to_pole_distance', width: 24 },
+      { header: 'Earthing Exist', key: 'pole_earthing_exists', width: 15 },
+      { header: 'ARM Type', key: 'arm_type', width: 15 },
+      { header: 'ARM Status', key: 'arm_status', width: 15 },
+      { header: 'ARM No#', key: 'present_arm_no', width: 15 },
+      { header: 'ARM Length', key: 'present_arm_length', width: 15 },
+      { header: 'Lights No#', key: 'how_many_lights_in_pole', width: 15 },
+      { header: 'Lights Type', key: 'light_type', width: 15 },
+      { header: 'Lights Capacity', key: 'light_capacity', width: 15 },
+      { header: 'Lights Status', key: 'light_working_status', width: 15 },
       { header: 'Road Category', key: 'road_category', width: 15 },
       { header: 'Road Type', key: 'road_type', width: 15 },
-      { header: 'Road Width (m)', key: 'road_width_mtrs', width: 15 },
-      { header: 'Pole Earthing Exists', key: 'pole_earthing_exists', width: 15 },
-      { header: 'Image 1 URL', key: 'image_url_1', width: 40 },
-      { header: 'Image 2 URL', key: 'image_url_2', width: 40 },
-      { header: 'Latitude', key: 'latitude', width: 12 },
-      { header: 'Longitude', key: 'longitude', width: 12 },
-      { header: 'Status', key: 'status', width: 12 },
-      { header: 'Created By', key: 'user_name', width: 15 },
-      { header: 'Created At', key: 'created_at', width: 20 },
-      { header: 'Req Arm Number', key: 'req_arm_number', width: 15 },
-      { header: 'Req Arm Length', key: 'req_arm_length', width: 15 },
-      { header: 'Req LED Lights No', key: 'req_led_lights_no', width: 15 },
-      { header: 'Req LED Wattage', key: 'req_led_wattage', width: 15 },
-      { header: 'Req Dedicated Wire', key: 'req_dedicated_wire', width: 15 }
+      { header: 'Road Width (mtrs)', key: 'road_width_mtrs', width: 18 },
+      { header: 'Arm No#', key: 'req_arm_number', width: 15 },
+      { header: 'Arm Length (mtrs)', key: 'req_arm_length', width: 18 },
+      { header: 'Light No#', key: 'req_led_lights_no', width: 15 },
+      { header: 'Light Wattage', key: 'req_led_wattage', width: 15 },
+      { header: 'Dedicated Street Light Wire', key: 'req_dedicated_wire', width: 25 },
+      { header: 'Pole Image1#', key: 'image_url_1', width: 40 },
+      { header: 'Pole Image2#', key: 'image_url_2', width: 40 },
+      { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 }
     ];
     
     // Header styling
@@ -348,9 +340,13 @@ async function downloadReportHandler(req, res, next) {
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
     });
     
-    data.poles.forEach(p => {
+    data.poles.forEach((p, idx) => {
+      const latLong = p.latitude && p.longitude ? `${p.latitude}, ${p.longitude}` : (p.latitude || p.longitude || '');
       pSheet.addRow({
         ...p,
+        sl_no: idx + 1,
+        ward_number: p.ward_number || p.ulb_name || '',
+        latitude_longitude: latLong,
         created_at: new Date(p.created_at).toLocaleString()
       });
     });
