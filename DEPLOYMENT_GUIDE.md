@@ -88,3 +88,32 @@ We have shifted the frontend hosting configuration from Google Cloud Run to **Fi
 * **Caching Policy**:
   * `index.html` is configured to never cache, preventing users from seeing stale builds on new deployments.
   * Hashed assets (`/assets/**`) are cached for 1 year with `immutable` for optimal loading performance.
+
+---
+
+## Frontend Deployment (Google Cloud Run) - Alternative
+
+If you prefer to run the frontend on Google Cloud Run instead of Firebase Hosting, you can build and deploy the frontend Docker container.
+
+### Steps to Deploy Frontend to Cloud Run:
+
+1. **Verify or set the production backend URL** in `frontend/.env.production`:
+   ```env
+   VITE_API_URL=https://govt-survey-backend-19218031051.asia-south1.run.app/api/v1
+   ```
+
+2. **Navigate to the frontend directory**:
+   ```bash
+   cd frontend
+   ```
+
+3. **Deploy using Google Cloud CLI**:
+   ```bash
+   gcloud run deploy govt-survey-frontend \
+     --source . \
+     --platform managed \
+     --region asia-south1 \
+     --allow-unauthenticated \
+     --port 8080
+   ```
+   *This command uploads the frontend folder, runs the multi-stage Docker build (building the React app and packaging it with Nginx), and deploys it to Cloud Run listening on port 8080.*

@@ -14,6 +14,7 @@ export function EmployeeTrackingView({ projectId }) {
   const today = getLocalDateString();
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
+  const isTgpl = String(projectId) === '3';
 
   if (isLoading) return <div className="p-8 text-center text-slate-500">Loading tracking data...</div>;
 
@@ -88,9 +89,9 @@ export function EmployeeTrackingView({ projectId }) {
             <tr className="bg-slate-50">
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Name</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Switch Points</th>
+              {!isTgpl && <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Switch Points</th>}
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Poles</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Switch Points</th>
+              {!isTgpl && <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Switch Points</th>}
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Poles</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
             </tr>
@@ -100,9 +101,9 @@ export function EmployeeTrackingView({ projectId }) {
               <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{emp.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_sp_resolved}</td>
+                {!isTgpl && <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_sp_resolved}</td>}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_poles_resolved}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_sp_resolved}</td>
+                {!isTgpl && <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_sp_resolved}</td>}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_poles_resolved}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <button
@@ -133,6 +134,7 @@ export function MobileUserTrackingView({ projectId }) {
   const today = getLocalDateString();
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
+  const isTgpl = String(projectId) === '3';
 
   if (isLoading) return <div className="p-8 text-center text-slate-500">Loading tracking data...</div>;
 
@@ -207,9 +209,9 @@ export function MobileUserTrackingView({ projectId }) {
             <tr className="bg-slate-50">
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Name</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Switch Points</th>
+              {!isTgpl && <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Switch Points</th>}
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Poles</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Switch Points</th>
+              {!isTgpl && <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Switch Points</th>}
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Poles</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
             </tr>
@@ -219,9 +221,9 @@ export function MobileUserTrackingView({ projectId }) {
               <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{user.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_sp}</td>
+                {!isTgpl && <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_sp}</td>}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_poles}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total_sp}</td>
+                {!isTgpl && <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total_sp}</td>}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total_poles}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <button
@@ -255,6 +257,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
   const [activeType, setActiveType] = useState('all');
   const [page, setPage] = useState(1);
   const limit = 50;
+  const isTgpl = String(projectId) === '3';
 
   // Reset page when key filters change
   useEffect(() => {
@@ -320,32 +323,34 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
         <h3 className="text-md font-medium text-gray-900">{status} Submissions ({data?.total || 0})</h3>
         
         {/* Type Filter Tabs */}
-        <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
-          <button
-            className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeType === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-            onClick={() => setActiveType('all')}
-          >
-            All
-          </button>
-          <button
-            className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeType === 'switch_point' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-            onClick={() => setActiveType('switch_point')}
-          >
-            Switch Points
-          </button>
-          <button
-            className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeType === 'pole' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-            onClick={() => setActiveType('pole')}
-          >
-            Poles
-          </button>
-        </div>
+        {!isTgpl && (
+          <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
+            <button
+              className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeType === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              onClick={() => setActiveType('all')}
+            >
+              All
+            </button>
+            <button
+              className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeType === 'switch_point' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              onClick={() => setActiveType('switch_point')}
+            >
+              Switch Points
+            </button>
+            <button
+              className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeType === 'pole' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              onClick={() => setActiveType('pole')}
+            >
+              Poles
+            </button>
+          </div>
+        )}
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead>
             <tr className="bg-slate-50">
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Type</th>
+              {!isTgpl && <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Type</th>}
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Time</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ward</th>
@@ -358,11 +363,13 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
               const displayDate = status === 'CONFIRMED' ? sub.confirmed_at : sub.created_at;
               return (
                 <tr key={i} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${sub.type === 'switch_point' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-                      {sub.type === 'switch_point' ? 'Switch' : 'Pole'}
-                    </span>
-                  </td>
+                  {!isTgpl && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${sub.type === 'switch_point' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                        {sub.type === 'switch_point' ? 'Switch' : 'Pole'}
+                      </span>
+                    </td>
+                  )}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {displayDate ? new Date(displayDate).toLocaleDateString() : 'N/A'}
                   </td>

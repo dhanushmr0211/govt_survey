@@ -391,7 +391,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
         <table className="w-full text-sm text-left text-gray-500">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50">
             <tr>
-              <th className="px-4 py-2">Type</th>
+              {!isTgpl && <th className="px-4 py-2">Type</th>}
               <th className="px-4 py-2">Ward</th>
               <th className="px-4 py-2">{isTgpl ? 'CCMS' : 'ULB'}</th>
               <th className="px-4 py-2">Time</th>
@@ -404,11 +404,13 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
               const date = displayDate ? new Date(displayDate) : null;
               return (
                 <tr key={`${item.type}-${item.id}`} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.type === 'switch_point' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
-                      {item.type === 'switch_point' ? 'Switch Point' : 'Pole'}
-                    </span>
-                  </td>
+                  {!isTgpl && (
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.type === 'switch_point' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
+                        {item.type === 'switch_point' ? 'Switch Point' : 'Pole'}
+                      </span>
+                    </td>
+                  )}
                   <td className="px-4 py-2">{item.ward_number}</td>
                   <td className="px-4 py-2">{isTgpl ? (item.ccms_number || item.switch_point_number || 'N/A') : (item.ulb_name || 'N/A')}</td>
                   <td className="px-4 py-2">{date ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>

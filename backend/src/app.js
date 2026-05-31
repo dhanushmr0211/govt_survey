@@ -116,20 +116,52 @@ function createApp() {
 
   app.use(helmet());
   app.use(compression());
+  const projectSuffix = '-19218031051.asia-south1.run.app';
+  const explicitAllowedOrigins = [
+    'https://prelectricals.in',
+    'https://www.prelectricals.in',
+    'https://project-09c470db-da07-4550-b70.web.app',
+    'https://project-09c470db-da07-4550-b70.firebaseapp.com',
+    'https://govt-survey-19218031051.asia-south1.run.app'
+  ];
+
   app.use(
     cors({
       origin: function (origin, callback) {
-        // If corsOrigin is boolean true, allow all origins (CORS_ORIGIN=*)
+        // Always allow requests with no origin (e.g. mobile apps, curl, postman)
+        if (!origin) {
+          return callback(null, true);
+        }
+
+        // 1. Check local development
+        const isLocalhost = origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
+        if (isLocalhost) {
+          return callback(null, true);
+        }
+
+        // 2. Check explicit allowed production origins
+        if (explicitAllowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+
+        // 3. Check GCP Cloud Run service subdomains belonging only to this specific project
+        if (origin.endsWith(projectSuffix)) {
+          return callback(null, true);
+        }
+
+        // 4. Check custom env-configured CORS origins (if set)
         if (env.corsOrigin === true) {
           return callback(null, true);
         }
-        const allowedOrigins = env.corsOrigin ? env.corsOrigin.split(',') : [];
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          console.log('Origin not allowed:', origin);
-          callback(new Error('Not allowed by CORS'));
+        const allowedOrigins = typeof env.corsOrigin === 'string' ? env.corsOrigin.split(',') : [];
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
         }
+
+        console.log('Origin not allowed by CORS:', origin);
+        const error = new Error('Not allowed by CORS');
+        error.status = 403;
+        callback(error);
       },
       credentials: true,
     })

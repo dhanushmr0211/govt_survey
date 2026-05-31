@@ -409,30 +409,28 @@ export const SubmissionQueueView = ({ projectId }) => {
             </div>
 
             {/* Type Tabs */}
-            <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
-              {!isTgpl && (
-                <>
-                  <button
-                    className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                    onClick={() => { setActiveType('all'); setPage(1); }}
-                  >
-                    All
-                  </button>
-                  <button
-                    className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'switch_point' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                    onClick={() => { setActiveType('switch_point'); setPage(1); }}
-                  >
-                    Switch Points
-                  </button>
-                </>
-              )}
-              <button
-                className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'pole' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                onClick={() => { setActiveType('pole'); setPage(1); }}
-              >
-                Poles
-              </button>
-            </div>
+            {!isTgpl && (
+              <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
+                <button
+                  className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                  onClick={() => { setActiveType('all'); setPage(1); }}
+                >
+                  All
+                </button>
+                <button
+                  className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'switch_point' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                  onClick={() => { setActiveType('switch_point'); setPage(1); }}
+                >
+                  Switch Points
+                </button>
+                <button
+                  className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'pole' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                  onClick={() => { setActiveType('pole'); setPage(1); }}
+                >
+                  Poles
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -489,7 +487,7 @@ export const SubmissionQueueView = ({ projectId }) => {
         <table className="premium-table">
           <thead>
             <tr>
-              <th>Type</th>
+              {!isTgpl && <th>Type</th>}
               <th>User ID</th>
               <th>Name</th>
               <th>Date</th>
@@ -505,11 +503,13 @@ export const SubmissionQueueView = ({ projectId }) => {
               const date = displayDate ? new Date(displayDate) : null;
               return (
                 <tr key={`${item.type}-${item.id}`}>
-                  <td>
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${item.type === 'switch_point' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
-                      {item.type === 'switch_point' ? 'Switch Point' : 'Pole'}
-                    </span>
-                  </td>
+                  {!isTgpl && (
+                    <td>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${item.type === 'switch_point' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
+                        {item.type === 'switch_point' ? 'Switch Point' : 'Pole'}
+                      </span>
+                    </td>
+                  )}
                   <td>{item.user_id}</td>
                   <td className="font-semibold text-slate-950">{item.user_name}</td>
                   <td>{date ? date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>
