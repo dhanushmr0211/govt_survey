@@ -55,6 +55,33 @@ async function updatePoleHandler(req, res, next) {
     if (data.ulb_id) data.ward_id = Number(data.ulb_id);
     if (data.ulb_name) data.ward_number = data.ulb_name;
 
+    if (data.ccms_number) {
+      let targetWardId = data.ward_id;
+      if (!targetWardId) {
+        const poleRes = await query(`SELECT ward_id FROM poles WHERE id = $1`, [Number(id)]);
+        targetWardId = poleRes.rows[0]?.ward_id;
+      }
+      
+      if (targetWardId) {
+        const ccmsClean = String(data.ccms_number).trim();
+        data.ccms_number = ccmsClean;
+
+        const ccmsExists = await query(
+          `SELECT DISTINCT ccms_number FROM poles 
+           WHERE project_id = $1 
+             AND ward_id = $2 
+             AND TRIM(LOWER(ccms_number)) = TRIM(LOWER($3))
+             AND id != $4
+             AND is_deleted = FALSE`,
+          [Number(projectId), Number(targetWardId), ccmsClean, Number(id)]
+        );
+        
+        if (ccmsExists.rows.length > 0) {
+          data.ccms_number = ccmsExists.rows[0].ccms_number;
+        }
+      }
+    }
+
     const updated = await updatePole(id, projectId, data);
     res.json({ pole: updated });
   } catch (error) {

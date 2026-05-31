@@ -215,6 +215,20 @@ export const PoleForm = ({ ulb, onBack }) => {
       }
     }
 
+    // TGPL Survey: Prevent duplicate CCMS number inside the same ward
+    if (isTgpl && isCustomCcms && formData.ccms_number) {
+      const ccmsLower = String(formData.ccms_number).trim().toLowerCase();
+      const duplicate = switchPoints.find(
+        (sp) => String(sp.ccms_number || '').trim().toLowerCase() === ccmsLower
+      );
+      if (duplicate) {
+        alert(`CCMS No# "${formData.ccms_number}" already exists in this ward. Please select it from the dropdown instead of creating a custom one.`);
+        setUploading(false);
+        setStatusText('');
+        return;
+      }
+    }
+
     // Build sanitized form data when mobile restrictions are enabled.
     const allowed = MOBILE_ALLOWED;
     const submitForm = { ...formData };

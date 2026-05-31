@@ -95,6 +95,27 @@ async function createPoleHandler(req, res) {
     data.project_id = Number(projectId);
     data.created_by = req.user?.id;
     
+    if (Number(projectId) === 3) {
+      if (!data.ccms_number) {
+        return res.status(400).json({ error: 'ccms_number is required' });
+      }
+      const ccmsClean = String(data.ccms_number).trim();
+      data.ccms_number = ccmsClean;
+
+      const ccmsExists = await query(
+        `SELECT DISTINCT ccms_number FROM poles 
+         WHERE project_id = $1 
+           AND ward_id = $2 
+           AND TRIM(LOWER(ccms_number)) = TRIM(LOWER($3))
+           AND is_deleted = FALSE`,
+        [Number(projectId), Number(data.ward_id), ccmsClean]
+      );
+      
+      if (ccmsExists.rows.length > 0) {
+        data.ccms_number = ccmsExists.rows[0].ccms_number;
+      }
+    }
+
     if (Number(projectId) !== 3 && !data.switch_point_id) {
       return res.status(400).json({ error: 'switch_point_id is required' });
     }
