@@ -4,8 +4,8 @@ import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useEmployeeTracking } from '../shared/hooks/useEmployeeTracking';
 import { useMobileUserTracking } from '../shared/hooks/useMobileUserTracking';
-import { getLocalDateString } from '../shared/utils/date';
 import { PoleInspectModal } from '../modules/poleSurvey/components/PoleInspectModal';
+import { SwitchPointInspectModal } from '../modules/poleSurvey/components/SwitchPointInspectModal';
 
 export function EmployeeTrackingView({ projectId }) {
   const { data: tracking = [], isLoading } = useEmployeeTracking(projectId);
@@ -426,133 +426,14 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
       )}
 
       {selectedSub && selectedSub.type === 'switch_point' && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[60]">
-          <div className="bg-white p-8 rounded-2xl max-w-4xl w-full mx-4 shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-slate-900">
-                Inspection: {selectedSub.ulb_name || 'N/A'}
-              </h3>
-              <button onClick={() => setSelectedSub(null)} className="text-slate-400 hover:text-slate-600">✕</button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase">Submitted By</p>
-                    <p className="font-bold text-slate-900">{selectedSub.user_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase">Submitted At</p>
-                    <p className="font-bold text-slate-900 text-xs">
-                      {selectedSub.created_at ? new Date(selectedSub.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}
-                    </p>
-                  </div>
-                  {selectedSub.confirmed_by_name && (
-                    <div>
-                      <p className="text-slate-400 text-[10px] font-bold uppercase">Confirmed By</p>
-                      <p className="font-bold text-slate-900">{selectedSub.confirmed_by_name}</p>
-                    </div>
-                  )}
-                  {selectedSub.confirmed_at && (
-                    <div>
-                      <p className="text-slate-400 text-[10px] font-bold uppercase">Confirmed At</p>
-                      <p className="font-bold text-slate-900 text-xs">
-                        {new Date(selectedSub.confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
-                      </p>
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase">Ward</p>
-                    <p className="font-bold text-slate-900">{selectedSub.ward_number}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase">ULB</p>
-                    <p className="font-bold text-slate-900">{selectedSub.ulb_name || 'N/A'}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-slate-400 text-[10px] font-bold uppercase">Identifier</p>
-                    <p className="font-bold text-slate-900">{selectedSub.identifier || 'N/A'}</p>
-                  </div>
-                </div>
-
-                <div>
-                   <p className="font-bold text-slate-900 mb-3 border-b border-slate-100 pb-2">Technical Specifications</p>
-                   <div className="grid grid-cols-2 gap-y-2 text-sm">
-                      <span className="text-slate-500">Ward No</span><span className="font-semibold text-right">{selectedSub.ward_number || 'N/A'}</span>
-                      <span className="text-slate-500">Switch Point No</span><span className="font-semibold text-right">{selectedSub.switch_point_number || 'N/A'}</span>
-                      <span className="text-slate-500">Type</span><span className="font-semibold text-right">{selectedSub.switch_point_type || 'N/A'}</span>
-                      <span className="text-slate-500">Meter Exists</span><span className="font-semibold text-right">{selectedSub.meter_exists ? 'Yes' : 'No'}</span>
-                      <span className="text-slate-500">Meter Type</span><span className="font-semibold text-right">{selectedSub.meter_type || 'N/A'}</span>
-                      <span className="text-slate-500">RR Number</span><span className="font-semibold text-right">{selectedSub.meter_rr_number || 'N/A'}</span>
-                      <span className="text-slate-500">Serial Number</span><span className="font-semibold text-right">{selectedSub.meter_serial_number || 'N/A'}</span>
-                      <span className="text-slate-500">Meter Condition</span><span className="font-semibold text-right">{selectedSub.meter_condition || 'N/A'}</span>
-                   </div>
-                </div>
-
-                <div>
-                  <p className="font-bold text-slate-900 mb-3 border-b border-slate-100 pb-2">Location</p>
-                  <div className="grid grid-cols-2 gap-y-2 text-sm">
-                    <span className="text-slate-500">Latitude</span>
-                    <span className="font-semibold text-right">{selectedSub.latitude || 'N/A'}</span>
-                    <span className="text-slate-500">Longitude</span>
-                    <span className="font-semibold text-right">{selectedSub.longitude || 'N/A'}</span>
-                  </div>
-                  {selectedSub.latitude && selectedSub.longitude && (
-                    <div className="mt-3">
-                      <a
-                        href={`https://www.google.com/maps?q=${selectedSub.latitude},${selectedSub.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded transition-all"
-                      >
-                        Open in Google Maps
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <p className="font-bold text-slate-900 mb-3">Field Images</p>
-                {loadingImages ? (
-                  <div className="aspect-video bg-slate-100 rounded-xl flex items-center justify-center border-2 border-dashed border-slate-200">
-                    <p className="text-slate-400 text-sm italic">Loading images...</p>
-                  </div>
-                ) : images.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-3 max-h-[60vh] overflow-y-auto pr-1">
-                    {images.map((img) => (
-                      <div key={img.id} className="rounded-lg overflow-hidden border border-slate-200">
-                        <img
-                          src={img.signed_url}
-                          alt="Submission"
-                          className="w-full h-auto object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="aspect-video bg-slate-100 rounded-xl flex items-center justify-center border-2 border-dashed border-slate-200">
-                    <p className="text-slate-400 text-sm italic">No images found for this submission.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end">
-              <button
-                onClick={() => setSelectedSub(null)}
-                className="px-6 py-2 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-colors"
-              >
-                Close Inspection
-              </button>
-            </div>
-          </div>
-        </div>
+        <SwitchPointInspectModal
+          switchPoint={selectedSub}
+          onClose={() => setSelectedSub(null)}
+          onSuccess={() => {
+            setSelectedSub(null);
+            queryClient.invalidateQueries(['user-submissions']);
+          }}
+        />
       )}
     </div>
   );
