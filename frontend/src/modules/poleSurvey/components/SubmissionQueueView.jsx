@@ -57,13 +57,13 @@ export const SubmissionQueueView = ({ projectId }) => {
   };
 
   const user = useAuthStore((state) => state.user);
+  const [isEditing, setIsEditing] = useState(false);
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
   const canShowEdit = user?.role === 'MASTER_ADMIN' || 
     (activeProject?.section_i && activeTab === 'pending') || 
     (activeProject?.section_j && activeTab === 'confirmed');
-  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);

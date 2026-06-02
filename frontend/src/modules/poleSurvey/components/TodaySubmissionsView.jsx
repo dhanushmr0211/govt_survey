@@ -36,6 +36,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   const [page, setPage] = useState(1);
   const limit = 50;
 
+  const [isEditing, setIsEditing] = useState(false);
   const user = useAuthStore((state) => state.user);
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
@@ -53,8 +54,6 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
     (activeProject?.section_i && activeTab === 'pending') || 
     (activeProject?.section_j && activeTab === 'confirmed')) && 
     !isMobileSurveyor;
-
-  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);

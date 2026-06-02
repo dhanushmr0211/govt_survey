@@ -16,6 +16,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const queryClient = useQueryClient();
   const addToast = useToastStore((state) => state.addToast);
 
+  const [isEditing, setIsEditing] = useState(false);
   const user = useAuthStore((state) => state.user);
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
   const activeProject = useAuthStore((state) => state.activeProject);
@@ -23,7 +24,6 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
   const canEdit = (user?.role === 'MASTER_ADMIN' || activeProject?.section_j) && !(isTgpl && selectedDetail?.type === 'switch_point');
-  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);

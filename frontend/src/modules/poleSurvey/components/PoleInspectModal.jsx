@@ -11,6 +11,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
   const queryClient = useQueryClient();
 
   const user = useAuthStore((state) => state.user);
+  const [isEditing, setIsEditing] = useState(false);
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = activeProject?.id;
@@ -20,8 +21,6 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
   const canEdit = user?.role === 'MASTER_ADMIN' || 
     (activeProject?.section_i && pole?.status === 'pending') || 
     (activeProject?.section_j && pole?.status === 'confirmed');
-
-  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     ...initialPole,
     pole_number: initialPole.pole_number || initialPole.identifier
