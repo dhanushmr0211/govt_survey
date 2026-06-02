@@ -20,6 +20,8 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
   const activeProject = useAuthStore((state) => state.activeProject);
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
+  const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
+  const canEditGPS = isEditing && isAutofillUser && isIdeck;
   const canEdit = (user?.role === 'MASTER_ADMIN' || activeProject?.section_j) && !(isTgpl && selectedDetail?.type === 'switch_point');
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
@@ -812,11 +814,31 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
                       <p className="text-gray-500 text-xs">Latitude</p>
-                      <p className="font-medium text-sm">{selectedDetail.data.latitude || 'N/A'}</p>
+                      {canEditGPS ? (
+                        <input
+                          type="text"
+                          name="latitude"
+                          value={formData.latitude || ''}
+                          onChange={handleChange}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
+                        />
+                      ) : (
+                        <p className="font-medium text-sm">{selectedDetail.data.latitude || 'N/A'}</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-gray-500 text-xs">Longitude</p>
-                      <p className="font-medium text-sm">{selectedDetail.data.longitude || 'N/A'}</p>
+                      {canEditGPS ? (
+                        <input
+                          type="text"
+                          name="longitude"
+                          value={formData.longitude || ''}
+                          onChange={handleChange}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
+                        />
+                      ) : (
+                        <p className="font-medium text-sm">{selectedDetail.data.longitude || 'N/A'}</p>
+                      )}
                     </div>
                   </div>
                   {selectedDetail.data.latitude && selectedDetail.data.longitude && (

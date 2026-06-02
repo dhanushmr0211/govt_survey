@@ -149,7 +149,7 @@ async function updateSwitchPointHandler(req, res, next) {
     const data = req.body;
 
     const existingSpRes = await query(
-      `SELECT id, ulb_id, ward_number, switch_point_number 
+      `SELECT id, ulb_id, ward_number, switch_point_number, latitude, longitude 
        FROM switch_points 
        WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE`,
       [id, projectId]
@@ -157,6 +157,25 @@ async function updateSwitchPointHandler(req, res, next) {
     const existingSp = existingSpRes.rows[0];
     if (!existingSp) {
       return res.status(404).json({ message: 'Switch Point not found' });
+    }
+
+    // Check if coordinates have changed
+    const incomingLat = data.latitude !== undefined && data.latitude !== null && data.latitude !== '' ? parseFloat(data.latitude) : null;
+    const incomingLng = data.longitude !== undefined && data.longitude !== null && data.longitude !== '' ? parseFloat(data.longitude) : null;
+    const existingLat = existingSp.latitude !== null && existingSp.latitude !== '' ? parseFloat(existingSp.latitude) : null;
+    const existingLng = existingSp.longitude !== null && existingSp.longitude !== '' ? parseFloat(existingSp.longitude) : null;
+
+    const latChanged = incomingLat !== null && incomingLat !== existingLat;
+    const lngChanged = incomingLng !== null && incomingLng !== existingLng;
+
+    if (latChanged || lngChanged) {
+      const userEmail = req.user?.email;
+      const isAllowedUser = userEmail && userEmail.toLowerCase().trim() === 'pratheekar1997@gmail.com';
+      const isIdeckProject = Number(projectId) === 2;
+
+      if (!isAllowedUser || !isIdeckProject) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit GPS coordinates.' });
+      }
     }
 
     const targetUlbId = data.ulb_id !== undefined ? Number(data.ulb_id) : Number(existingSp.ulb_id);
@@ -219,7 +238,7 @@ async function updatePoleHandler(req, res, next) {
     const data = req.body;
 
     const existingPoleRes = await query(
-      `SELECT p.id, p.ward_number, p.switch_point_number, p.switch_point_id, sp.ulb_id 
+      `SELECT p.id, p.ward_number, p.switch_point_number, p.switch_point_id, p.latitude, p.longitude, sp.ulb_id 
        FROM poles p 
        JOIN switch_points sp ON p.switch_point_id = sp.id 
        WHERE p.id = $1 AND p.project_id = $2`,
@@ -228,6 +247,25 @@ async function updatePoleHandler(req, res, next) {
     const existingPole = existingPoleRes.rows[0];
     if (!existingPole) {
       return res.status(404).json({ message: 'Pole not found' });
+    }
+
+    // Check if coordinates have changed
+    const incomingLat = data.latitude !== undefined && data.latitude !== null && data.latitude !== '' ? parseFloat(data.latitude) : null;
+    const incomingLng = data.longitude !== undefined && data.longitude !== null && data.longitude !== '' ? parseFloat(data.longitude) : null;
+    const existingLat = existingPole.latitude !== null && existingPole.latitude !== '' ? parseFloat(existingPole.latitude) : null;
+    const existingLng = existingPole.longitude !== null && existingPole.longitude !== '' ? parseFloat(existingPole.longitude) : null;
+
+    const latChanged = incomingLat !== null && incomingLat !== existingLat;
+    const lngChanged = incomingLng !== null && incomingLng !== existingLng;
+
+    if (latChanged || lngChanged) {
+      const userEmail = req.user?.email;
+      const isAllowedUser = userEmail && userEmail.toLowerCase().trim() === 'pratheekar1997@gmail.com';
+      const isIdeckProject = Number(projectId) === 2;
+
+      if (!isAllowedUser || !isIdeckProject) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit GPS coordinates.' });
+      }
     }
 
     const targetUlbId = data.ulb_id !== undefined ? Number(data.ulb_id) : Number(existingPole.ulb_id);

@@ -15,6 +15,8 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = activeProject?.id;
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
+  const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
+  const canEditGPS = isEditing && isAutofillUser && isIdeck;
   const canEdit = user?.role === 'MASTER_ADMIN' || 
     (activeProject?.section_i && pole?.status === 'pending') || 
     (activeProject?.section_j && pole?.status === 'confirmed');
@@ -398,11 +400,31 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <p className="text-gray-500 text-xs">Latitude</p>
-                  <p className="font-medium text-sm">{pole.latitude || 'N/A'}</p>
+                  {canEditGPS ? (
+                    <input
+                      type="text"
+                      name="latitude"
+                      value={formData.latitude || ''}
+                      onChange={handleChange}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
+                    />
+                  ) : (
+                    <p className="font-medium text-sm">{pole.latitude || 'N/A'}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">Longitude</p>
-                  <p className="font-medium text-sm">{pole.longitude || 'N/A'}</p>
+                  {canEditGPS ? (
+                    <input
+                      type="text"
+                      name="longitude"
+                      value={formData.longitude || ''}
+                      onChange={handleChange}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
+                    />
+                  ) : (
+                    <p className="font-medium text-sm">{pole.longitude || 'N/A'}</p>
+                  )}
                 </div>
               </div>
               {pole.latitude && pole.longitude && (

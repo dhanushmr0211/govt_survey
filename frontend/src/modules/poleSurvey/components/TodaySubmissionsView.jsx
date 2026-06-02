@@ -39,6 +39,8 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   const user = useAuthStore((state) => state.user);
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
+  const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
+  const canEditGPS = isEditing && isAutofillUser && isIdeck;
 
   const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
 
@@ -606,11 +608,31 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
                       <p className="text-gray-500 text-xs">Latitude</p>
-                      <p className="font-medium text-sm">{selectedSubmission.latitude || 'N/A'}</p>
+                      {canEditGPS ? (
+                        <input
+                          type="text"
+                          name="latitude"
+                          value={formData.latitude || ''}
+                          onChange={handleChange}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
+                        />
+                      ) : (
+                        <p className="font-medium text-sm">{selectedSubmission.latitude || 'N/A'}</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-gray-500 text-xs">Longitude</p>
-                      <p className="font-medium text-sm">{selectedSubmission.longitude || 'N/A'}</p>
+                      {canEditGPS ? (
+                        <input
+                          type="text"
+                          name="longitude"
+                          value={formData.longitude || ''}
+                          onChange={handleChange}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
+                        />
+                      ) : (
+                        <p className="font-medium text-sm">{selectedSubmission.longitude || 'N/A'}</p>
+                      )}
                     </div>
                   </div>
                   {selectedSubmission.latitude && selectedSubmission.longitude && (

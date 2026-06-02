@@ -31,10 +31,12 @@ async function updateSwitchPoint(id, projectId, data) {
          meter_serial_number = COALESCE($9, meter_serial_number),
          meter_condition = COALESCE($10, meter_condition),
          ulb_id = COALESCE($11, ulb_id),
+         latitude = COALESCE($12, latitude),
+         longitude = COALESCE($13, longitude),
          updated_at = NOW()
      WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE
      RETURNING *`,
-    [id, projectId, data.ward_number, data.switch_point_number, data.switch_point_type, data.meter_exists, data.meter_type, data.meter_rr_number, data.meter_serial_number, data.meter_condition, data.ulb_id]
+    [id, projectId, data.ward_number, data.switch_point_number, data.switch_point_type, data.meter_exists, data.meter_type, data.meter_rr_number, data.meter_serial_number, data.meter_condition, data.ulb_id, data.latitude, data.longitude]
   );
   return result.rows[0];
 }

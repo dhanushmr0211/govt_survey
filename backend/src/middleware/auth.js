@@ -18,7 +18,7 @@ async function authenticate(req, res, next) {
     // Check that the token still belongs to an active user and has not
     // outlived an access update.
     const userResult = await pool.query(
-      `SELECT id, role, is_blocked, EXTRACT(EPOCH FROM updated_at)::int as updated_at_seconds
+      `SELECT id, email, role, is_blocked, EXTRACT(EPOCH FROM updated_at)::int as updated_at_seconds
        FROM users 
        WHERE id = $1 AND is_deleted = FALSE`,
       [payload.sub]
@@ -41,6 +41,7 @@ async function authenticate(req, res, next) {
 
     req.user = {
       id: Number(user.id),
+      email: user.email,
       sub: payload.sub,
       role: normalizeRole(user.role)
     };

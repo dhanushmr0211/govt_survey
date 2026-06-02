@@ -58,10 +58,12 @@ async function updatePole(id, projectId, data) {
          road_width_mtrs = COALESCE($24, road_width_mtrs),
          pole_earthing_exists = COALESCE($25, pole_earthing_exists),
          switch_point_id = COALESCE($26, switch_point_id),
+         latitude = COALESCE($27, latitude),
+         longitude = COALESCE($28, longitude),
          updated_at = NOW()
      WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE
      RETURNING *`,
-    [id, projectId, data.ward_number, data.switch_point_number, data.conductor_type, data.pole_number, data.pole_type, data.pole_height_mtrs, data.pole_condition, data.pole_to_pole_distance_mtrs, data.arm_type, data.arm_status, data.present_arm_no, data.present_arm_length_mtrs, data.how_many_lights_in_pole, data.light_mounting_height, data.light_type, data.light_capacity, data.light_type_2, data.light_capacity_2, data.light_working_status, data.road_category, data.road_type, data.road_width_mtrs, data.pole_earthing_exists, data.switch_point_id]
+    [id, projectId, data.ward_number, data.switch_point_number, data.conductor_type, data.pole_number, data.pole_type, data.pole_height_mtrs, data.pole_condition, data.pole_to_pole_distance_mtrs, data.arm_type, data.arm_status, data.present_arm_no, data.present_arm_length_mtrs, data.how_many_lights_in_pole, data.light_mounting_height, data.light_type, data.light_capacity, data.light_type_2, data.light_capacity_2, data.light_working_status, data.road_category, data.road_type, data.road_width_mtrs, data.pole_earthing_exists, data.switch_point_id, data.latitude, data.longitude]
   );
   return result.rows[0];
 }
