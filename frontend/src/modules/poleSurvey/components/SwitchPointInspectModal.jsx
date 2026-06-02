@@ -24,16 +24,39 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
   });
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
+  const [ulbs, setUlbs] = useState([]);
+
+  useEffect(() => {
+    const fetchUlbs = async () => {
+      if (!projectId) return;
+      try {
+        const token = useAuthStore.getState().token || localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/projects/${projectId}/structure`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUlbs(data.ulbs || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch project structure for ULBs:", err);
+      }
+    };
+    fetchUlbs();
+  }, [projectId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setSwitchPoint(initialSwitchPoint);
       setFormData({
-        ...initialSwitchPoint
+        ...initialSwitchPoint,
+        ulb_id: initialSwitchPoint.ulb_id || ulbs.find(u => u.name === initialSwitchPoint.ulb_name)?.id || ''
       });
     }, 0);
     return () => clearTimeout(timer);
-  }, [initialSwitchPoint]);
+  }, [initialSwitchPoint, ulbs]);
 
   useEffect(() => {
     if (!projectId || !switchPoint.id) return;
@@ -219,7 +242,31 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
               </div>
               <div>
                 <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">ULB</p>
-                <p className="font-semibold text-slate-900">{switchPoint.ulb_name || 'N/A'}</p>
+                {isEditing ? (
+                  <select
+                    name="ulb_id"
+                    value={formData.ulb_id || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const selectedUlb = ulbs.find(u => String(u.id) === String(val));
+                      setFormData(prev => ({
+                        ...prev,
+                        ulb_id: val ? Number(val) : '',
+                        ulb_name: selectedUlb ? selectedUlb.name : '',
+                        ward_id: isTgpl && val ? Number(val) : prev.ward_id,
+                        ward_number: isTgpl && selectedUlb ? selectedUlb.name : prev.ward_number
+                      }));
+                    }}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
+                  >
+                    <option value="">Select ULB...</option>
+                    {ulbs.map(u => (
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="font-semibold text-slate-900">{switchPoint.ulb_name || 'N/A'}</p>
+                )}
               </div>
               <div className="col-span-2">
                 <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Identifier</p>

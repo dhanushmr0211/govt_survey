@@ -26,17 +26,40 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
   });
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
+  const [ulbs, setUlbs] = useState([]);
+
+  useEffect(() => {
+    const fetchUlbs = async () => {
+      if (!projectId) return;
+      try {
+        const token = useAuthStore.getState().token || localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/projects/${projectId}/structure`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUlbs(data.ulbs || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch project structure for ULBs:", err);
+      }
+    };
+    fetchUlbs();
+  }, [projectId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setPole(initialPole);
       setFormData({
         ...initialPole,
+        ulb_id: initialPole.ulb_id || ulbs.find(u => u.name === initialPole.ulb_name)?.id || '',
         pole_number: initialPole.pole_number || initialPole.identifier
       });
     }, 0);
     return () => clearTimeout(timer);
-  }, [initialPole]);
+  }, [initialPole, ulbs]);
 
   useEffect(() => {
     if (!projectId || !pole.id) return;
@@ -268,7 +291,27 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
               <div>
                 <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">ULB</p>
                 {isEditing ? (
-                  <p className="font-semibold text-slate-900">{pole.ulb_name || 'N/A'}</p>
+                  <select
+                    name="ulb_id"
+                    value={formData.ulb_id || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const selectedUlb = ulbs.find(u => String(u.id) === String(val));
+                      setFormData(prev => ({
+                        ...prev,
+                        ulb_id: val ? Number(val) : '',
+                        ulb_name: selectedUlb ? selectedUlb.name : '',
+                        ward_id: isTgpl && val ? Number(val) : prev.ward_id,
+                        ward_number: isTgpl && selectedUlb ? selectedUlb.name : prev.ward_number
+                      }));
+                    }}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
+                  >
+                    <option value="">Select ULB...</option>
+                    {ulbs.map(u => (
+                      <option key={u.id} value={u.id}>{u.name}</option>
+                    ))}
+                  </select>
                 ) : (
                   <p className="font-semibold text-slate-900">{pole.ulb_name || 'N/A'}</p>
                 )}
