@@ -140,6 +140,13 @@ export const PoleForm = ({ ulb, onBack }) => {
             updated.present_arm_length = '0';
             updated.present_arm_no = '0';
           }
+        } else if (name === 'how_many_lights') {
+          if (value === '0') {
+            updated.light_type = 'empty';
+            updated.light_capacity = '0W';
+            updated.light_type_2 = 'empty';
+            updated.light_capacity_2 = '0W';
+          }
         } else if (name === 'light_type') {
           const valLower = String(value || '').toLowerCase();
           if (valLower === 'led') {
@@ -149,11 +156,26 @@ export const PoleForm = ({ ulb, onBack }) => {
           } else if (valLower === 'tube light') {
             updated.light_capacity = '40W';
           } else if (valLower === 'svl') {
-            updated.light_capacity = '250';
+            updated.light_capacity = '250W';
           } else if (valLower === 'mini mast') {
-            updated.light_capacity = '150';
+            updated.light_capacity = '150W';
           } else if (valLower === 'high mast') {
-            updated.light_capacity = '200';
+            updated.light_capacity = '200W';
+          }
+        } else if (name === 'light_type_2') {
+          const valLower = String(value || '').toLowerCase();
+          if (valLower === 'led') {
+            updated.light_capacity_2 = '40W';
+          } else if (valLower === 'cfl') {
+            updated.light_capacity_2 = '5W-25W';
+          } else if (valLower === 'tube light') {
+            updated.light_capacity_2 = '40W';
+          } else if (valLower === 'svl') {
+            updated.light_capacity_2 = '250W';
+          } else if (valLower === 'mini mast') {
+            updated.light_capacity_2 = '150W';
+          } else if (valLower === 'high mast') {
+            updated.light_capacity_2 = '200W';
           }
         }
       }
@@ -651,7 +673,7 @@ export const PoleForm = ({ ulb, onBack }) => {
             <label className="block text-gray-700 font-medium mb-1">Light 1 Capacity</label>
             <select name="light_capacity" value={formData.light_capacity} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
               <option value="">Select Capacity</option>
-              {['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'].map((opt) => (
+              {['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'].map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
@@ -674,7 +696,7 @@ export const PoleForm = ({ ulb, onBack }) => {
               <label className="block text-gray-700 font-medium mb-1">Light 2 Capacity</label>
               <select name="light_capacity_2" value={formData.light_capacity_2} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
                 <option value="">Select Capacity</option>
-                {['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'].map((opt) => (
+                {['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'].map((opt) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
               </select>
@@ -719,7 +741,7 @@ export const PoleForm = ({ ulb, onBack }) => {
           <label className="block text-gray-700 font-medium mb-1">Road Width (mtrs)</label>
           <select name="road_width" value={formData.road_width} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isBallari}>
             <option value="">Select Width</option>
-            {[4, 5, 6, 7, 8, 9, 12, 16, 18, 24, 30].map((opt) => (
+            {[4, 5, 6, 7, 8, 9, 10, 12, 16, 18, 20, 24, 25, 30].map((opt) => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
           </select>

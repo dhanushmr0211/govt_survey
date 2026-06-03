@@ -202,6 +202,13 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
             updated.present_arm_length_mtrs = '0';
             updated.present_arm_no = '0';
           }
+        } else if (name === 'how_many_lights_in_pole') {
+          if (value === '0') {
+            updated.light_type = 'empty';
+            updated.light_capacity = '0W';
+            updated.light_type_2 = 'empty';
+            updated.light_capacity_2 = '0W';
+          }
         } else if (name === 'light_type') {
           const valLower = String(value || '').toLowerCase();
           if (valLower === 'led') {
@@ -211,11 +218,30 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
           } else if (valLower === 'tube light') {
             updated.light_capacity = '40W';
           } else if (valLower === 'svl') {
-            updated.light_capacity = '250';
+            updated.light_capacity = '250W';
           } else if (valLower === 'mini mast') {
-            updated.light_capacity = '150';
+            updated.light_capacity = '150W';
           } else if (valLower === 'high mast') {
-            updated.light_capacity = '200';
+            updated.light_capacity = '200W';
+          } else if (valLower === 'empty') {
+            updated.light_capacity = '0W';
+          }
+        } else if (name === 'light_type_2') {
+          const valLower = String(value || '').toLowerCase();
+          if (valLower === 'led') {
+            updated.light_capacity_2 = '40W';
+          } else if (valLower === 'cfl') {
+            updated.light_capacity_2 = '5W-25W';
+          } else if (valLower === 'tube light') {
+            updated.light_capacity_2 = '40W';
+          } else if (valLower === 'svl') {
+            updated.light_capacity_2 = '250W';
+          } else if (valLower === 'mini mast') {
+            updated.light_capacity_2 = '150W';
+          } else if (valLower === 'high mast') {
+            updated.light_capacity_2 = '200W';
+          } else if (valLower === 'empty') {
+            updated.light_capacity_2 = '0W';
           }
         }
       }
@@ -763,13 +789,13 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                         {renderField('Lights Count', 'how_many_lights_in_pole', selectedDetail.data.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
                         {renderField('Mounting Height', 'light_mounting_height', selectedDetail.data.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
                         {renderField('Light 1 Type', 'light_type', selectedDetail.data.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                        {renderField('Light 1 Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Light 1 Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'])}
                         {renderField('Light 2 Type', 'light_type_2', selectedDetail.data.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                        {renderField('Light 2 Capacity', 'light_capacity_2', selectedDetail.data.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Light 2 Capacity', 'light_capacity_2', selectedDetail.data.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'])}
                         {renderField('Working', 'light_working_status', selectedDetail.data.light_working_status, ['yes', 'no'])}
                         {renderField('Road Cat', 'road_category', selectedDetail.data.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
                         {renderField('Road Type', 'road_type', selectedDetail.data.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
-                        {renderField('Road Width', 'road_width_mtrs', selectedDetail.data.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                        {renderField('Road Width', 'road_width_mtrs', selectedDetail.data.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '10', '12', '16', '18', '20', '24', '25', '30'])}
                         {renderField('Earthing', 'pole_earthing_exists', selectedDetail.data.pole_earthing_exists, ['YES', 'NO'])}
                         
                         <div className="col-span-3 border-t pt-2 mt-2 font-semibold text-gray-700">Proposal Form</div>
@@ -796,13 +822,13 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                         {renderField('Lights Count', 'how_many_lights_in_pole', selectedDetail.data.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
                         {renderField('Mounting Height', 'light_mounting_height', selectedDetail.data.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
                         {renderField('Light 1 Type', 'light_type', selectedDetail.data.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                        {renderField('Light 1 Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Light 1 Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'])}
                         {renderField('Light 2 Type', 'light_type_2', selectedDetail.data.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                        {renderField('Light 2 Capacity', 'light_capacity_2', selectedDetail.data.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90', '120', '150', '200', '250', '400'])}
+                        {renderField('Light 2 Capacity', 'light_capacity_2', selectedDetail.data.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'])}
                         {renderField('Working', 'light_working_status', selectedDetail.data.light_working_status, ['yes', 'no'])}
                         {renderField('Road Cat', 'road_category', selectedDetail.data.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
                         {renderField('Road Type', 'road_type', selectedDetail.data.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
-                        {renderField('Road Width', 'road_width_mtrs', selectedDetail.data.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                        {renderField('Road Width', 'road_width_mtrs', selectedDetail.data.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '10', '12', '16', '18', '20', '24', '25', '30'])}
                         {renderField('Earthing', 'pole_earthing_exists', selectedDetail.data.pole_earthing_exists, ['YES', 'NO'])}
                       </>
                     )}
