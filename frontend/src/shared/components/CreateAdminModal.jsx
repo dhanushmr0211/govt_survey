@@ -127,6 +127,10 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
   };
  
   const handleProjectChange = (projectId) => {
+    const isPresentProject = projectId === currentPid;
+    const isDisabled = !isPresentProject && (!!selectedUser || loggedInUser?.role !== 'MASTER_ADMIN');
+    if (isDisabled) return;
+
     setFormData((prev) => {
       const projects = prev.projects.includes(projectId)
         ? prev.projects.filter((id) => id !== projectId)
@@ -431,19 +435,17 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
               ) : (
                 projects.map((p) => {
                   const isPresentProject = p.id === currentPid;
-                  const isAssignedToOtherProject = assignedProjectIds.includes(p.id) && !isPresentProject;
-                  
-                  const isChecked = isPresentProject ? formData.projects.includes(p.id) : isAssignedToOtherProject;
-                  const isDisabled = !!selectedUser && !isPresentProject;
+                  const isDisabled = !isPresentProject && (!!selectedUser || loggedInUser?.role !== 'MASTER_ADMIN');
+                  const isChecked = formData.projects.includes(p.id) || (p.id !== currentPid && assignedProjectIds.includes(p.id));
 
                   return (
-                    <label key={p.id} className={`flex items-center gap-2 cursor-pointer py-1 hover:bg-slate-100/50 rounded px-1 transition-colors ${isDisabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                    <label key={p.id} className={`flex items-center gap-2 py-1 rounded px-1 transition-colors ${isDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-100/50'}`}>
                       <input 
                         type="checkbox" 
                         checked={isChecked} 
                         disabled={isDisabled}
                         onChange={() => handleProjectChange(p.id)} 
-                        className="rounded text-primary focus:ring-primary disabled:opacity-60" 
+                        className="rounded text-primary focus:ring-primary disabled:opacity-40" 
                       />
                       <span className="text-slate-700 font-medium">{p.name}</span>
                     </label>
