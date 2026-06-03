@@ -128,7 +128,8 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
  
   const handleProjectChange = (projectId) => {
     const isPresentProject = projectId === currentPid;
-    const isDisabled = !isPresentProject && (!!selectedUser || loggedInUser?.role !== 'MASTER_ADMIN');
+    const hasProjectContext = !isNaN(currentPid) && currentPid > 0;
+    const isDisabled = !isPresentProject && (hasProjectContext || !!selectedUser || loggedInUser?.role !== 'MASTER_ADMIN');
     if (isDisabled) return;
 
     setFormData((prev) => {
@@ -435,7 +436,8 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
               ) : (
                 projects.map((p) => {
                   const isPresentProject = p.id === currentPid;
-                  const isDisabled = !isPresentProject && (!!selectedUser || loggedInUser?.role !== 'MASTER_ADMIN');
+                  const hasProjectContext = !isNaN(currentPid) && currentPid > 0;
+                  const isDisabled = !isPresentProject && (hasProjectContext || !!selectedUser || loggedInUser?.role !== 'MASTER_ADMIN');
                   const isChecked = formData.projects.includes(p.id) || (p.id !== currentPid && assignedProjectIds.includes(p.id));
 
                   return (
