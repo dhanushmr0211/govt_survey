@@ -275,7 +275,25 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
             updated.pole_height_mtrs = '16';
             updated.pole_condition = 'Good';
             updated.pole_earthing_exists = 'YES';
+            updated.light_mounting_height = 'high mast';
+            updated.light_type = 'high mast';
+            updated.light_capacity = '200W';
           } else if (value === 'Mini Mast') {
+            updated.pole_height_mtrs = '12';
+            updated.pole_condition = 'Good';
+            updated.pole_earthing_exists = 'YES';
+            updated.light_mounting_height = 'mini mast';
+            updated.light_type = 'mini mast';
+            updated.light_capacity = '150W';
+          } else if (value === 'Tubular') {
+            updated.pole_height_mtrs = '12';
+            updated.pole_condition = 'Good';
+            updated.pole_earthing_exists = 'YES';
+          } else if (value === 'Spun') {
+            updated.pole_height_mtrs = '12';
+            updated.pole_condition = 'Good';
+            updated.pole_earthing_exists = 'NO';
+          } else if (value === 'Octoganal') {
             updated.pole_height_mtrs = '12';
             updated.pole_condition = 'Good';
             updated.pole_earthing_exists = 'YES';
@@ -290,6 +308,9 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
           if (value === '0') {
             updated.light_type = 'empty';
             updated.light_capacity = '0W';
+            updated.light_type_2 = 'empty';
+            updated.light_capacity_2 = '0W';
+          } else if (value === '1') {
             updated.light_type_2 = 'empty';
             updated.light_capacity_2 = '0W';
           }
@@ -309,6 +330,8 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
             updated.light_capacity = '200W';
           } else if (valLower === 'empty') {
             updated.light_capacity = '0W';
+          } else if (valLower === 'bulb') {
+            updated.light_capacity = '40W';
           }
         } else if (name === 'light_type_2') {
           const valLower = String(value || '').toLowerCase();
@@ -326,6 +349,8 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
             updated.light_capacity_2 = '200W';
           } else if (valLower === 'empty') {
             updated.light_capacity_2 = '0W';
+          } else if (valLower === 'bulb') {
+            updated.light_capacity_2 = '40W';
           }
         }
       }
