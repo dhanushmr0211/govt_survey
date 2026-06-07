@@ -198,7 +198,13 @@ async function login(req, res, next) {
     invalidateProjectAccess(user.id);
 
     if (data.accepted_terms) {
-      await pool.query('UPDATE users SET accepted_terms_at = NOW() WHERE id = $1', [user.id]);
+      await pool.query(
+        `UPDATE users 
+         SET accepted_terms_at = COALESCE(accepted_terms_at, timezone('Asia/Kolkata', NOW())),
+             last_accepted_terms_at = timezone('Asia/Kolkata', NOW()) 
+         WHERE id = $1`, 
+        [user.id]
+      );
     }
 
     return res.json({

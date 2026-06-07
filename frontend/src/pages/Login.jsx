@@ -30,7 +30,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [acceptedConsent, setAcceptedConsent] = useState(true);
+  const [acceptedConsent, setAcceptedConsent] = useState(false);
   const showConsentCheckbox = true;
 
   const navigate = useNavigate();
@@ -51,6 +51,10 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (showConsentCheckbox && !acceptedConsent) {
+      alert("Please agree to the Privacy Policy and Terms & Conditions to access the portal.");
+      return;
+    }
     setLoading(true);
     setError('');
     
@@ -144,7 +148,6 @@ export default function Login() {
                   id="consent_checkbox" 
                   checked={acceptedConsent} 
                   onChange={(e) => setAcceptedConsent(e.target.checked)} 
-                  required
                   className="w-4 h-4 rounded border-white/20 bg-transparent text-primary focus:ring-primary/20 accent-primary cursor-pointer mt-0.5"
                 />
                 <label htmlFor="consent_checkbox" className="text-xs text-white/60 leading-normal cursor-pointer">
@@ -159,7 +162,7 @@ export default function Login() {
             <button 
               type="submit" 
               className="w-full bg-white/[0.04] border border-white/20 text-white font-black py-4.5 rounded-2xl shadow-xl hover:bg-white/10 hover:border-white/40 transition-all active:scale-[0.96] flex items-center justify-center gap-3 mt-6 text-sm uppercase tracking-widest disabled:opacity-50"
-              disabled={loading || (showConsentCheckbox && !acceptedConsent)}
+              disabled={loading}
             >
               {loading ? (
                 <Loader2 className="animate-spin" size={24} />
