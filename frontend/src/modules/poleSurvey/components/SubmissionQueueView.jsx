@@ -610,7 +610,7 @@ export const SubmissionQueueView = ({ projectId }) => {
               {!isTgpl && <th>Type</th>}
               <th>User ID</th>
               <th>Name</th>
-              <th>Date/Time</th>
+              {activeTab !== 'deleted' && <th>Date/Time</th>}
               <th>Ward</th>
               <th>ULB Name</th>
               {activeTab === 'deleted' && <th>Deleted By</th>}
@@ -637,7 +637,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                   )}
                   <td>{item.user_id}</td>
                   <td className="font-semibold text-slate-950">{item.user_name}</td>
-                  <td>{date ? date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>
+                  {activeTab !== 'deleted' && <td>{date ? date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>}
                   <td>{item.ward_number}</td>
                   <td>{item.ulb_name || 'N/A'}</td>
                   {activeTab === 'deleted' && <td className="text-red-600 font-semibold">{item.deleted_by_name || 'N/A'}</td>}
