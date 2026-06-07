@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Edit2, Save } from 'lucide-react';
+import { ArrowLeft, Edit2, Save, Trash2 } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import { useToastStore } from '../../../store/toastStore';
 import imageCompression from 'browser-image-compression';
@@ -49,6 +49,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
+  const showDeleteButton = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'prelectricals01@gmail.com';
   const canEdit = (user?.role === 'MASTER_ADMIN' || activeProject?.section_j) && !(isTgpl && selectedDetail?.type === 'switch_point');
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);
@@ -148,6 +149,31 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     },
     onError: (error) => {
       addToast(error.response?.data?.message || 'Error saving changes', 'error');
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const type = selectedDetail.type;
+      const id = type === 'switch_point' ? selectedDetail.data.id : selectedDetail.data.pole_id;
+      const endpoint = isTgpl
+        ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/poles/${id}`
+        : `${API_BASE_URL}/projects/${projectId}/pole-survey/submissions/${id}?type=${type}`;
+      const res = await axios.delete(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['wardDetails']);
+      queryClient.invalidateQueries(['wardSummary']);
+      addToast('Submission deleted successfully!', 'success');
+      setSelectedDetail(null);
+      setIsEditing(false);
+    },
+    onError: (err) => {
+      console.error('Delete error:', err);
+      addToast(err.response?.data?.message || 'Failed to delete submission', 'error');
     }
   });
 
@@ -1000,9 +1026,23 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
             </div>
               
             <div className="flex justify-end gap-2 mt-6 border-t pt-4">
+              {showDeleteButton && (
+                <button
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this submission?')) {
+                      deleteMutation.mutate();
+                    }
+                  }}
+                  disabled={deleteMutation.isLoading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold mr-auto"
+                >
+                  <Trash2 size={16} />
+                  <span>{deleteMutation.isLoading ? 'Deleting...' : 'Delete Submission'}</span>
+                </button>
+              )}
               <button
                 onClick={() => { setSelectedDetail(null); setIsEditing(false); }}
-                className="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-semibold"
               >
                 Cancel
               </button>
@@ -1010,7 +1050,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                 <button
                   onClick={handleSave}
                   disabled={saveMutation.isLoading}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold"
                 >
                   <Save size={16} />
                   <span>{saveMutation.isLoading ? 'Saving...' : 'Save Changes'}</span>

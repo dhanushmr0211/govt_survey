@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Check, AlertTriangle, Edit2, Save } from 'lucide-react';
+import { X, Check, AlertTriangle, Edit2, Save, Trash2 } from 'lucide-react';
 import { confirmPole } from '../services/poleSurveyService';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../store/authStore';
@@ -110,11 +110,41 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
     fetchImages();
   }, [pole.id, projectId]);
 
+  const showDeleteButton = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'prelectricals01@gmail.com';
+
   const confirmMutation = useMutation({
     mutationFn: () => confirmPole(projectId, pole.id),
     onSuccess: () => {
       onSuccess();
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const endpoint = isTgpl
+        ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/poles/${pole.id}`
+        : `${API_BASE_URL}/projects/${projectId}/pole-survey/submissions/${pole.id}?type=pole`;
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${useAuthStore.getState().token || localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to delete submission');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['poles']);
+      queryClient.invalidateQueries(['submissions']);
+      onSuccess();
+    },
+    onError: (err) => {
+      console.error('Delete error:', err);
+      alert(err.message || 'Failed to delete submission');
+    }
   });
 
   const saveMutation = useMutation({
@@ -579,6 +609,20 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
             <span>Raise Issue</span>
           </button>
           <div className="flex gap-2">
+            {showDeleteButton && (
+              <button
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to delete this submission?')) {
+                    deleteMutation.mutate();
+                  }
+                }}
+                disabled={deleteMutation.isLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold"
+              >
+                <Trash2 size={16} />
+                <span>{deleteMutation.isLoading ? 'Deleting...' : 'Delete Submission'}</span>
+              </button>
+            )}
             <button
               onClick={onClose}
               className="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50"

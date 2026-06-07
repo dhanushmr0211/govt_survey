@@ -1023,4 +1023,265 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
   };
 }
 
-module.exports = { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions, getMyStats, getEmployeeTracking, getMobileUserTracking, getReportData };
+async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtScope = null, ulbScope = null, fromDate = null, toDate = null, type = null) {
+  const offset = (page - 1) * limit;
+  
+  let scopeFilter = '';
+  const params = [projectId, limit, offset];
+  let pIdx = 4;
+
+  if (districtScope && Array.isArray(districtScope) && districtScope.length > 0) {
+    scopeFilter += ` AND ulb.district_id = ANY($${pIdx})`;
+    params.push(districtScope);
+    pIdx++;
+  }
+  if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
+    scopeFilter += ` AND sp.ulb_id = ANY($${pIdx})`;
+    params.push(ulbScope);
+    pIdx++;
+  }
+
+  let spDateFilter = '';
+  let pDateFilter = '';
+  if (fromDate && toDate) {
+    const startIdx = params.length + 1;
+    spDateFilter = ` AND (timezone('Asia/Kolkata', timezone('UTC', sp.deleted_at)))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    pDateFilter = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.deleted_at)))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    params.push(fromDate, toDate);
+  }
+
+  let queryBody = '';
+  if (type === 'switch_point') {
+    queryBody = `
+      SELECT 
+        'switch_point' as type,
+        sp.id,
+        sp.created_by as user_id,
+        u_cre.name as user_name,
+        sp.created_at,
+        sp.ward_number,
+        sp.switch_point_number::text as identifier,
+        ulb.name as ulb_name,
+        dist.name as district_name,
+        sp.switch_point_number::text as switch_point_number,
+        sp.switch_point_type,
+        sp.meter_exists,
+        sp.meter_type,
+        sp.meter_rr_number,
+        sp.meter_serial_number,
+        sp.meter_condition,
+        sp.latitude,
+        sp.longitude,
+        sp.confirmed_by,
+        sp.confirmed_at,
+        u_conf.name as confirmed_by_name,
+        sp.deleted_by,
+        sp.deleted_at,
+        u_del.name as deleted_by_name,
+        NULL as conductor_type,
+        NULL as pole_type,
+        NULL::numeric as pole_height_mtrs,
+        NULL as pole_condition,
+        NULL::numeric as pole_to_pole_distance_mtrs,
+        NULL as arm_type,
+        NULL as arm_status,
+        NULL as present_arm_no,
+        NULL::numeric as present_arm_length_mtrs,
+        NULL as how_many_lights_in_pole,
+        NULL as light_mounting_height,
+        NULL as light_type, NULL as light_capacity, NULL as light_type_2, NULL as light_capacity_2,
+        NULL as light_working_status,
+        NULL as road_category,
+        NULL as road_type,
+        NULL::numeric as road_width_mtrs,
+        NULL as pole_earthing_exists
+      FROM switch_points sp
+      LEFT JOIN users u_cre ON sp.created_by = u_cre.id
+      LEFT JOIN users u_conf ON sp.confirmed_by = u_conf.id
+      LEFT JOIN users u_del ON sp.deleted_by = u_del.id
+      LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+      LEFT JOIN districts dist ON ulb.district_id = dist.id
+      WHERE sp.project_id = $1 AND sp.is_deleted = TRUE
+      ${spDateFilter}
+      ${scopeFilter}
+    `;
+  } else if (type === 'pole') {
+    queryBody = `
+      SELECT 
+        'pole' as type,
+        p.id,
+        p.created_by as user_id,
+        u_cre.name as user_name,
+        p.created_at,
+        sp.ward_number,
+        p.pole_number::text as identifier,
+        ulb.name as ulb_name,
+        dist.name as district_name,
+        p.switch_point_number::text as switch_point_number,
+        NULL as switch_point_type,
+        NULL::boolean as meter_exists,
+        NULL as meter_type,
+        NULL as meter_rr_number,
+        NULL as meter_serial_number,
+        NULL as meter_condition,
+        p.latitude,
+        p.longitude,
+        p.confirmed_by,
+        p.confirmed_at,
+        u_conf.name as confirmed_by_name,
+        p.deleted_by,
+        p.deleted_at,
+        u_del.name as deleted_by_name,
+        p.conductor_type,
+        p.pole_type,
+        p.pole_height_mtrs,
+        p.pole_condition,
+        p.pole_to_pole_distance_mtrs,
+        p.arm_type,
+        p.arm_status,
+        p.present_arm_no,
+        p.present_arm_length_mtrs,
+        p.how_many_lights_in_pole,
+        p.light_mounting_height,
+        p.light_type, p.light_capacity, p.light_type_2, p.light_capacity_2,
+        p.light_working_status,
+        p.road_category,
+        p.road_type,
+        p.road_width_mtrs,
+        p.pole_earthing_exists
+      FROM poles p
+      JOIN switch_points sp ON p.switch_point_id = sp.id
+      LEFT JOIN users u_cre ON p.created_by = u_cre.id
+      LEFT JOIN users u_conf ON p.confirmed_by = u_conf.id
+      LEFT JOIN users u_del ON p.deleted_by = u_del.id
+      LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+      LEFT JOIN districts dist ON ulb.district_id = dist.id
+      WHERE p.project_id = $1 AND p.is_deleted = TRUE
+      ${pDateFilter}
+      ${scopeFilter}
+    `;
+  } else {
+    queryBody = `
+      SELECT 
+        'switch_point' as type,
+        sp.id,
+        sp.created_by as user_id,
+        u_cre.name as user_name,
+        sp.created_at,
+        sp.ward_number,
+        sp.switch_point_number::text as identifier,
+        ulb.name as ulb_name,
+        dist.name as district_name,
+        sp.switch_point_number::text as switch_point_number,
+        sp.switch_point_type,
+        sp.meter_exists,
+        sp.meter_type,
+        sp.meter_rr_number,
+        sp.meter_serial_number,
+        sp.meter_condition,
+        sp.latitude,
+        sp.longitude,
+        sp.confirmed_by,
+        sp.confirmed_at,
+        u_conf.name as confirmed_by_name,
+        sp.deleted_by,
+        sp.deleted_at,
+        u_del.name as deleted_by_name,
+        NULL as conductor_type,
+        NULL as pole_type,
+        NULL::numeric as pole_height_mtrs,
+        NULL as pole_condition,
+        NULL::numeric as pole_to_pole_distance_mtrs,
+        NULL as arm_type,
+        NULL as arm_status,
+        NULL as present_arm_no,
+        NULL::numeric as present_arm_length_mtrs,
+        NULL as how_many_lights_in_pole,
+        NULL as light_mounting_height,
+        NULL as light_type, NULL as light_capacity, NULL as light_type_2, NULL as light_capacity_2,
+        NULL as light_working_status,
+        NULL as road_category,
+        NULL as road_type,
+        NULL::numeric as road_width_mtrs,
+        NULL as pole_earthing_exists
+      FROM switch_points sp
+      LEFT JOIN users u_cre ON sp.created_by = u_cre.id
+      LEFT JOIN users u_conf ON sp.confirmed_by = u_conf.id
+      LEFT JOIN users u_del ON sp.deleted_by = u_del.id
+      LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+      LEFT JOIN districts dist ON ulb.district_id = dist.id
+      WHERE sp.project_id = $1 AND sp.is_deleted = TRUE
+      ${spDateFilter}
+      ${scopeFilter}
+      
+      UNION ALL
+      
+      SELECT 
+        'pole' as type,
+        p.id,
+        p.created_by as user_id,
+        u_cre.name as user_name,
+        p.created_at,
+        sp.ward_number,
+        p.pole_number::text as identifier,
+        ulb.name as ulb_name,
+        dist.name as district_name,
+        p.switch_point_number::text as switch_point_number,
+        NULL as switch_point_type,
+        NULL::boolean as meter_exists,
+        NULL as meter_type,
+        NULL as meter_rr_number,
+        NULL as meter_serial_number,
+        NULL as meter_condition,
+        p.latitude,
+        p.longitude,
+        p.confirmed_by,
+        p.confirmed_at,
+        u_conf.name as confirmed_by_name,
+        p.deleted_by,
+        p.deleted_at,
+        u_del.name as deleted_by_name,
+        p.conductor_type,
+        p.pole_type,
+        p.pole_height_mtrs,
+        p.pole_condition,
+        p.pole_to_pole_distance_mtrs,
+        p.arm_type,
+        p.arm_status,
+        p.present_arm_no,
+        p.present_arm_length_mtrs,
+        p.how_many_lights_in_pole,
+        p.light_mounting_height,
+        p.light_type, p.light_capacity, p.light_type_2, p.light_capacity_2,
+        p.light_working_status,
+        p.road_category,
+        p.road_type,
+        p.road_width_mtrs,
+        p.pole_earthing_exists
+      FROM poles p
+      JOIN switch_points sp ON p.switch_point_id = sp.id
+      LEFT JOIN users u_cre ON p.created_by = u_cre.id
+      LEFT JOIN users u_conf ON p.confirmed_by = u_conf.id
+      LEFT JOIN users u_del ON p.deleted_by = u_del.id
+      LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
+      LEFT JOIN districts dist ON ulb.district_id = dist.id
+      WHERE p.project_id = $1 AND p.is_deleted = TRUE
+      ${pDateFilter}
+      ${scopeFilter}
+    `;
+  }
+
+  const sql = `
+    SELECT *, COUNT(*) OVER() AS total_count FROM (
+      ${queryBody}
+    ) combined
+    ORDER BY deleted_at DESC
+    LIMIT $2 OFFSET $3
+  `;
+  
+  const result = await query(sql, params);
+  const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
+  return { rows: result.rows, total };
+}
+
+module.exports = { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions, getDeletedSubmissions, getMyStats, getEmployeeTracking, getMobileUserTracking, getReportData };

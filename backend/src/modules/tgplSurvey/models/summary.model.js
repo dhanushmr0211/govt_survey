@@ -9,6 +9,7 @@ async function resolveUserNames(rows) {
     if (row.user_id && !isNaN(Number(row.user_id))) userIds.add(Number(row.user_id));
     if (row.confirmed_by && !isNaN(Number(row.confirmed_by))) userIds.add(Number(row.confirmed_by));
     if (row.pole_confirmed_by && !isNaN(Number(row.pole_confirmed_by))) userIds.add(Number(row.pole_confirmed_by));
+    if (row.deleted_by && !isNaN(Number(row.deleted_by))) userIds.add(Number(row.deleted_by));
   });
   
   if (userIds.size === 0) return rows;
@@ -32,6 +33,9 @@ async function resolveUserNames(rows) {
     }
     if (row.pole_confirmed_by) {
       row.pole_confirmed_by_name = userMap[row.pole_confirmed_by] || `User #${row.pole_confirmed_by}`;
+    }
+    if (row.deleted_by) {
+      row.deleted_by_name = userMap[row.deleted_by] || `User #${row.deleted_by}`;
     }
   });
   
@@ -769,6 +773,139 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
   };
 }
 
+async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtScope = null, ulbScope = null, fromDate = null, toDate = null, type = null) {
+  const offset = (page - 1) * limit;
+  let scopeFilter = '';
+  const params = [projectId, limit, offset];
+  let pIdx = 4;
+
+  if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
+    scopeFilter += ` AND p.ward_id = ANY($${pIdx})`;
+    params.push(ulbScope);
+    pIdx++;
+  }
+
+  let pDateFilter = '';
+  if (fromDate && toDate) {
+    const startIdx = params.length + 1;
+    pDateFilter = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.deleted_at)))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    params.push(fromDate, toDate);
+  }
+
+  let queryBody = '';
+  if (type === 'switch_point') {
+    queryBody = `
+      SELECT 
+        'switch_point' as type,
+        NULL::int as id,
+        NULL::int as user_id,
+        NULL::text as user_name,
+        NULL::timestamp as created_at,
+        NULL::text as ward_number,
+        NULL::text as identifier,
+        NULL::text as ulb_name,
+        NULL::text as switch_point_number,
+        NULL::int as confirmed_by,
+        NULL::timestamp as confirmed_at,
+        NULL::text as confirmed_by_name,
+        NULL::int as deleted_by,
+        NULL::timestamp as deleted_at,
+        NULL::text as deleted_by_name,
+        NULL::text as switch_point_type,
+        NULL::boolean as meter_exists,
+        NULL::text as meter_type,
+        NULL::text as meter_rr_number,
+        NULL::text as meter_serial_number,
+        NULL::text as meter_condition,
+        NULL::numeric as latitude,
+        NULL::numeric as longitude,
+        NULL::text as conductor_type,
+        NULL::text as pole_type,
+        NULL::numeric as pole_height_mtrs,
+        NULL::text as pole_condition,
+        NULL::numeric as pole_to_pole_distance_mtrs,
+        NULL::text as arm_type,
+        NULL::text as arm_status,
+        NULL::text as present_arm_no,
+        NULL::numeric as present_arm_length_mtrs,
+        NULL::text as how_many_lights_in_pole,
+        NULL::text as light_mounting_height,
+        NULL::text as light_type, NULL::text as light_capacity, NULL::text as light_type_2, NULL::text as light_capacity_2,
+        NULL::text as light_working_status,
+        NULL::text as road_category,
+        NULL::text as road_type,
+        NULL::numeric as road_width_mtrs,
+        NULL::text as pole_earthing_exists
+      LIMIT 0
+    `;
+  } else {
+    queryBody = `
+      SELECT 
+        'pole' as type,
+        p.id,
+        p.created_by as user_id,
+        u_cre.name as user_name,
+        p.created_at,
+        w.name as ward_number,
+        p.pole_number::text as identifier,
+        w.name as ulb_name,
+        p.switch_point_number::text as switch_point_number,
+        p.confirmed_by,
+        p.confirmed_at,
+        u_conf.name as confirmed_by_name,
+        p.deleted_by,
+        p.deleted_at,
+        u_del.name as deleted_by_name,
+        NULL::text as switch_point_type,
+        NULL::boolean as meter_exists,
+        NULL::text as meter_type,
+        NULL::text as meter_rr_number,
+        NULL::text as meter_serial_number,
+        NULL::text as meter_condition,
+        p.latitude,
+        p.longitude,
+        p.conductor_type,
+        p.pole_type,
+        p.pole_height_mtrs,
+        p.pole_condition,
+        p.pole_to_pole_distance_mtrs,
+        p.arm_type,
+        p.arm_status,
+        p.present_arm_no,
+        p.present_arm_length_mtrs,
+        p.how_many_lights_in_pole,
+        p.light_mounting_height,
+        p.light_type, p.light_capacity, p.light_type_2, p.light_capacity_2,
+        p.light_working_status,
+        p.road_category,
+        p.road_type,
+        p.road_width_mtrs,
+        p.pole_earthing_exists
+      FROM poles p
+      JOIN wards w ON p.ward_id = w.id
+      LEFT JOIN users u_cre ON p.created_by = u_cre.id
+      LEFT JOIN users u_conf ON p.confirmed_by = u_conf.id
+      LEFT JOIN users u_del ON p.deleted_by = u_del.id
+      WHERE p.project_id = $1 AND p.is_deleted = TRUE
+      ${pDateFilter}
+      ${scopeFilter}
+    `;
+  }
+
+  const sql = `
+    SELECT *, COUNT(*) OVER() AS total_count FROM (
+      ${queryBody}
+    ) combined
+    ORDER BY deleted_at DESC
+    LIMIT $2 OFFSET $3
+  `;
+  
+  const result = await query(sql, params);
+  const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
+  const resolved = await resolveUserNames(result.rows);
+  return { rows: resolved, total };
+}
+
 module.exports = {
   getDistrictSummary,
   getWardSummary,
@@ -776,6 +913,7 @@ module.exports = {
   getPendingSubmissions,
   getConfirmedSubmissions,
   getTodaySubmissions,
+  getDeletedSubmissions,
   getMyStats,
   getEmployeeTracking,
   getMobileUserTracking,

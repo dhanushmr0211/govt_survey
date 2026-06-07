@@ -1,4 +1,4 @@
-const { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions, getMyStats, getEmployeeTracking, getMobileUserTracking, getReportData } = require('../models/summary.model');
+const { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions, getDeletedSubmissions, getMyStats, getEmployeeTracking, getMobileUserTracking, getReportData } = require('../models/summary.model');
 const { canAccessProject } = require('../../../middleware/projectAccess');
 const { ROLES } = require('../../../constants/roles');
 const ExcelJS = require('exceljs');
@@ -400,4 +400,34 @@ async function downloadReportHandler(req, res, next) {
   } catch (error) { next(error); }
 }
 
-module.exports = { getDistrictSummaryHandler, getWardSummaryHandler, getWardDetailsHandler, getPendingSubmissionsHandler, getTodaySubmissionsHandler, getConfirmedSubmissionsHandler, getMyStatsHandler, getEmployeeTrackingHandler, getMobileUserTrackingHandler, downloadReportHandler };
+async function getDeletedSubmissionsHandler(req, res, next) {
+  try {
+    const { projectId } = req.params;
+    
+    const userEmail = (req.user?.email || '').toLowerCase().trim();
+    if (userEmail !== 'pratheekar1997@gmail.com' && userEmail !== 'prelectricals01@gmail.com') {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to access the deleted queue' });
+    }
+
+    const { page = 1, limit = 50, fromDate, toDate, type } = req.query;
+    const permissions = req.projectSections || {};
+
+    if (isNaN(Number(projectId))) {
+      return res.status(400).json({ message: 'Invalid project ID' });
+    }
+
+    const { rows, total } = await getDeletedSubmissions(
+      Number(projectId),
+      Number(page),
+      Number(limit),
+      permissions.district_scope,
+      permissions.ulb_scope,
+      fromDate || null,
+      toDate || null,
+      type || null
+    );
+    res.json({ queue: rows, total });
+  } catch (error) { next(error); }
+}
+
+module.exports = { getDistrictSummaryHandler, getWardSummaryHandler, getWardDetailsHandler, getPendingSubmissionsHandler, getTodaySubmissionsHandler, getConfirmedSubmissionsHandler, getDeletedSubmissionsHandler, getMyStatsHandler, getEmployeeTrackingHandler, getMobileUserTrackingHandler, downloadReportHandler };

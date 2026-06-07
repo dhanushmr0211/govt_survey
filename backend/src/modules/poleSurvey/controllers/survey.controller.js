@@ -337,6 +337,40 @@ async function confirmPoleHandler(req, res, next) {
   }
 }
 
+async function deleteSubmissionHandler(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { type } = req.query; // 'pole' or 'switch_point'
+    const { projectId } = req.params;
+    const userId = req.user.id;
+
+    const userEmail = (req.user?.email || '').toLowerCase().trim();
+    if (userEmail !== 'pratheekar1997@gmail.com' && userEmail !== 'prelectricals01@gmail.com') {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to delete submissions.' });
+    }
+
+    if (type === 'switch_point') {
+      await query(
+        `UPDATE switch_points 
+         SET is_deleted = TRUE, deleted_at = timezone('Asia/Kolkata', NOW()), deleted_by = $1 
+         WHERE id = $2 AND project_id = $3`,
+        [userId, id, projectId]
+      );
+    } else {
+      await query(
+        `UPDATE poles 
+         SET is_deleted = TRUE, deleted_at = timezone('Asia/Kolkata', NOW()), deleted_by = $1 
+         WHERE id = $2 AND project_id = $3`,
+        [userId, id, projectId]
+      );
+    }
+
+    res.json({ message: 'Submission successfully deleted.' });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getSwitchPointsHandler,
   getPolesHandler,
@@ -344,5 +378,6 @@ module.exports = {
   updateSwitchPointHandler,
   updatePoleHandler,
   confirmSwitchPointHandler,
-  confirmPoleHandler
+  confirmPoleHandler,
+  deleteSubmissionHandler
 };

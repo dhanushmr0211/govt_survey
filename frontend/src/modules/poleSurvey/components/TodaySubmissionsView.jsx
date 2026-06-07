@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
-import { CheckCircle2, SearchCheck, Edit2, Save } from 'lucide-react';
+import { CheckCircle2, SearchCheck, Edit2, Save, Trash2 } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import { useToastStore } from '../../../store/toastStore';
 import imageCompression from 'browser-image-compression';
@@ -68,6 +68,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
+  const showDeleteButton = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'prelectricals01@gmail.com';
 
   const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
 
@@ -104,6 +105,28 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   });
 
   const { queue, total } = data;
+
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id, type }) => {
+      const endpoint = isTgpl
+        ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/poles/${id}`
+        : `${API_BASE_URL}/projects/${projectId}/pole-survey/submissions/${id}?type=${type}`;
+      const res = await axios.delete(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['submissions']);
+      addToast('Submission deleted successfully!', 'success');
+      setSelectedSubmission(null);
+      setIsEditing(false);
+    },
+    onError: (err) => {
+      console.error('Delete error:', err);
+      addToast(err.response?.data?.message || 'Failed to delete submission', 'error');
+    }
+  });
 
   const confirmMutation = useMutation({
     mutationFn: async ({ id, type }) => {
@@ -775,6 +798,20 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
             </div>
             
             <div className="flex justify-end gap-3 mt-6 border-t pt-4 bg-white">
+              {showDeleteButton && (
+                <button
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this submission?')) {
+                      deleteMutation.mutate({ id: selectedSubmission.id, type: selectedSubmission.type });
+                    }
+                  }}
+                  disabled={deleteMutation.isLoading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 font-medium mr-auto"
+                >
+                  <Trash2 size={16} />
+                  <span>{deleteMutation.isLoading ? 'Deleting...' : 'Delete Submission'}</span>
+                </button>
+              )}
               <button
                 onClick={() => { setSelectedSubmission(null); setIsEditing(false); }}
                 className="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"

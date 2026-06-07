@@ -7,7 +7,8 @@ const {
   getCcmsListHandler,
   updatePoleHandler,
   confirmPoleHandler,
-  validateMoveHandler
+  validateMoveHandler,
+  deletePoleHandler
 } = require('../controllers/survey.controller');
 
 const { 
@@ -24,6 +25,7 @@ const {
   downloadReportHandler,
   getTodaySubmissionsHandler,
   getConfirmedSubmissionsHandler,
+  getDeletedSubmissionsHandler,
   getMyStatsHandler,
   getEmployeeTrackingHandler,
   getMobileUserTrackingHandler
@@ -43,6 +45,7 @@ tgplSurveyRouter.get('/ccms', getCcmsListHandler);
 tgplSurveyRouter.get('/poles', getPolesHandler);
 tgplSurveyRouter.patch('/poles/:id', updatePoleHandler);
 tgplSurveyRouter.post('/poles/:id/confirm', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.EMPLOYEE, ROLES.CLIENT), confirmPoleHandler);
+tgplSurveyRouter.delete('/poles/:id', deletePoleHandler);
 tgplSurveyRouter.post('/validate-move', validateMoveHandler);
 
 // Reports / Summary
@@ -56,6 +59,7 @@ tgplSurveyRouter.get('/summary/ulbs/:ulbId/wards/:wardNumber/details', getWardDe
 tgplSurveyRouter.get('/queue/pending', getPendingSubmissionsHandler);
 tgplSurveyRouter.get('/queue/confirmed', getConfirmedSubmissionsHandler);
 tgplSurveyRouter.get('/queue/today', getTodaySubmissionsHandler);
+tgplSurveyRouter.get('/queue/deleted', getDeletedSubmissionsHandler);
 
 // Files
 tgplSurveyRouter.post('/files', upload.single('file'), uploadFileHandler);

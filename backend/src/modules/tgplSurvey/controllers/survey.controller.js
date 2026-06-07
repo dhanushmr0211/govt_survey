@@ -165,10 +165,35 @@ async function validateMoveHandler(req, res, next) {
   }
 }
 
+async function deletePoleHandler(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { projectId } = req.params;
+    const userId = req.user.id;
+
+    const userEmail = (req.user?.email || '').toLowerCase().trim();
+    if (userEmail !== 'pratheekar1997@gmail.com' && userEmail !== 'prelectricals01@gmail.com') {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to delete submissions.' });
+    }
+
+    await query(
+      `UPDATE poles 
+       SET is_deleted = TRUE, deleted_at = timezone('Asia/Kolkata', NOW()), deleted_by = $1 
+       WHERE id = $2 AND project_id = $3`,
+      [userId, id, projectId]
+    );
+
+    res.json({ message: 'Pole successfully deleted.' });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getPolesHandler,
   getCcmsListHandler,
   updatePoleHandler,
   confirmPoleHandler,
-  validateMoveHandler
+  validateMoveHandler,
+  deletePoleHandler
 };

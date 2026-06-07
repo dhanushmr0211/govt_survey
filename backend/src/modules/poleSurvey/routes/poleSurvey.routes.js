@@ -9,7 +9,8 @@ const {
   updateSwitchPointHandler,
   updatePoleHandler,
   confirmSwitchPointHandler,
-  confirmPoleHandler
+  confirmPoleHandler,
+  deleteSubmissionHandler
 } = require('../controllers/survey.controller');
 
 const { 
@@ -27,6 +28,7 @@ const {
   downloadReportHandler,
   getTodaySubmissionsHandler,
   getConfirmedSubmissionsHandler,
+  getDeletedSubmissionsHandler,
   getMyStatsHandler,
   getEmployeeTrackingHandler,
   getMobileUserTrackingHandler
@@ -52,6 +54,7 @@ poleSurveyRouter.post('/validate-move', validateMoveHandler);
 
 poleSurveyRouter.post('/switch-points/:id/confirm', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.EMPLOYEE, ROLES.CLIENT), confirmSwitchPointHandler);
 poleSurveyRouter.post('/poles/:id/confirm', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.EMPLOYEE, ROLES.CLIENT), confirmPoleHandler);
+poleSurveyRouter.delete('/submissions/:id', deleteSubmissionHandler);
 
 // Reports / Summary
 poleSurveyRouter.get('/my-stats', getMyStatsHandler);
@@ -64,6 +67,7 @@ poleSurveyRouter.get('/summary/ulbs/:ulbId/wards/:wardNumber/details', getWardDe
 poleSurveyRouter.get('/queue/pending', getPendingSubmissionsHandler);
 poleSurveyRouter.get('/queue/confirmed', getConfirmedSubmissionsHandler);
 poleSurveyRouter.get('/queue/today', getTodaySubmissionsHandler);
+poleSurveyRouter.get('/queue/deleted', getDeletedSubmissionsHandler);
 
 // Files
 poleSurveyRouter.post('/files', upload.single('file'), uploadFileHandler);

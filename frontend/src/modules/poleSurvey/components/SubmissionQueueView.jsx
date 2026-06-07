@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
-import { CheckCircle2, SearchCheck, Edit2, Save } from 'lucide-react';
+import { CheckCircle2, SearchCheck, Edit2, Save, Trash2 } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import { useToastStore } from '../../../store/toastStore';
 import imageCompression from 'browser-image-compression';
@@ -85,6 +85,7 @@ export const SubmissionQueueView = ({ projectId }) => {
   const user = useAuthStore((state) => state.user);
   const [isEditing, setIsEditing] = useState(false);
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
+  const showDeletedTab = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'prelectricals01@gmail.com';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
   const canShowEdit = user?.role === 'MASTER_ADMIN' || 
@@ -94,12 +95,16 @@ export const SubmissionQueueView = ({ projectId }) => {
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
 
-  const dateField = activeTab === 'pending' ? 'created_at' : 'confirmed_at';
+  const dateField = activeTab === 'pending' ? 'created_at' : activeTab === 'deleted' ? 'deleted_at' : 'confirmed_at';
 
   const { data = { queue: [], total: 0 }, isLoading } = useQuery({
     queryKey: ['submissions', activeTab, activeType, page, projectId, fromDate, toDate, dateField],
     queryFn: async () => {
-      const endpoint = activeTab === 'pending' ? 'queue/pending' : 'queue/confirmed';
+      const endpoint = activeTab === 'pending' 
+        ? 'queue/pending' 
+        : activeTab === 'confirmed' 
+          ? 'queue/confirmed' 
+          : 'queue/deleted';
       let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}?page=${page}&limit=${limit}`;
       if (fromDate) url += `&fromDate=${fromDate}`;
       if (toDate) url += `&toDate=${toDate}`;
@@ -115,6 +120,28 @@ export const SubmissionQueueView = ({ projectId }) => {
   });
 
   const { queue, total } = data;
+
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id, type }) => {
+      const endpoint = isTgpl
+        ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/poles/${id}`
+        : `${API_BASE_URL}/projects/${projectId}/pole-survey/submissions/${id}?type=${type}`;
+      const res = await axios.delete(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['submissions'] });
+      setSelectedSubmission(null);
+      setIsEditing(false);
+      alert('Submission successfully deleted.');
+    },
+    onError: (err) => {
+      console.error('Delete error:', err);
+      alert(err.response?.data?.message || 'Failed to delete submission');
+    }
+  });
 
   const confirmMutation = useMutation({
     mutationFn: async ({ id, type }) => {
@@ -491,6 +518,14 @@ export const SubmissionQueueView = ({ projectId }) => {
               >
                 Confirmed
               </button>
+              {showDeletedTab && (
+                <button
+                  className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeTab === 'deleted' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                  onClick={() => { setActiveTab('deleted'); setPage(1); }}
+                >
+                  Deleted
+                </button>
+              )}
             </div>
 
             {/* Type Tabs */}
@@ -579,12 +614,18 @@ export const SubmissionQueueView = ({ projectId }) => {
               <th>Time</th>
               <th>Ward</th>
               <th>ULB Name</th>
+              {activeTab === 'deleted' && <th>Deleted By</th>}
+              {activeTab === 'deleted' && <th>Deleted Date/Time</th>}
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {queue.map((item) => {
-              const displayDate = activeTab === 'confirmed' ? item.confirmed_at : item.created_at;
+              const displayDate = activeTab === 'confirmed' 
+                ? item.confirmed_at 
+                : activeTab === 'deleted' 
+                  ? item.deleted_at 
+                  : item.created_at;
               const date = displayDate ? new Date(displayDate) : null;
               return (
                 <tr key={`${item.type}-${item.id}`}>
@@ -601,6 +642,8 @@ export const SubmissionQueueView = ({ projectId }) => {
                   <td>{date ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>
                   <td>{item.ward_number}</td>
                   <td>{item.ulb_name || 'N/A'}</td>
+                  {activeTab === 'deleted' && <td className="text-red-600 font-semibold">{item.deleted_by_name || 'N/A'}</td>}
+                  {activeTab === 'deleted' && <td className="text-slate-500 text-xs">{item.deleted_at ? new Date(item.deleted_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>}
                   <td>
                     <div className="flex gap-2">
                     <button
@@ -707,6 +750,18 @@ export const SubmissionQueueView = ({ projectId }) => {
                       <div>
                         <p className="text-gray-500 text-xs">Confirmed At</p>
                         <p className="font-medium">{selectedSubmission.confirmed_at ? new Date(selectedSubmission.confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</p>
+                      </div>
+                    </>
+                  )}
+                  {selectedSubmission.deleted_by_name && (
+                    <>
+                      <div>
+                        <p className="text-gray-500 text-xs text-red-500 font-bold">Deleted By</p>
+                        <p className="font-medium text-red-600 font-semibold">{selectedSubmission.deleted_by_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 text-xs text-red-500 font-bold">Deleted At</p>
+                        <p className="font-medium text-red-600 font-semibold">{selectedSubmission.deleted_at ? new Date(selectedSubmission.deleted_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</p>
                       </div>
                     </>
                   )}
@@ -939,9 +994,23 @@ export const SubmissionQueueView = ({ projectId }) => {
             </div>
               
             <div className="flex justify-end gap-2 mt-6 border-t pt-4">
+              {showDeletedTab && activeTab !== 'deleted' && (
+                <button
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this submission?')) {
+                      deleteMutation.mutate({ id: selectedSubmission.id, type: selectedSubmission.type });
+                    }
+                  }}
+                  disabled={deleteMutation.isLoading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold mr-auto"
+                >
+                  <Trash2 size={16} />
+                  <span>{deleteMutation.isLoading ? 'Deleting...' : 'Delete Submission'}</span>
+                </button>
+              )}
               <button
                 onClick={() => { setSelectedSubmission(null); setIsEditing(false); }}
-                className="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-semibold"
               >
                 Cancel
               </button>
@@ -949,7 +1018,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                 <button
                   onClick={handleSave}
                   disabled={saveMutation.isLoading}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 text-sm font-semibold"
                 >
                   <Save size={16} />
                   <span>{saveMutation.isLoading ? 'Saving...' : 'Save Changes'}</span>
@@ -962,7 +1031,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         confirmMutation.mutate({ id: selectedSubmission.id, type: selectedSubmission.type });
                       }
                     }}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm font-semibold"
                   >
                     <CheckCircle2 size={16} />
                     <span>Confirm Submission</span>
