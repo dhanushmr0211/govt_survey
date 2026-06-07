@@ -8,6 +8,32 @@ import { getCurrentLocation } from '../../../shared/utils/geolocation';
 import { isMobileEditRestricted } from '../utils/mobileRestrictions';
 import { useAuthStore } from '../../../store/authStore';
 
+const getAutoRoadCategory = (roadType, roadWidthStr) => {
+  if (!roadType) return null;
+  const typeUpper = roadType.toUpperCase();
+  const width = Number(roadWidthStr);
+
+  if (typeUpper.includes('GALLI')) {
+    return 'B2';
+  }
+  if (typeUpper.includes('RESIDENTIAL')) {
+    if (!isNaN(width) && width > 0) {
+      if (width <= 6) return 'B2';
+      if (width === 8) return 'B1';
+    }
+  }
+  if (typeUpper.includes('SUB MAIN')) {
+    if (!isNaN(width) && width > 0) {
+      if (width <= 8) return 'B1';
+      if (width >= 10) return 'A2';
+    }
+  }
+  if (typeUpper.includes('MAIN ROAD') || typeUpper === 'MAIN') {
+    return 'A1';
+  }
+  return null;
+};
+
 export const PoleForm = ({ ulb, onBack }) => {
   const user = useAuthStore((state) => state.user);
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
@@ -206,6 +232,12 @@ export const PoleForm = ({ ulb, onBack }) => {
             updated.light_capacity_2 = '200W';
           } else if (valLower === 'bulb') {
             updated.light_capacity_2 = '40W';
+          }
+        }
+        if (name === 'road_type' || name === 'road_width') {
+          const autoCategory = getAutoRoadCategory(updated.road_type, updated.road_width);
+          if (autoCategory) {
+            updated.road_category = autoCategory;
           }
         }
       }

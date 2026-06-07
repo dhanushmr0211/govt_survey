@@ -7,6 +7,32 @@ import { useToastStore } from '../../../store/toastStore';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 
+const getAutoRoadCategory = (roadType, roadWidthStr) => {
+  if (!roadType) return null;
+  const typeUpper = roadType.toUpperCase();
+  const width = Number(roadWidthStr);
+
+  if (typeUpper.includes('GALLI')) {
+    return 'B2';
+  }
+  if (typeUpper.includes('RESIDENTIAL')) {
+    if (!isNaN(width) && width > 0) {
+      if (width <= 6) return 'B2';
+      if (width === 8) return 'B1';
+    }
+  }
+  if (typeUpper.includes('SUB MAIN')) {
+    if (!isNaN(width) && width > 0) {
+      if (width <= 8) return 'B1';
+      if (width >= 10) return 'A2';
+    }
+  }
+  if (typeUpper.includes('MAIN ROAD') || typeUpper === 'MAIN') {
+    return 'A1';
+  }
+  return null;
+};
+
 export const SubmissionQueueView = ({ projectId }) => {
   const token = localStorage.getItem('token');
   const [selectedSubmission, setSelectedSubmission] = useState(null);
@@ -366,6 +392,12 @@ export const SubmissionQueueView = ({ projectId }) => {
             updated.light_capacity_2 = '0W';
           } else if (valLower === 'bulb') {
             updated.light_capacity_2 = '40W';
+          }
+        }
+        if (name === 'road_type' || name === 'road_width_mtrs') {
+          const autoCategory = getAutoRoadCategory(updated.road_type, updated.road_width_mtrs);
+          if (autoCategory) {
+            updated.road_category = autoCategory;
           }
         }
       }
