@@ -352,14 +352,14 @@ async function deleteSubmissionHandler(req, res, next) {
     if (type === 'switch_point') {
       await query(
         `UPDATE switch_points 
-         SET is_deleted = TRUE, deleted_at = timezone('Asia/Kolkata', NOW()), deleted_by = $1 
+         SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $1 
          WHERE id = $2 AND project_id = $3`,
         [userId, id, projectId]
       );
     } else {
       await query(
         `UPDATE poles 
-         SET is_deleted = TRUE, deleted_at = timezone('Asia/Kolkata', NOW()), deleted_by = $1 
+         SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $1 
          WHERE id = $2 AND project_id = $3`,
         [userId, id, projectId]
       );

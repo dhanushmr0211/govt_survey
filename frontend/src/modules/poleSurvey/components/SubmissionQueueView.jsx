@@ -610,8 +610,7 @@ export const SubmissionQueueView = ({ projectId }) => {
               {!isTgpl && <th>Type</th>}
               <th>User ID</th>
               <th>Name</th>
-              <th>Date</th>
-              <th>Time</th>
+              <th>Date/Time</th>
               <th>Ward</th>
               <th>ULB Name</th>
               {activeTab === 'deleted' && <th>Deleted By</th>}
@@ -638,8 +637,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                   )}
                   <td>{item.user_id}</td>
                   <td className="font-semibold text-slate-950">{item.user_name}</td>
-                  <td>{date ? date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>
-                  <td>{date ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>
+                  <td>{date ? date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>
                   <td>{item.ward_number}</td>
                   <td>{item.ulb_name || 'N/A'}</td>
                   {activeTab === 'deleted' && <td className="text-red-600 font-semibold">{item.deleted_by_name || 'N/A'}</td>}
@@ -831,7 +829,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         {renderField('Pole No', 'pole_number', selectedSubmission.identifier)}
                         {renderField('Pole Type', 'pole_type', selectedSubmission.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
                         {renderField('Height', 'pole_height', selectedSubmission.pole_height, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
-                        {renderField('Distance', 'pole_to_pole_distance', selectedSubmission.pole_to_pole_distance)}
+                        {renderField('Distance', 'pole_to_pole_distance', selectedSubmission.pole_to_pole_distance, ['10', '20', '25', '30'])}
                         {renderField('ARM Type', 'arm_type', selectedSubmission.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
                         {renderField('ARM Status', 'arm_status', selectedSubmission.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
                         {renderField('Present ARM No', 'present_arm_no', selectedSubmission.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
@@ -864,7 +862,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         {renderField('Pole Type', 'pole_type', selectedSubmission.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
                         {renderField('Height', 'pole_height_mtrs', selectedSubmission.pole_height_mtrs, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
                         {renderField('Condition', 'pole_condition', selectedSubmission.pole_condition, ['Good', 'defective', 'missing'])}
-                        {renderField('Distance', 'pole_to_pole_distance_mtrs', selectedSubmission.pole_to_pole_distance_mtrs)}
+                        {renderField('Distance', 'pole_to_pole_distance_mtrs', selectedSubmission.pole_to_pole_distance_mtrs, ['10', '20', '25', '30'])}
                         {renderField('ARM Type', 'arm_type', selectedSubmission.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
                         {renderField('ARM Status', 'arm_status', selectedSubmission.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
                         {renderField('Present ARM No', 'present_arm_no', selectedSubmission.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}

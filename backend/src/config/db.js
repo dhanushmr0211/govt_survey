@@ -1,4 +1,12 @@
-const { Pool } = require('pg');
+const pg = require('pg');
+const { Pool } = pg;
+
+// Override parsing for type 1114 (timestamp without time zone)
+// to interpret database strings as UTC instead of local timezone
+pg.types.setTypeParser(1114, function(stringValue) {
+  return new Date(stringValue + 'Z');
+});
+
 const { env } = require('./env');
 const { AsyncLocalStorage } = require('async_hooks');
 

@@ -642,7 +642,12 @@ export const PoleForm = ({ ulb, onBack }) => {
         {!shouldHide('distance_mtrs') && (
           <div>
             <label className="block text-gray-700 font-medium mb-1">Pole To Pole Distance (mtrs)</label>
-            <input type="text" name="distance_mtrs" value={formData.distance_mtrs} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari} />
+            <select name="distance_mtrs" value={formData.distance_mtrs} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+              <option value="">Select Distance</option>
+              {['10', '20', '25', '30'].map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
           </div>
         )}
 
