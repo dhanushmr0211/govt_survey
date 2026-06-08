@@ -624,14 +624,21 @@ async function getMyStats(projectId, userId, date = null) {
   const todayStr = getLocalDateString();
   
   // Total stats
-  const totalPoleResult = await query(
-    'SELECT COUNT(*) as total FROM poles WHERE project_id = $1 AND created_by = $2 AND is_deleted = FALSE',
+  const totalResult = await query(
+    `SELECT 
+       COUNT(CASE WHEN COALESCE(survey_type, 'survey') = 'survey' THEN 1 END) as survey_count,
+       COUNT(CASE WHEN survey_type = 'installation' THEN 1 END) as installation_count
+     FROM poles 
+     WHERE project_id = $1 AND created_by = $2 AND is_deleted = FALSE`,
     [projectId, userId]
   );
 
   // Today's stats
-  const todayPoleResult = await query(
-    `SELECT COUNT(*) as total FROM poles 
+  const todayResult = await query(
+    `SELECT 
+       COUNT(CASE WHEN COALESCE(survey_type, 'survey') = 'survey' THEN 1 END) as survey_count,
+       COUNT(CASE WHEN survey_type = 'installation' THEN 1 END) as installation_count
+     FROM poles 
      WHERE project_id = $1 AND created_by = $2 AND is_deleted = FALSE
      AND (timezone('Asia/Kolkata', timezone('UTC', created_at)))::date = $3`,
     [projectId, userId, todayStr]
@@ -639,8 +646,11 @@ async function getMyStats(projectId, userId, date = null) {
 
   // Date-wise stats (custom date if passed, otherwise default to today)
   const targetDate = date || todayStr;
-  const dateWisePoleResult = await query(
-    `SELECT COUNT(*) as total FROM poles 
+  const dateWiseResult = await query(
+    `SELECT 
+       COUNT(CASE WHEN COALESCE(survey_type, 'survey') = 'survey' THEN 1 END) as survey_count,
+       COUNT(CASE WHEN survey_type = 'installation' THEN 1 END) as installation_count
+     FROM poles 
      WHERE project_id = $1 AND created_by = $2 AND is_deleted = FALSE
      AND (timezone('Asia/Kolkata', timezone('UTC', created_at)))::date = $3`,
     [projectId, userId, targetDate]
@@ -649,16 +659,22 @@ async function getMyStats(projectId, userId, date = null) {
   return {
     total: {
       switch_points: 0,
-      poles: parseInt(totalPoleResult.rows[0].total, 10)
+      poles: parseInt(totalResult.rows[0].survey_count, 10) + parseInt(totalResult.rows[0].installation_count, 10),
+      survey_poles: parseInt(totalResult.rows[0].survey_count, 10),
+      installation_poles: parseInt(totalResult.rows[0].installation_count, 10)
     },
     today: {
       switch_points: 0,
-      poles: parseInt(todayPoleResult.rows[0].total, 10)
+      poles: parseInt(todayResult.rows[0].survey_count, 10) + parseInt(todayResult.rows[0].installation_count, 10),
+      survey_poles: parseInt(todayResult.rows[0].survey_count, 10),
+      installation_poles: parseInt(todayResult.rows[0].installation_count, 10)
     },
     dateWise: {
       date: targetDate,
       switch_points: 0,
-      poles: parseInt(dateWisePoleResult.rows[0].total, 10)
+      poles: parseInt(dateWiseResult.rows[0].survey_count, 10) + parseInt(dateWiseResult.rows[0].installation_count, 10),
+      survey_poles: parseInt(dateWiseResult.rows[0].survey_count, 10),
+      installation_poles: parseInt(dateWiseResult.rows[0].installation_count, 10)
     }
   };
 }
@@ -680,7 +696,11 @@ async function getEmployeeTracking(projectId) {
     `SELECT 
       p.confirmed_by as id,
       COUNT(p.id) as total_poles_resolved,
-      COUNT(CASE WHEN (timezone('Asia/Kolkata', timezone('UTC', p.confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN p.id END) as today_poles_resolved
+      COUNT(CASE WHEN (timezone('Asia/Kolkata', timezone('UTC', p.confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN p.id END) as today_poles_resolved,
+      COUNT(CASE WHEN COALESCE(p.survey_type, 'survey') = 'survey' THEN p.id END) as total_survey_resolved,
+      COUNT(CASE WHEN p.survey_type = 'installation' THEN p.id END) as total_inst_resolved,
+      COUNT(CASE WHEN COALESCE(p.survey_type, 'survey') = 'survey' AND (timezone('Asia/Kolkata', timezone('UTC', p.confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN p.id END) as today_survey_resolved,
+      COUNT(CASE WHEN p.survey_type = 'installation' AND (timezone('Asia/Kolkata', timezone('UTC', p.confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN p.id END) as today_inst_resolved
      FROM poles p
      WHERE p.confirmed_by = ANY($1) AND p.project_id = $2 AND p.is_deleted = FALSE
      GROUP BY p.confirmed_by`,
@@ -691,7 +711,11 @@ async function getEmployeeTracking(projectId) {
   statsResult.rows.forEach(r => {
     statsMap[r.id] = {
       total_poles_resolved: parseInt(r.total_poles_resolved, 10),
-      today_poles_resolved: parseInt(r.today_poles_resolved, 10)
+      today_poles_resolved: parseInt(r.today_poles_resolved, 10),
+      total_survey_resolved: parseInt(r.total_survey_resolved, 10),
+      total_inst_resolved: parseInt(r.total_inst_resolved, 10),
+      today_survey_resolved: parseInt(r.today_survey_resolved, 10),
+      today_inst_resolved: parseInt(r.today_inst_resolved, 10)
     };
   });
 
@@ -701,8 +725,12 @@ async function getEmployeeTracking(projectId) {
     name: u.name,
     total_sp_resolved: 0,
     total_poles_resolved: statsMap[u.id]?.total_poles_resolved || 0,
+    total_survey_resolved: statsMap[u.id]?.total_survey_resolved || 0,
+    total_inst_resolved: statsMap[u.id]?.total_inst_resolved || 0,
     today_sp_resolved: 0,
-    today_poles_resolved: statsMap[u.id]?.today_poles_resolved || 0
+    today_poles_resolved: statsMap[u.id]?.today_poles_resolved || 0,
+    today_survey_resolved: statsMap[u.id]?.today_survey_resolved || 0,
+    today_inst_resolved: statsMap[u.id]?.today_inst_resolved || 0
   }));
 
   result.sort((a, b) => b.total_poles_resolved - a.total_poles_resolved);
@@ -726,7 +754,11 @@ async function getMobileUserTracking(projectId) {
     `SELECT 
       p.created_by as id,
       COUNT(p.id) as total_poles,
-      COUNT(CASE WHEN (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN p.id END) as today_poles
+      COUNT(CASE WHEN (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN p.id END) as today_poles,
+      COUNT(CASE WHEN COALESCE(p.survey_type, 'survey') = 'survey' THEN p.id END) as total_survey,
+      COUNT(CASE WHEN p.survey_type = 'installation' THEN p.id END) as total_inst,
+      COUNT(CASE WHEN COALESCE(p.survey_type, 'survey') = 'survey' AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN p.id END) as today_survey,
+      COUNT(CASE WHEN p.survey_type = 'installation' AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN p.id END) as today_inst
      FROM poles p
      WHERE p.created_by = ANY($1) AND p.project_id = $2 AND p.is_deleted = FALSE
      GROUP BY p.created_by`,
@@ -737,7 +769,11 @@ async function getMobileUserTracking(projectId) {
   statsResult.rows.forEach(r => {
     statsMap[r.id] = {
       total_poles: parseInt(r.total_poles, 10),
-      today_poles: parseInt(r.today_poles, 10)
+      today_poles: parseInt(r.today_poles, 10),
+      total_survey: parseInt(r.total_survey, 10),
+      total_inst: parseInt(r.total_inst, 10),
+      today_survey: parseInt(r.today_survey, 10),
+      today_inst: parseInt(r.today_inst, 10)
     };
   });
 
@@ -747,8 +783,12 @@ async function getMobileUserTracking(projectId) {
     name: u.name,
     total_sp: 0,
     total_poles: statsMap[u.id]?.total_poles || 0,
+    total_survey: statsMap[u.id]?.total_survey || 0,
+    total_inst: statsMap[u.id]?.total_inst || 0,
     today_sp: 0,
-    today_poles: statsMap[u.id]?.today_poles || 0
+    today_poles: statsMap[u.id]?.today_poles || 0,
+    today_survey: statsMap[u.id]?.today_survey || 0,
+    today_inst: statsMap[u.id]?.today_inst || 0
   }));
 
   result.sort((a, b) => b.total_poles - a.total_poles);

@@ -90,10 +90,21 @@ export function EmployeeTrackingView({ projectId }) {
             <tr className="bg-slate-50">
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Name</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Email</th>
-              {!isTgpl && <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Switch Points</th>}
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Poles</th>
-              {!isTgpl && <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Switch Points</th>}
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Poles</th>
+              {!isTgpl ? (
+                <>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Switch Points</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Poles</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Switch Points</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Poles</th>
+                </>
+              ) : (
+                <>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Survey</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Inst</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Survey</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Inst</th>
+                </>
+              )}
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
             </tr>
           </thead>
@@ -102,10 +113,21 @@ export function EmployeeTrackingView({ projectId }) {
               <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{emp.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.email}</td>
-                {!isTgpl && <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_sp_resolved}</td>}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_poles_resolved}</td>
-                {!isTgpl && <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_sp_resolved}</td>}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_poles_resolved}</td>
+                {!isTgpl ? (
+                  <>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_sp_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_poles_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_sp_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_poles_resolved}</td>
+                  </>
+                ) : (
+                  <>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_survey_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_inst_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_survey_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_inst_resolved}</td>
+                  </>
+                )}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <button
                     onClick={() => {
@@ -210,10 +232,21 @@ export function MobileUserTrackingView({ projectId }) {
             <tr className="bg-slate-50">
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Name</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Email</th>
-              {!isTgpl && <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Switch Points</th>}
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Poles</th>
-              {!isTgpl && <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Switch Points</th>}
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Poles</th>
+              {!isTgpl ? (
+                <>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Switch Points</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Poles</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Switch Points</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Poles</th>
+                </>
+              ) : (
+                <>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Survey</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Inst</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Survey</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Inst</th>
+                </>
+              )}
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
             </tr>
           </thead>
@@ -222,10 +255,21 @@ export function MobileUserTrackingView({ projectId }) {
               <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{user.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.email}</td>
-                {!isTgpl && <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_sp}</td>}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_poles}</td>
-                {!isTgpl && <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total_sp}</td>}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total_poles}</td>
+                {!isTgpl ? (
+                  <>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_sp}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_poles}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total_sp}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total_poles}</td>
+                  </>
+                ) : (
+                  <>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_survey}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_inst}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total_survey}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total_inst}</td>
+                  </>
+                )}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <button
                     onClick={() => {
