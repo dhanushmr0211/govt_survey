@@ -841,6 +841,43 @@ export const SubmissionQueueView = ({ projectId }) => {
                         {renderField('Serial Number', 'meter_serial_number', selectedSubmission.meter_serial_number)}
                         {renderField('Meter Condition', 'meter_condition', selectedSubmission.meter_condition, ['working', 'not working', 'missing'])}
                       </>
+                    ) : isTgpl && selectedSubmission.survey_type === 'installation' ? (
+                      <>
+                        {renderField('Ward No', 'ward_number', selectedSubmission.ward_number)}
+                        {renderField('CCMS No', 'ccms_number', selectedSubmission.ccms_number)}
+                        {renderField('Pole No', 'pole_number', selectedSubmission.identifier)}
+                        {renderField('Lights Count', 'how_many_lights_in_pole', selectedSubmission.how_many_lights_in_pole, Array.from({length: 6}, (_, i) => String(i)))}
+                        {Number(formData.how_many_lights_in_pole || selectedSubmission.how_many_lights_in_pole || 0) >= 1 && (
+                          <>
+                            {renderField('Light 1 Type', 'light_type', selectedSubmission.light_type, ['NEW LED', 'OLD LED'])}
+                            {renderField('Light 1 Capacity', 'light_capacity', selectedSubmission.light_capacity, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                          </>
+                        )}
+                        {Number(formData.how_many_lights_in_pole || selectedSubmission.how_many_lights_in_pole || 0) >= 2 && (
+                          <>
+                            {renderField('Light 2 Type', 'light_type_2', selectedSubmission.light_type_2, ['NEW LED', 'OLD LED'])}
+                            {renderField('Light 2 Capacity', 'light_capacity_2', selectedSubmission.light_capacity_2, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                          </>
+                        )}
+                        {Number(formData.how_many_lights_in_pole || selectedSubmission.how_many_lights_in_pole || 0) >= 3 && (
+                          <>
+                            {renderField('Light 3 Type', 'light_type_3', selectedSubmission.light_type_3, ['NEW LED', 'OLD LED'])}
+                            {renderField('Light 3 Capacity', 'light_capacity_3', selectedSubmission.light_capacity_3, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                          </>
+                        )}
+                        {Number(formData.how_many_lights_in_pole || selectedSubmission.how_many_lights_in_pole || 0) >= 4 && (
+                          <>
+                            {renderField('Light 4 Type', 'light_type_4', selectedSubmission.light_type_4, ['NEW LED', 'OLD LED'])}
+                            {renderField('Light 4 Capacity', 'light_capacity_4', selectedSubmission.light_capacity_4, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                          </>
+                        )}
+                        {Number(formData.how_many_lights_in_pole || selectedSubmission.how_many_lights_in_pole || 0) >= 5 && (
+                          <>
+                            {renderField('Light 5 Type', 'light_type_5', selectedSubmission.light_type_5, ['NEW LED', 'OLD LED'])}
+                            {renderField('Light 5 Capacity', 'light_capacity_5', selectedSubmission.light_capacity_5, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                          </>
+                        )}
+                      </>
                     ) : isTgpl ? (
                       <>
                         {renderField('Ward No', 'ward_number', selectedSubmission.ward_number)}
