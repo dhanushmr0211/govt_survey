@@ -38,6 +38,7 @@ export const SubmissionQueueView = ({ projectId }) => {
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [activeTab, setActiveTab] = useState('pending');
   const [activeType, setActiveType] = useState('all');
+  const [activeSurveyType, setActiveSurveyType] = useState('survey');
   const activeProject = useAuthStore((state) => state.activeProject);
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
   const [ulbs, setUlbs] = useState([]);
@@ -98,7 +99,7 @@ export const SubmissionQueueView = ({ projectId }) => {
   const dateField = activeTab === 'pending' ? 'created_at' : activeTab === 'deleted' ? 'deleted_at' : 'confirmed_at';
 
   const { data = { queue: [], total: 0 }, isLoading } = useQuery({
-    queryKey: ['submissions', activeTab, activeType, page, projectId, fromDate, toDate, dateField],
+    queryKey: ['submissions', activeTab, activeType, page, projectId, fromDate, toDate, dateField, activeSurveyType],
     queryFn: async () => {
       const endpoint = activeTab === 'pending' 
         ? 'queue/pending' 
@@ -109,6 +110,7 @@ export const SubmissionQueueView = ({ projectId }) => {
       if (fromDate) url += `&fromDate=${fromDate}`;
       if (toDate) url += `&toDate=${toDate}`;
       if (activeType !== 'all') url += `&type=${activeType}`;
+      if (isTgpl) url += `&surveyType=${activeSurveyType}`;
       url += `&dateField=${dateField}`;
 
       const res = await axios.get(url, {
@@ -494,12 +496,36 @@ export const SubmissionQueueView = ({ projectId }) => {
 
   return (
     <div className="premium-panel overflow-hidden">
+      {isTgpl && (
+        <div className="flex border-b border-slate-100 bg-slate-50/50 p-1">
+          <button
+            onClick={() => { setActiveSurveyType('survey'); setPage(1); }}
+            className={`flex-1 py-3 px-6 text-sm font-bold border-b-2 transition-all ${
+              activeSurveyType === 'survey'
+                ? 'border-primary text-primary bg-white shadow-sm rounded-t-lg'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'
+            }`}
+          >
+            📋 Survey Submissions
+          </button>
+          <button
+            onClick={() => { setActiveSurveyType('installation'); setPage(1); }}
+            className={`flex-1 py-3 px-6 text-sm font-bold border-b-2 transition-all ${
+              activeSurveyType === 'installation'
+                ? 'border-primary text-primary bg-white shadow-sm rounded-t-lg'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'
+            }`}
+          >
+            ⚙️ Installation Submissions
+          </button>
+        </div>
+      )}
       <div className="flex flex-col gap-4 border-b border-slate-100 p-5">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
             <h2 className="text-lg font-bold text-slate-950">Submission Queue</h2>
             <p className="text-sm text-slate-500">
-              {total} {activeType === 'all' ? 'records' : activeType === 'switch_point' ? 'switch points' : 'poles'} in the {activeTab} queue
+              {total} {isTgpl ? (activeSurveyType === 'installation' ? 'installation poles' : 'survey poles') : (activeType === 'all' ? 'records' : activeType === 'switch_point' ? 'switch points' : 'poles')} in the {activeTab} queue
             </p>
           </div>
         

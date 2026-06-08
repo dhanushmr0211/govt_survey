@@ -246,7 +246,7 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', ul
   return resolveUserNames(result.rows);
 }
 
-async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at', type = null) {
+async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at', type = null, surveyType = null) {
   const offset = (page - 1) * limit;
   let scopeFilter = '';
   const params = [projectId, limit, offset, userId];
@@ -264,6 +264,18 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
     const startIdx = params.length + 1;
     pDateFilter = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.${submissionDateColumn})))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
     params.push(fromDate, toDate);
+  }
+
+  let pSurveyTypeFilter = '';
+  if (surveyType) {
+    const startIdx = params.length + 1;
+    if (surveyType === 'survey') {
+      pSurveyTypeFilter = ` AND COALESCE(p.survey_type, 'survey') = $${startIdx}`;
+      params.push('survey');
+    } else if (surveyType === 'installation') {
+      pSurveyTypeFilter = ` AND p.survey_type = $${startIdx}`;
+      params.push('installation');
+    }
   }
 
   let queryBody = '';
@@ -371,6 +383,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       AND ($4::int IS NULL OR p.created_by = $4)
       ${pDateFilter}
       ${scopeFilter}
+      ${pSurveyTypeFilter}
     `;
   }
 
@@ -388,7 +401,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
   return { rows, total };
 }
 
-async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at', type = null) {
+async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at', type = null, surveyType = null) {
   const offset = (page - 1) * limit;
   let scopeFilter = '';
   const params = [projectId, limit, offset, userId, confirmedBy];
@@ -406,6 +419,18 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
     const startIdx = params.length + 1;
     pDateFilter = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.${submissionDateColumn})))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
     params.push(fromDate, toDate);
+  }
+
+  let pSurveyTypeFilter = '';
+  if (surveyType) {
+    const startIdx = params.length + 1;
+    if (surveyType === 'survey') {
+      pSurveyTypeFilter = ` AND COALESCE(p.survey_type, 'survey') = $${startIdx}`;
+      params.push('survey');
+    } else if (surveyType === 'installation') {
+      pSurveyTypeFilter = ` AND p.survey_type = $${startIdx}`;
+      params.push('installation');
+    }
   }
 
   let queryBody = '';
@@ -524,6 +549,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       AND ($5::int IS NULL OR p.confirmed_by = $5)
       ${pDateFilter}
       ${scopeFilter}
+      ${pSurveyTypeFilter}
     `;
   }
 
@@ -849,7 +875,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
   };
 }
 
-async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtScope = null, ulbScope = null, fromDate = null, toDate = null, type = null) {
+async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtScope = null, ulbScope = null, fromDate = null, toDate = null, type = null, surveyType = null) {
   const offset = (page - 1) * limit;
   let scopeFilter = '';
   const params = [projectId, limit, offset];
@@ -866,6 +892,18 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
     const startIdx = params.length + 1;
     pDateFilter = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.deleted_at)))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
     params.push(fromDate, toDate);
+  }
+
+  let pSurveyTypeFilter = '';
+  if (surveyType) {
+    const startIdx = params.length + 1;
+    if (surveyType === 'survey') {
+      pSurveyTypeFilter = ` AND COALESCE(p.survey_type, 'survey') = $${startIdx}`;
+      params.push('survey');
+    } else if (surveyType === 'installation') {
+      pSurveyTypeFilter = ` AND p.survey_type = $${startIdx}`;
+      params.push('installation');
+    }
   }
 
   let queryBody = '';
@@ -972,6 +1010,7 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
       WHERE p.project_id = $1 AND p.is_deleted = TRUE
       ${pDateFilter}
       ${scopeFilter}
+      ${pSurveyTypeFilter}
     `;
   }
 

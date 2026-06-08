@@ -120,7 +120,7 @@ async function getPendingSubmissionsHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access the pending queue' });
     }
 
-    const { page = 1, limit = 50, userId, fromDate, toDate, dateField, type } = req.query;
+    const { page = 1, limit = 50, userId, fromDate, toDate, dateField, type, surveyType } = req.query;
     const filterUserId = isMobileUser ? Number(req.user.sub) : (userId ? Number(userId) : null);
 
     if (isNaN(Number(projectId))) {
@@ -136,7 +136,8 @@ async function getPendingSubmissionsHandler(req, res, next) {
       fromDate || null,
       toDate || null,
       dateField || 'created_at',
-      type || null
+      type || null,
+      surveyType || null
     );
     res.json({ queue: rows, total });
   } catch (error) { next(error); }
@@ -187,7 +188,7 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access confirmed submissions' });
     }
 
-    const { page = 1, limit = 50, userId, confirmedBy, fromDate, toDate, dateField, type } = req.query;
+    const { page = 1, limit = 50, userId, confirmedBy, fromDate, toDate, dateField, type, surveyType } = req.query;
     const filterUserId = isMobileUser ? Number(req.user.sub) : (userId ? Number(userId) : null);
 
     const isEmployee = projectRole === ROLES.EMPLOYEE;
@@ -204,7 +205,8 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
       fromDate || null,
       toDate || null,
       dateField || 'created_at',
-      type || null
+      type || null,
+      surveyType || null
     );
     res.json({ queue: rows, total });
   } catch (error) { next(error); }
@@ -369,7 +371,7 @@ async function getDeletedSubmissionsHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access the deleted queue' });
     }
 
-    const { page = 1, limit = 50, fromDate, toDate, type } = req.query;
+    const { page = 1, limit = 50, fromDate, toDate, type, surveyType } = req.query;
     const permissions = req.projectSections || {};
 
     if (isNaN(Number(projectId))) {
@@ -384,7 +386,8 @@ async function getDeletedSubmissionsHandler(req, res, next) {
       permissions.ulb_scope,
       fromDate || null,
       toDate || null,
-      type || null
+      type || null,
+      surveyType || null
     );
     res.json({ queue: rows, total });
   } catch (error) { next(error); }
