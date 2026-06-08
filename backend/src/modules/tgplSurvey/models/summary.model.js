@@ -86,7 +86,15 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', distri
       COALESCE((
         SELECT COUNT(p.id) FROM poles p
         WHERE p.ward_id = w.id AND p.is_deleted = FALSE ${dateFilter}
-      ), 0) as total_poles
+      ), 0) as total_poles,
+      COALESCE((
+        SELECT COUNT(p.id) FROM poles p
+        WHERE p.ward_id = w.id AND p.is_deleted = FALSE AND COALESCE(p.survey_type, 'survey') = 'survey' ${dateFilter}
+      ), 0) as total_survey_poles,
+      COALESCE((
+        SELECT COUNT(p.id) FROM poles p
+        WHERE p.ward_id = w.id AND p.is_deleted = FALSE AND p.survey_type = 'installation' ${dateFilter}
+      ), 0) as total_inst_poles
     FROM wards w
     WHERE w.is_deleted = FALSE ${scopeFilter}
     ORDER BY w.name;

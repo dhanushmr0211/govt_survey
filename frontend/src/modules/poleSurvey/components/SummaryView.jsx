@@ -40,23 +40,29 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
         ulbs: [],
         total_switch_points: 0,
         total_poles: 0,
+        total_survey_poles: 0,
+        total_inst_poles: 0,
       };
     }
     acc[row.district_id].ulbs.push(row);
     acc[row.district_id].total_switch_points += parseInt(row.total_switch_points || 0);
     acc[row.district_id].total_poles += parseInt(row.total_poles || 0);
+    acc[row.district_id].total_survey_poles += parseInt(row.total_survey_poles || 0);
+    acc[row.district_id].total_inst_poles += parseInt(row.total_inst_poles || 0);
     return acc;
   }, {});
   const filteredDistricts = Object.values(districts).filter(d => 
-    !hideZeroCounts || d.total_switch_points > 0 || d.total_poles > 0
+    !hideZeroCounts || d.total_switch_points > 0 || d.total_poles > 0 || d.total_survey_poles > 0 || d.total_inst_poles > 0
   ).map(d => ({
     ...d,
-    ulbs: d.ulbs.filter(u => !hideZeroCounts || parseInt(u.total_switch_points) > 0 || parseInt(u.total_poles) > 0)
+    ulbs: d.ulbs.filter(u => !hideZeroCounts || parseInt(u.total_switch_points) > 0 || parseInt(u.total_poles) > 0 || parseInt(u.total_survey_poles) > 0 || parseInt(u.total_inst_poles) > 0)
   })).filter(d => !hideZeroCounts || d.ulbs.length > 0);
 
 
   const totalSwitchPoints = summary.reduce((sum, row) => sum + parseInt(row.total_switch_points || 0), 0);
   const totalPoles = summary.reduce((sum, row) => sum + parseInt(row.total_poles || 0), 0);
+  const totalSurveyPoles = summary.reduce((sum, row) => sum + parseInt(row.total_survey_poles || 0), 0);
+  const totalInstPoles = summary.reduce((sum, row) => sum + parseInt(row.total_inst_poles || 0), 0);
 
   return (
     <div className="space-y-5">
@@ -97,27 +103,50 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
         </div>
       )}
       {/* Total Stats Card */}
-      <div className={`grid grid-cols-1 gap-4 ${isTgpl ? 'md:grid-cols-1' : 'md:grid-cols-2'}`}>
-        {!isTgpl && (
-          <div className="premium-panel flex items-center justify-between p-5">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Total Switch Points</p>
-              <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalSwitchPoints}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {!isTgpl ? (
+          <>
+            <div className="premium-panel flex items-center justify-between p-5">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Switch Points</p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalSwitchPoints}</p>
+              </div>
+              <div className="rounded-lg bg-blue-50 p-3 text-blue-700">
+                <Zap size={26} />
+              </div>
             </div>
-            <div className="rounded-lg bg-blue-50 p-3 text-blue-700">
-              <Zap size={26} />
+            <div className="premium-panel flex items-center justify-between p-5">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Poles</p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalPoles}</p>
+              </div>
+              <div className="rounded-lg bg-amber-50 p-3 text-amber-700">
+                <Lightbulb size={26} />
+              </div>
             </div>
-          </div>
+          </>
+        ) : (
+          <>
+            <div className="premium-panel flex items-center justify-between p-5">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Survey Poles</p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalSurveyPoles}</p>
+              </div>
+              <div className="rounded-lg bg-blue-50 p-3 text-blue-700">
+                <Lightbulb size={26} />
+              </div>
+            </div>
+            <div className="premium-panel flex items-center justify-between p-5">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Installation</p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalInstPoles}</p>
+              </div>
+              <div className="rounded-lg bg-amber-50 p-3 text-amber-700">
+                <Lightbulb size={26} />
+              </div>
+            </div>
+          </>
         )}
-        <div className="premium-panel flex items-center justify-between p-5">
-          <div>
-            <p className="text-sm font-medium text-slate-500">Total Poles</p>
-            <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalPoles}</p>
-          </div>
-          <div className="rounded-lg bg-amber-50 p-3 text-amber-700">
-            <Lightbulb size={26} />
-          </div>
-        </div>
       </div>
 
       {filteredDistricts.map((district) => (
@@ -127,16 +156,29 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
               {district.name.toUpperCase().replace(' DISTRICT', '')} DISTRICT
             </h2>
             <div className="flex flex-wrap gap-3">
-              {!isTgpl && (
-                <div className="min-w-[130px] rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-center">
-                  <p className="text-xs font-semibold text-blue-700">Switch Points</p>
-                  <p className="text-xl font-bold text-blue-900">{district.total_switch_points}</p>
-                </div>
+              {!isTgpl ? (
+                <>
+                  <div className="min-w-[130px] rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-center">
+                    <p className="text-xs font-semibold text-blue-700">Switch Points</p>
+                    <p className="text-xl font-bold text-blue-900">{district.total_switch_points}</p>
+                  </div>
+                  <div className="min-w-[130px] rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-center">
+                    <p className="text-xs font-semibold text-amber-700">Total Poles</p>
+                    <p className="text-xl font-bold text-amber-900">{district.total_poles}</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="min-w-[130px] rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-center">
+                    <p className="text-xs font-semibold text-blue-700">Total Survey Poles</p>
+                    <p className="text-xl font-bold text-blue-900">{district.total_survey_poles}</p>
+                  </div>
+                  <div className="min-w-[130px] rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-center">
+                    <p className="text-xs font-semibold text-amber-700">Total Installation</p>
+                    <p className="text-xl font-bold text-amber-900">{district.total_inst_poles}</p>
+                  </div>
+                </>
               )}
-              <div className="min-w-[130px] rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-center">
-                <p className="text-xs font-semibold text-amber-700">Total Poles</p>
-                <p className="text-xl font-bold text-amber-900">{district.total_poles}</p>
-              </div>
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -144,8 +186,17 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
               <thead>
                 <tr>
                   <th>TMC/CMC</th>
-                  {!isTgpl && <th>Total Switch Points</th>}
-                  <th>Total Poles</th>
+                  {!isTgpl ? (
+                    <>
+                      <th>Total Switch Points</th>
+                      <th>Total Poles</th>
+                    </>
+                  ) : (
+                    <>
+                      <th>Total Survey Poles</th>
+                      <th>Total Installation</th>
+                    </>
+                  )}
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -153,8 +204,17 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
                 {district.ulbs.map((ulb) => (
                   <tr key={ulb.ulb_id}>
                     <td className="font-semibold text-slate-950">{ulb.ulb_name}</td>
-                    {!isTgpl && <td>{ulb.total_switch_points}</td>}
-                    <td>{ulb.total_poles}</td>
+                    {!isTgpl ? (
+                      <>
+                        <td>{ulb.total_switch_points}</td>
+                        <td>{ulb.total_poles}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td>{ulb.total_survey_poles}</td>
+                        <td>{ulb.total_inst_poles}</td>
+                      </>
+                    )}
                     <td>
                       <button
                         onClick={() => onViewDetails(ulb, { date: effectiveDate, mode, fromDate: effectiveFromDate, toDate: effectiveToDate })}
