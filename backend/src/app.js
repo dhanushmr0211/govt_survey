@@ -83,8 +83,40 @@ function createApp() {
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_arm_length TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_led_lights_no TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_led_wattage TEXT;',
-    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_dedicated_wire TEXT;'
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS req_dedicated_wire TEXT;',
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_wards_name_uniq ON wards (name);',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS survey_type TEXT DEFAULT \'survey\';',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_type_3 TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_capacity_3 TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_type_4 TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_capacity_4 TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_type_5 TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_capacity_5 TEXT;',
+    `INSERT INTO wards (name)
+     SELECT w_name FROM (VALUES
+       ('15-Kammagondanahalli'),
+       ('16-Mallasandra'),
+       ('17-Chikkasandra'),
+       ('18-Bagalakunte'),
+       ('19-T Dasarahalli'),
+       ('20-Nalagadarenahalli'),
+       ('21-Chokkasandra'),
+       ('22-Peenya Industrial Area'),
+       ('23-Rajagopal Nagar'),
+       ('24-Hegganahalli'),
+       ('25-Sunkadakatte'),
+       ('26-Dodda Bidarakallu'),
+       ('27-Lingadheeranahalli'),
+       ('28-Herohalli'),
+       ('29-Ullalu'),
+       ('30-Nagadevanahalli'),
+       ('31-Bande Mutt'),
+       ('32-Kengeri'),
+       ('33-Hemmigepura')
+     ) AS new_wards(w_name)
+     ON CONFLICT (name) DO NOTHING;`
   ];
+
 
   (async () => {
     // Migrations for Default Pool

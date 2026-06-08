@@ -3,10 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { SwitchPointForm } from '../components/SwitchPointForm';
 import { PoleForm } from '../components/PoleForm';
+import { InstallationForm } from '../components/InstallationForm';
 import { TodaySubmissionsView } from '../components/TodaySubmissionsView';
 import { useAuthStore } from '../../../store/authStore';
 import { useUserStats } from '../../../shared/hooks/useUserStats';
-import { BarChart3, ClipboardList, FileCheck, WifiOff, ArrowLeft } from 'lucide-react';
+import { BarChart3, ClipboardList, FileCheck, WifiOff, ArrowLeft, Wrench } from 'lucide-react';
 import API_BASE_URL from '../../../config/api';
 import { OfflineQueueView } from '../components/OfflineQueueView';
 import { offlineSyncService } from '../services/offlineSyncService';
@@ -21,6 +22,8 @@ export default function MobileSurvey() {
   const [activeTab, setActiveTab] = useState('survey');
   const [pendingCount, setPendingCount] = useState(0);
   const [selectedDate, setSelectedDate] = useState(() => getLocalDateString());
+  const [selectedInstallationWard, setSelectedInstallationWard] = useState(null);
+  const [installationSearchTerm, setInstallationSearchTerm] = useState('');
 
   const projectId = activeProject?.id;
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
@@ -55,6 +58,19 @@ export default function MobileSurvey() {
       return res.data.ulbs || [];
     },
     enabled: searchTerm.length >= 2,
+  });
+
+  const { data: installationWards = [] } = useQuery({
+    queryKey: ['installationWards', installationSearchTerm],
+    queryFn: async () => {
+      if (installationSearchTerm.length < 2) return [];
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/ulbs/search?q=${installationSearchTerm}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.ulbs || [];
+    },
+    enabled: installationSearchTerm.length >= 2,
   });
 
   const { data: stats = {
@@ -247,6 +263,49 @@ export default function MobileSurvey() {
           </>
         )}
 
+        {activeTab === 'installation' && isTgpl && (
+          <>
+            {!selectedInstallationWard ? (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Enter Ward</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={installationSearchTerm}
+                    onChange={(e) => setInstallationSearchTerm(e.target.value)}
+                    placeholder="e.g. Ward 15"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  />
+                  {installationWards.length > 0 && (
+                    <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg max-h-48 overflow-y-auto">
+                      {installationWards.map((ward) => (
+                        <div
+                          key={ward.id}
+                          onClick={() => {
+                            setSelectedInstallationWard(ward);
+                            setInstallationSearchTerm(ward.name);
+                          }}
+                          className="p-3 hover:bg-gray-50 cursor-pointer text-sm"
+                        >
+                          {ward.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <InstallationForm
+                ward={selectedInstallationWard}
+                onBack={() => {
+                  setSelectedInstallationWard(null);
+                  setInstallationSearchTerm('');
+                }}
+              />
+            )}
+          </>
+        )}
+
         {activeTab === 'submissions' && (
           <TodaySubmissionsView projectId={projectId} />
         )}
@@ -272,6 +331,15 @@ export default function MobileSurvey() {
           <ClipboardList size={20} className="mb-1" />
           <span>Survey</span>
         </button>
+        {isTgpl && (
+          <button
+            onClick={() => setActiveTab('installation')}
+            className={`flex flex-col items-center p-2 text-xs font-medium transition-colors ${activeTab === 'installation' ? 'text-primary' : 'text-gray-500'}`}
+          >
+            <Wrench size={20} className="mb-1" />
+            <span>Installation</span>
+          </button>
+        )}
         <button
           onClick={() => setActiveTab('submissions')}
           className={`flex flex-col items-center p-2 text-xs font-medium transition-colors ${activeTab === 'submissions' ? 'text-primary' : 'text-gray-500'}`}

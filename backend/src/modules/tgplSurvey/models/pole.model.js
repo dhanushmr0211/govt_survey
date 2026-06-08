@@ -11,7 +11,8 @@ async function createPole(projectId, data, createdBy) {
       light_type_2, light_capacity_2,
       light_working_status, road_category, road_type, road_width_mtrs, pole_earthing_exists,
       image_url_1, image_url_2, req_arm_number, req_arm_length, req_led_lights_no,
-      req_led_wattage, req_dedicated_wire, created_by
+      req_led_wattage, req_dedicated_wire, created_by,
+      survey_type, light_type_3, light_capacity_3, light_type_4, light_capacity_4, light_type_5, light_capacity_5
     ) VALUES (
       $1, $2, $3, $4, $5,
       $6, $7, $8, $9, $10,
@@ -20,7 +21,8 @@ async function createPole(projectId, data, createdBy) {
       $21, $22, $23, $24, $25,
       $26, $27, $28, $29, $30,
       $31, $32, $33, $34, $35,
-      $36, $37, $38, $39, $40
+      $36, $37, $38, $39, $40,
+      $41, $42, $43, $44, $45, $46, $47
     ) RETURNING *`,
     [
       projectId,
@@ -62,7 +64,14 @@ async function createPole(projectId, data, createdBy) {
       data.req_led_lights_no,
       data.req_led_wattage,
       data.req_dedicated_wire,
-      createdBy
+      createdBy,
+      data.survey_type || 'survey',
+      data.light_type_3,
+      data.light_capacity_3,
+      data.light_type_4,
+      data.light_capacity_4,
+      data.light_type_5,
+      data.light_capacity_5
     ]
   );
   return result.rows[0];
@@ -126,6 +135,13 @@ async function updatePole(id, projectId, data) {
          req_dedicated_wire = COALESCE($36, req_dedicated_wire),
          image_url_1 = COALESCE($37, image_url_1),
          image_url_2 = COALESCE($38, image_url_2),
+         survey_type = COALESCE($39, survey_type),
+         light_type_3 = COALESCE($40, light_type_3),
+         light_capacity_3 = COALESCE($41, light_capacity_3),
+         light_type_4 = COALESCE($42, light_type_4),
+         light_capacity_4 = COALESCE($43, light_capacity_4),
+         light_type_5 = COALESCE($44, light_type_5),
+         light_capacity_5 = COALESCE($45, light_capacity_5),
          updated_at = NOW()
      WHERE id = $1 AND project_id = $2 AND is_deleted = FALSE
      RETURNING *`,
@@ -167,7 +183,14 @@ async function updatePole(id, projectId, data) {
       data.req_led_wattage,
       data.req_dedicated_wire,
       data.image_url_1,
-      data.image_url_2
+      data.image_url_2,
+      data.survey_type,
+      data.light_type_3,
+      data.light_capacity_3,
+      data.light_type_4,
+      data.light_capacity_4,
+      data.light_type_5,
+      data.light_capacity_5
     ]
   );
   return result.rows[0];

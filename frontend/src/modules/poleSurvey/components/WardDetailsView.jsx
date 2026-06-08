@@ -38,7 +38,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const token = localStorage.getItem('token');
   const [selectedWard, setSelectedWard] = useState(null);
   const [selectedDetail, setSelectedDetail] = useState(null); // { type: 'switch_point' | 'pole', data: ... }
-  const [selectedCcmsId, setSelectedCcmsId] = useState(null);
+  const [selectedCcms, setSelectedCcms] = useState({ id: null, type: 'survey' });
   const queryClient = useQueryClient();
   const addToast = useToastStore((state) => state.addToast);
 
@@ -505,18 +505,69 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     }, {});
   }, [details, isTgpl]);
 
+  const surveySwitchPoints = useMemo(() => {
+    if (!isTgpl) return {};
+    return details.reduce((acc, item) => {
+      if (item.survey_type === 'installation') return acc;
+      const spId = item.ccms_number || 'NO_CCMS';
+      if (!acc[spId]) {
+        acc[spId] = {
+          id: spId,
+          switch_point_number: item.ccms_number,
+          poles: [],
+        };
+      }
+      if (item.pole_id) {
+        acc[spId].poles.push({
+          ...item,
+          latitude: item.pole_latitude,
+          longitude: item.pole_longitude,
+        });
+      }
+      return acc;
+    }, {});
+  }, [details, isTgpl]);
+
+  const installationSwitchPoints = useMemo(() => {
+    if (!isTgpl) return {};
+    return details.reduce((acc, item) => {
+      if (item.survey_type !== 'installation') return acc;
+      const spId = item.ccms_number || 'NO_CCMS';
+      if (!acc[spId]) {
+        acc[spId] = {
+          id: spId,
+          switch_point_number: item.ccms_number,
+          poles: [],
+        };
+      }
+      if (item.pole_id) {
+        acc[spId].poles.push({
+          ...item,
+          latitude: item.pole_latitude,
+          longitude: item.pole_longitude,
+        });
+      }
+      return acc;
+    }, {});
+  }, [details, isTgpl]);
+
   useEffect(() => {
     if (isTgpl) {
-      const spList = Object.values(switchPoints);
-      if (spList.length > 0) {
-        if (!selectedCcmsId || !switchPoints[selectedCcmsId]) {
-          setSelectedCcmsId(spList[0].id);
+      const surveyList = Object.values(surveySwitchPoints);
+      const instList = Object.values(installationSwitchPoints);
+      if (surveyList.length > 0) {
+        if (!selectedCcms.id || (selectedCcms.type === 'survey' && !surveySwitchPoints[selectedCcms.id]) || (selectedCcms.type === 'installation' && !installationSwitchPoints[selectedCcms.id])) {
+          setSelectedCcms({ id: surveyList[0].id, type: 'survey' });
+        }
+      } else if (instList.length > 0) {
+        if (!selectedCcms.id || (selectedCcms.type === 'survey' && !surveySwitchPoints[selectedCcms.id]) || (selectedCcms.type === 'installation' && !installationSwitchPoints[selectedCcms.id])) {
+          setSelectedCcms({ id: instList[0].id, type: 'installation' });
         }
       } else {
-        setSelectedCcmsId(null);
+        setSelectedCcms({ id: null, type: 'survey' });
       }
     }
-  }, [isTgpl, switchPoints, selectedCcmsId]);
+  }, [isTgpl, surveySwitchPoints, installationSwitchPoints, selectedCcms]);
 
   return (
     <div className="premium-panel overflow-hidden">
@@ -534,47 +585,87 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
       </div>
 
       {/* CCMS List (for TGPL) or Ward List (for standard) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 p-5 border-b border-slate-100 bg-slate-50">
+      <div className="p-5 border-b border-slate-100 bg-slate-50 space-y-4">
         {isTgpl ? (
           isLoadingDetails ? (
-            [...Array(4)].map((_, i) => (
-              <div key={i} className="h-16 animate-pulse rounded-lg bg-white"></div>
-            ))
-          ) : Object.values(switchPoints).length === 0 ? (
-            <div className="col-span-full py-4 text-center text-slate-500 text-sm">No CCMS units found in this ward.</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-16 animate-pulse rounded-lg bg-white"></div>
+              ))}
+            </div>
+          ) : Object.values(surveySwitchPoints).length === 0 && Object.values(installationSwitchPoints).length === 0 ? (
+            <div className="py-4 text-center text-slate-500 text-sm">No CCMS units found in this ward.</div>
           ) : (
-            Object.values(switchPoints).map((sp) => (
-              <button
-                key={sp.id}
-                onClick={() => setSelectedCcmsId(sp.id)}
-                className={`rounded-lg border p-3 text-center transition ${selectedCcmsId === sp.id ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
-              >
-                <p className="text-xs text-slate-500">CCMS</p>
-                <p className="text-base font-bold truncate max-w-full" title={sp.switch_point_number || 'No CCMS'}>
-                  {sp.switch_point_number || 'No CCMS'}
-                </p>
-                <p className="text-xs text-slate-500">{sp.poles.length} Poles</p>
-              </button>
-            ))
+            <div className="space-y-4">
+              {/* Survey Section */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Survey</h4>
+                {Object.values(surveySwitchPoints).length === 0 ? (
+                  <p className="text-xs text-slate-400 italic pl-2">No survey CCMS units found.</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                    {Object.values(surveySwitchPoints).map((sp) => (
+                      <button
+                        key={sp.id}
+                        onClick={() => setSelectedCcms({ id: sp.id, type: 'survey' })}
+                        className={`rounded-lg border p-3 text-center transition ${selectedCcms.id === sp.id && selectedCcms.type === 'survey' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+                      >
+                        <p className="text-xs text-slate-500">CCMS</p>
+                        <p className="text-base font-bold truncate max-w-full" title={sp.switch_point_number || 'No CCMS'}>
+                          {sp.switch_point_number || 'No CCMS'}
+                        </p>
+                        <p className="text-xs text-slate-500">{sp.poles.length} Poles</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Installation Section */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Installation</h4>
+                {Object.values(installationSwitchPoints).length === 0 ? (
+                  <p className="text-xs text-slate-400 italic pl-2">No installation CCMS units found.</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                    {Object.values(installationSwitchPoints).map((sp) => (
+                      <button
+                        key={sp.id}
+                        onClick={() => setSelectedCcms({ id: sp.id, type: 'installation' })}
+                        className={`rounded-lg border p-3 text-center transition ${selectedCcms.id === sp.id && selectedCcms.type === 'installation' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+                      >
+                        <p className="text-xs text-slate-500">CCMS</p>
+                        <p className="text-base font-bold truncate max-w-full" title={sp.switch_point_number || 'No CCMS'}>
+                          {sp.switch_point_number || 'No CCMS'}
+                        </p>
+                        <p className="text-xs text-slate-500">{sp.poles.length} Poles</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           )
         ) : (
-          isLoadingWards ? (
-            [...Array(8)].map((_, i) => (
-              <div key={i} className="h-16 animate-pulse rounded-lg bg-white"></div>
-            ))
-          ) : (
-            wards.map((ward) => (
-              <button
-                key={ward.ward_number}
-                onClick={() => setSelectedWard(ward.ward_number)}
-                className={`rounded-lg border p-3 text-center transition ${selectedWard === ward.ward_number ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
-              >
-                <p className="text-xs text-slate-500">Ward</p>
-                <p className="text-lg font-bold">{ward.ward_number}</p>
-                <p className="text-xs text-slate-500">{ward.total_poles} Poles</p>
-              </button>
-            ))
-          )
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+            {isLoadingWards ? (
+              [...Array(8)].map((_, i) => (
+                <div key={i} className="h-16 animate-pulse rounded-lg bg-white"></div>
+              ))
+            ) : (
+              wards.map((ward) => (
+                <button
+                  key={ward.ward_number}
+                  onClick={() => setSelectedWard(ward.ward_number)}
+                  className={`rounded-lg border p-3 text-center transition ${selectedWard === ward.ward_number ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+                >
+                  <p className="text-xs text-slate-500">Ward</p>
+                  <p className="text-lg font-bold">{ward.ward_number}</p>
+                  <p className="text-xs text-slate-500">{ward.total_poles} Poles</p>
+                </button>
+              ))
+            )}
+          </div>
         )}
       </div>
 
@@ -593,7 +684,9 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
             <div className="space-y-6">
               {isTgpl ? (
                 (() => {
-                  const sp = switchPoints[selectedCcmsId];
+                  const sp = selectedCcms.type === 'installation' 
+                    ? installationSwitchPoints[selectedCcms.id] 
+                    : surveySwitchPoints[selectedCcms.id];
                   if (!sp) {
                     return (
                       <div className="py-20 text-center text-slate-500">
@@ -602,40 +695,64 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                     );
                   }
                   return (
-                    <div key={sp.id} className="rounded-lg border border-slate-150 overflow-hidden mb-6 bg-white shadow-sm">
+                    <div key={`${sp.id}_${selectedCcms.type}`} className="rounded-lg border border-slate-150 overflow-hidden mb-6 bg-white shadow-sm">
                       {/* CCMS Header */}
                       <div className="bg-slate-50 p-4 border-b border-slate-150 flex justify-between items-center">
                         <div>
-                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">CCMS Unit</span>
+                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                            {selectedCcms.type === 'installation' ? 'CCMS Unit (Installation)' : 'CCMS Unit (Survey)'}
+                          </span>
                           <h3 className="text-base font-bold text-slate-950">CCMS No: {sp.switch_point_number || 'No CCMS'}</h3>
                         </div>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="premium-table text-sm">
                           <thead>
-                            <tr>
-                              <th>Pole No</th>
-                              <th>Type</th>
-                              <th>DTC No</th>
-                              <th>Light 1 Type</th>
-                              <th>Light 2 Type</th>
-                              <th>Status</th>
-                              <th>Action</th>
-                            </tr>
+                            {selectedCcms.type === 'installation' ? (
+                              <tr>
+                                <th>Pole No</th>
+                                <th>How Many Lights</th>
+                                <th>Light 1 Type (Capacity)</th>
+                                <th>Light 2 Type (Capacity)</th>
+                                <th>Light 3 Type (Capacity)</th>
+                                <th>Action</th>
+                              </tr>
+                            ) : (
+                              <tr>
+                                <th>Pole No</th>
+                                <th>Type</th>
+                                <th>DTC No</th>
+                                <th>Light 1 Type</th>
+                                <th>Light 2 Type</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                              </tr>
+                            )}
                           </thead>
                           <tbody>
                             {sp.poles.map((pole) => (
                               <tr key={pole.pole_id}>
                                 <td className="font-semibold text-slate-950">{pole.pole_number}</td>
-                                <td>{pole.pole_type || 'N/A'}</td>
-                                <td>{pole.dtc_number || 'N/A'}</td>
-                                <td>{pole.light_type || 'N/A'}</td>
-                                <td>{pole.light_type_2 || 'N/A'}</td>
-                                <td>
-                                  <span className={`rounded-full px-2 py-1 text-xs font-semibold ${pole.light_working_status === 'yes' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                                    {pole.light_working_status === 'yes' ? 'Working' : 'Not Working'}
-                                  </span>
-                                </td>
+                                {selectedCcms.type === 'installation' ? (
+                                  <>
+                                    <td>{pole.how_many_lights_in_pole || '0'}</td>
+                                    <td>{pole.light_type ? `${pole.light_type} (${pole.light_capacity || 'N/A'})` : 'N/A'}</td>
+                                    <td>{pole.light_type_2 ? `${pole.light_type_2} (${pole.light_capacity_2 || 'N/A'})` : 'N/A'}</td>
+                                    <td>{pole.light_type_3 ? `${pole.light_type_3} (${pole.light_capacity_3 || 'N/A'})` : 'N/A'}</td>
+                                  </>
+                                ) : (
+                                  <>
+                                    <td>{pole.pole_type || 'N/A'}</td>
+                                    <td>{pole.dtc_number || 'N/A'}</td>
+                                    <td>{pole.light_type || 'N/A'}</td>
+                                    <td>{pole.light_type_2 || 'N/A'}</td>
+                                    <td>
+                                      <span className={`rounded-full px-2 py-1 text-xs font-semibold ${pole.light_working_status === 'yes' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                        {pole.light_working_status === 'yes' ? 'Working' : 'Not Working'}
+                                      </span>
+                                    </td>
+                                  </>
+                                )}
                                 <td>
                                   <button 
                                     onClick={() => {
@@ -655,7 +772,11 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                               </tr>
                             ))}
                             {sp.poles.length === 0 && (
-                              <tr><td colSpan="7" className="text-center text-slate-500">No poles under this CCMS.</td></tr>
+                              <tr>
+                                <td colSpan={selectedCcms.type === 'installation' ? 6 : 7} className="text-center text-slate-500">
+                                  No poles under this CCMS.
+                                </td>
+                              </tr>
                             )}
                           </tbody>
                         </table>
@@ -851,43 +972,82 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                         </>
                       )
                     ) : isTgpl ? (
-                      <>
-                        {renderField('Ward No', 'ward_number', selectedDetail.data.ward_number)}
-                        {renderField('DTC No', 'dtc_number', selectedDetail.data.dtc_number)}
-                        {renderField('DTC Capacity', 'dtc_capacity', selectedDetail.data.dtc_capacity)}
-                        {renderField('CCMS No', 'ccms_number', selectedDetail.data.ccms_number)}
-                        {renderField('Meter Type', 'meter_type', selectedDetail.data.meter_type, ['1P', '3P'])}
-                        {renderField('RR Number', 'meter_rr_number', selectedDetail.data.meter_rr_number)}
-                        {renderField('Serial Number', 'meter_serial_number', selectedDetail.data.meter_serial_number)}
-                        {renderField('Meter Dim. Status', 'meter_dimensional_status', selectedDetail.data.meter_dimensional_status, ['Working', 'not working', 'missing', 'door lock', 'no meter'])}
-                        {renderField('Conductor Type', 'conductor_type', selectedDetail.data.conductor_type, ['ABC', 'ACSR', 'UG'])}
-                        {renderField('Pole No', 'pole_number', selectedDetail.data.pole_number)}
-                        {renderField('Pole Type', 'pole_type', selectedDetail.data.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
-                        {renderField('Height', 'pole_height', selectedDetail.data.pole_height, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
-                        {renderField('Distance', 'pole_to_pole_distance', selectedDetail.data.pole_to_pole_distance, ['10', '20', '25', '30'])}
-                        {renderField('ARM Type', 'arm_type', selectedDetail.data.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
-                        {renderField('ARM Status', 'arm_status', selectedDetail.data.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
-                        {renderField('Present ARM No', 'present_arm_no', selectedDetail.data.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
-                        {renderField('Present ARM Length', 'present_arm_length', selectedDetail.data.present_arm_length, ['0', '1', '1.5', '2', '2.5'])}
-                        {renderField('Lights Count', 'how_many_lights_in_pole', selectedDetail.data.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
-                        {renderField('Mounting Height', 'light_mounting_height', selectedDetail.data.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
-                        {renderField('Light 1 Type', 'light_type', selectedDetail.data.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                        {renderField('Light 1 Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'])}
-                        {renderField('Light 2 Type', 'light_type_2', selectedDetail.data.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
-                        {renderField('Light 2 Capacity', 'light_capacity_2', selectedDetail.data.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'])}
-                        {renderField('Working', 'light_working_status', selectedDetail.data.light_working_status, ['yes', 'no'])}
-                        {renderField('Road Cat', 'road_category', selectedDetail.data.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
-                        {renderField('Road Type', 'road_type', selectedDetail.data.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
-                        {renderField('Road Width', 'road_width_mtrs', selectedDetail.data.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '10', '12', '16', '18', '20', '24', '25', '30'])}
-                        {renderField('Earthing', 'pole_earthing_exists', selectedDetail.data.pole_earthing_exists, ['YES', 'NO'])}
-                        
-                        <div className="col-span-3 border-t pt-2 mt-2 font-semibold text-gray-700">Proposal Form</div>
-                        {renderField('Req ARM No', 'req_arm_number', selectedDetail.data.req_arm_number, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
-                        {renderField('Req ARM Length', 'req_arm_length', selectedDetail.data.req_arm_length, ['0', '1.0', '1.5', '2', '2.5'])}
-                        {renderField('Req LED Lights No', 'req_led_lights_no', selectedDetail.data.req_led_lights_no, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
-                        {renderField('Req LED Wattage', 'req_led_wattage', selectedDetail.data.req_led_wattage, ['400W', '250W', '200W', '150W', '120W', '90W', '65W', '40W', '5-25W', '0W'])}
-                        {renderField('Req Dedicated Wire', 'req_dedicated_wire', selectedDetail.data.req_dedicated_wire, ['yes', 'no'])}
-                      </>
+                      selectedDetail.data.survey_type === 'installation' ? (
+                        <>
+                          {renderField('Ward No', 'ward_number', selectedDetail.data.ward_number)}
+                          {renderField('CCMS No', 'ccms_number', selectedDetail.data.ccms_number)}
+                          {renderField('Pole No', 'pole_number', selectedDetail.data.pole_number)}
+                          {renderField('Lights Count', 'how_many_lights_in_pole', selectedDetail.data.how_many_lights_in_pole, ['0', '1', '2', '3', '4', '5'])}
+                          {Number(formData.how_many_lights_in_pole || selectedDetail.data.how_many_lights_in_pole) >= 1 && (
+                            <>
+                              {renderField('Light 1 Type', 'light_type', selectedDetail.data.light_type, ['NEW LED', 'OLD LED'])}
+                              {renderField('Light 1 Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                            </>
+                          )}
+                          {Number(formData.how_many_lights_in_pole || selectedDetail.data.how_many_lights_in_pole) >= 2 && (
+                            <>
+                              {renderField('Light 2 Type', 'light_type_2', selectedDetail.data.light_type_2, ['NEW LED', 'OLD LED'])}
+                              {renderField('Light 2 Capacity', 'light_capacity_2', selectedDetail.data.light_capacity_2, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                            </>
+                          )}
+                          {Number(formData.how_many_lights_in_pole || selectedDetail.data.how_many_lights_in_pole) >= 3 && (
+                            <>
+                              {renderField('Light 3 Type', 'light_type_3', selectedDetail.data.light_type_3, ['NEW LED', 'OLD LED'])}
+                              {renderField('Light 3 Capacity', 'light_capacity_3', selectedDetail.data.light_capacity_3, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                            </>
+                          )}
+                          {Number(formData.how_many_lights_in_pole || selectedDetail.data.how_many_lights_in_pole) >= 4 && (
+                            <>
+                              {renderField('Light 4 Type', 'light_type_4', selectedDetail.data.light_type_4, ['NEW LED', 'OLD LED'])}
+                              {renderField('Light 4 Capacity', 'light_capacity_4', selectedDetail.data.light_capacity_4, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                            </>
+                          )}
+                          {Number(formData.how_many_lights_in_pole || selectedDetail.data.how_many_lights_in_pole) >= 5 && (
+                            <>
+                              {renderField('Light 5 Type', 'light_type_5', selectedDetail.data.light_type_5, ['NEW LED', 'OLD LED'])}
+                              {renderField('Light 5 Capacity', 'light_capacity_5', selectedDetail.data.light_capacity_5, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {renderField('Ward No', 'ward_number', selectedDetail.data.ward_number)}
+                          {renderField('DTC No', 'dtc_number', selectedDetail.data.dtc_number)}
+                          {renderField('DTC Capacity', 'dtc_capacity', selectedDetail.data.dtc_capacity)}
+                          {renderField('CCMS No', 'ccms_number', selectedDetail.data.ccms_number)}
+                          {renderField('Meter Type', 'meter_type', selectedDetail.data.meter_type, ['1P', '3P'])}
+                          {renderField('RR Number', 'meter_rr_number', selectedDetail.data.meter_rr_number)}
+                          {renderField('Serial Number', 'meter_serial_number', selectedDetail.data.meter_serial_number)}
+                          {renderField('Meter Dim. Status', 'meter_dimensional_status', selectedDetail.data.meter_dimensional_status, ['Working', 'not working', 'missing', 'door lock', 'no meter'])}
+                          {renderField('Conductor Type', 'conductor_type', selectedDetail.data.conductor_type, ['ABC', 'ACSR', 'UG'])}
+                          {renderField('Pole No', 'pole_number', selectedDetail.data.pole_number)}
+                          {renderField('Pole Type', 'pole_type', selectedDetail.data.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
+                          {renderField('Height', 'pole_height', selectedDetail.data.pole_height, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
+                          {renderField('Distance', 'pole_to_pole_distance', selectedDetail.data.pole_to_pole_distance, ['10', '20', '25', '30'])}
+                          {renderField('ARM Type', 'arm_type', selectedDetail.data.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
+                          {renderField('ARM Status', 'arm_status', selectedDetail.data.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
+                          {renderField('Present ARM No', 'present_arm_no', selectedDetail.data.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
+                          {renderField('Present ARM Length', 'present_arm_length', selectedDetail.data.present_arm_length, ['0', '1', '1.5', '2', '2.5'])}
+                          {renderField('Lights Count', 'how_many_lights_in_pole', selectedDetail.data.how_many_lights_in_pole, Array.from({length: 13}, (_, i) => String(i)))}
+                          {renderField('Mounting Height', 'light_mounting_height', selectedDetail.data.light_mounting_height, ['5', '6-7', '9', 'mini mast', 'high mast'])}
+                          {renderField('Light 1 Type', 'light_type', selectedDetail.data.light_type, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                          {renderField('Light 1 Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'])}
+                          {renderField('Light 2 Type', 'light_type_2', selectedDetail.data.light_type_2, ['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'])}
+                          {renderField('Light 2 Capacity', 'light_capacity_2', selectedDetail.data.light_capacity_2, ['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'])}
+                          {renderField('Working', 'light_working_status', selectedDetail.data.light_working_status, ['yes', 'no'])}
+                          {renderField('Road Cat', 'road_category', selectedDetail.data.road_category, ['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'])}
+                          {renderField('Road Type', 'road_type', selectedDetail.data.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
+                          {renderField('Road Width', 'road_width_mtrs', selectedDetail.data.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '10', '12', '16', '18', '20', '24', '25', '30'])}
+                          {renderField('Earthing', 'pole_earthing_exists', selectedDetail.data.pole_earthing_exists, ['YES', 'NO'])}
+                          
+                          <div className="col-span-3 border-t pt-2 mt-2 font-semibold text-gray-700">Proposal Form</div>
+                          {renderField('Req ARM No', 'req_arm_number', selectedDetail.data.req_arm_number, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
+                          {renderField('Req ARM Length', 'req_arm_length', selectedDetail.data.req_arm_length, ['0', '1.0', '1.5', '2', '2.5'])}
+                          {renderField('Req LED Lights No', 'req_led_lights_no', selectedDetail.data.req_led_lights_no, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
+                          {renderField('Req LED Wattage', 'req_led_wattage', selectedDetail.data.req_led_wattage, ['400W', '250W', '200W', '150W', '120W', '90W', '65W', '40W', '5-25W', '0W'])}
+                          {renderField('Req Dedicated Wire', 'req_dedicated_wire', selectedDetail.data.req_dedicated_wire, ['yes', 'no'])}
+                        </>
+                      )
                     ) : (
                       <>
                         {renderField('Ward No', 'ward_number', selectedDetail.data.ward_number)}

@@ -221,7 +221,14 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', ul
       p.req_arm_length,
       p.req_led_lights_no,
       p.req_led_wattage,
-      p.req_dedicated_wire
+      p.req_dedicated_wire,
+      p.survey_type,
+      p.light_type_3,
+      p.light_capacity_3,
+      p.light_type_4,
+      p.light_capacity_4,
+      p.light_type_5,
+      p.light_capacity_5
     FROM poles p
     JOIN wards w ON p.ward_id = w.id
     WHERE p.ward_id = $1 AND p.is_deleted = FALSE ${dateFilter} ${scopeFilter}
@@ -342,7 +349,14 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         p.req_arm_length,
         p.req_led_lights_no,
         p.req_led_wattage,
-        p.req_dedicated_wire
+        p.req_dedicated_wire,
+        p.survey_type,
+        p.light_type_3,
+        p.light_capacity_3,
+        p.light_type_4,
+        p.light_capacity_4,
+        p.light_type_5,
+        p.light_capacity_5
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
       WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted = FALSE
@@ -487,7 +501,14 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         p.req_led_wattage,
         p.req_dedicated_wire,
         p.image_url_1,
-        p.image_url_2
+        p.image_url_2,
+        p.survey_type,
+        p.light_type_3,
+        p.light_capacity_3,
+        p.light_type_4,
+        p.light_capacity_4,
+        p.light_type_5,
+        p.light_capacity_5
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
       WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
@@ -575,7 +596,14 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         p.req_led_wattage,
         p.req_dedicated_wire,
         p.image_url_1,
-        p.image_url_2
+        p.image_url_2,
+        p.survey_type,
+        p.light_type_3,
+        p.light_capacity_3,
+        p.light_type_4,
+        p.light_capacity_4,
+        p.light_type_5,
+        p.light_capacity_5
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
       WHERE p.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date = $2 AND p.is_deleted = FALSE
@@ -880,7 +908,14 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
         p.road_category,
         p.road_type,
         p.road_width_mtrs,
-        p.pole_earthing_exists
+        p.pole_earthing_exists,
+        p.survey_type,
+        p.light_type_3,
+        p.light_capacity_3,
+        p.light_type_4,
+        p.light_capacity_4,
+        p.light_type_5,
+        p.light_capacity_5
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
       LEFT JOIN users u_cre ON p.created_by = u_cre.id
