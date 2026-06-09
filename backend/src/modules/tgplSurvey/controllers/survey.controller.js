@@ -1,6 +1,15 @@
 const { getPoles, updatePole, confirmPole } = require('../models/pole.model');
 const { query } = require('../../../config/db');
 
+function normalizeIdentifier(val) {
+  if (!val) return '';
+  const trimmed = String(val).trim();
+  if (/^\d+$/.test(trimmed)) {
+    return String(Number(trimmed));
+  }
+  return trimmed.toLowerCase();
+}
+
 async function getPolesHandler(req, res, next) {
   try {
     const { projectId } = req.params;
@@ -55,30 +64,56 @@ async function updatePoleHandler(req, res, next) {
     if (data.ulb_id) data.ward_id = Number(data.ulb_id);
     if (data.ulb_name) data.ward_number = data.ulb_name;
 
-    if (data.ccms_number) {
-      let targetWardId = data.ward_id;
-      if (!targetWardId) {
-        const poleRes = await query(`SELECT ward_id FROM poles WHERE id = $1`, [Number(id)]);
-        targetWardId = poleRes.rows[0]?.ward_id;
-      }
-      
-      if (targetWardId) {
-        const ccmsClean = String(data.ccms_number).trim();
-        data.ccms_number = ccmsClean;
+    // Retrieve current pole fields to handle partial updates correctly
+    const poleRes = await query(`SELECT ward_id, ccms_number, pole_number, survey_type FROM poles WHERE id = $1`, [Number(id)]);
+    const currentPole = poleRes.rows[0];
 
-        const ccmsExists = await query(
-          `SELECT DISTINCT ccms_number FROM poles 
+    if (currentPole) {
+      const checkWardId = data.ward_id || currentPole.ward_id;
+      const checkCcmsNumber = data.ccms_number !== undefined ? data.ccms_number : currentPole.ccms_number;
+      const checkPoleNumber = data.pole_number !== undefined ? data.pole_number : currentPole.pole_number;
+      const checkSurveyType = data.survey_type || currentPole.survey_type || 'survey';
+
+      if (checkCcmsNumber && checkPoleNumber) {
+        const ccmsClean = String(checkCcmsNumber).trim();
+        const poleClean = String(checkPoleNumber).trim();
+
+        const normCcms = normalizeIdentifier(ccmsClean);
+        const normPole = normalizeIdentifier(poleClean);
+
+        // Fetch existing poles in the target ward (excluding this one)
+        const existingPoles = await query(
+          `SELECT id, ccms_number, pole_number, survey_type FROM poles 
            WHERE project_id = $1 
              AND ward_id = $2 
-             AND TRIM(LOWER(ccms_number)) = TRIM(LOWER($3))
-             AND id != $4
+             AND id != $3
              AND is_deleted = FALSE`,
-          [Number(projectId), Number(targetWardId), ccmsClean, Number(id)]
+          [Number(projectId), Number(checkWardId), Number(id)]
         );
-        
-        if (ccmsExists.rows.length > 0) {
-          data.ccms_number = ccmsExists.rows[0].ccms_number;
+
+        // Normalize matching CCMS value if found
+        const existingCcmsRow = existingPoles.rows.find(row => normalizeIdentifier(row.ccms_number) === normCcms);
+        if (existingCcmsRow) {
+          if (data.ccms_number !== undefined) data.ccms_number = existingCcmsRow.ccms_number;
+        } else {
+          if (data.ccms_number !== undefined) data.ccms_number = ccmsClean;
         }
+
+        const isDuplicate = existingPoles.rows.some(row => {
+          const rowSurveyType = row.survey_type || 'survey';
+          return rowSurveyType === checkSurveyType &&
+                 normalizeIdentifier(row.ccms_number) === normCcms &&
+                 normalizeIdentifier(row.pole_number) === normPole;
+        });
+
+        if (isDuplicate) {
+          const typeStr = checkSurveyType === 'installation' ? 'installation' : 'survey';
+          return res.status(400).json({ 
+            message: `Pole No. "${poleClean}" under CCMS "${data.ccms_number || checkCcmsNumber}" already has a submitted ${typeStr} record in this ward.`
+          });
+        }
+
+        if (data.pole_number !== undefined) data.pole_number = poleClean;
       }
     }
 

@@ -13,6 +13,15 @@ function isValidLatLng(lat, lng) {
   if (g < -180 || g > 180) return false;
   return true;
 }
+
+function normalizeIdentifier(val) {
+  if (!val) return '';
+  const trimmed = String(val).trim();
+  if (/^\d+$/.test(trimmed)) {
+    return String(Number(trimmed));
+  }
+  return trimmed.toLowerCase();
+}
 async function searchUlbsHandler(req, res) {
   try {
     const { q } = req.query;
@@ -99,21 +108,48 @@ async function createPoleHandler(req, res) {
       if (!data.ccms_number) {
         return res.status(400).json({ error: 'ccms_number is required' });
       }
-      const ccmsClean = String(data.ccms_number).trim();
-      data.ccms_number = ccmsClean;
+      if (!data.pole_number) {
+        return res.status(400).json({ error: 'pole_number is required' });
+      }
 
-      const ccmsExists = await query(
-        `SELECT DISTINCT ccms_number FROM poles 
+      const ccmsClean = String(data.ccms_number).trim();
+      const poleClean = String(data.pole_number).trim();
+
+      const normCcms = normalizeIdentifier(ccmsClean);
+      const normPole = normalizeIdentifier(poleClean);
+
+      // Check for duplicate pole in same ward and survey type
+      const existingPoles = await query(
+        `SELECT ccms_number, pole_number, survey_type FROM poles 
          WHERE project_id = $1 
            AND ward_id = $2 
-           AND TRIM(LOWER(ccms_number)) = TRIM(LOWER($3))
            AND is_deleted = FALSE`,
-        [Number(projectId), Number(data.ward_id), ccmsClean]
+        [Number(projectId), Number(data.ward_id)]
       );
-      
-      if (ccmsExists.rows.length > 0) {
-        data.ccms_number = ccmsExists.rows[0].ccms_number;
+
+      // Find if CCMS already exists in this ward to preserve original formatting
+      const existingCcmsRow = existingPoles.rows.find(row => normalizeIdentifier(row.ccms_number) === normCcms);
+      if (existingCcmsRow) {
+        data.ccms_number = existingCcmsRow.ccms_number;
+      } else {
+        data.ccms_number = ccmsClean;
       }
+
+      const isDuplicate = existingPoles.rows.some(row => {
+        const rowSurveyType = row.survey_type || 'survey';
+        const targetSurveyType = data.survey_type || 'survey';
+        return rowSurveyType === targetSurveyType &&
+               normalizeIdentifier(row.ccms_number) === normCcms &&
+               normalizeIdentifier(row.pole_number) === normPole;
+      });
+
+      if (isDuplicate) {
+        const typeStr = (data.survey_type || 'survey') === 'installation' ? 'installation' : 'survey';
+        const errMsg = `Pole No. "${poleClean}" under CCMS "${data.ccms_number}" already has a submitted ${typeStr} record in this ward.`;
+        return res.status(400).json({ error: errMsg, message: errMsg });
+      }
+
+      data.pole_number = poleClean;
     }
 
     if (Number(projectId) !== 3 && !data.switch_point_id) {
