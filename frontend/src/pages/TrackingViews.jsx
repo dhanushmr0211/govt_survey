@@ -300,6 +300,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
   const [activeType, setActiveType] = useState('all');
+  const [activeSurveyType, setActiveSurveyType] = useState('survey');
   const [page, setPage] = useState(1);
   const limit = 50;
   const isTgpl = String(projectId) === '3';
@@ -307,10 +308,10 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
   // Reset page when key filters change
   useEffect(() => {
     setPage(1);
-  }, [projectId, userId, confirmedBy, status, fromDate, toDate, activeType]);
+  }, [projectId, userId, confirmedBy, status, fromDate, toDate, activeType, activeSurveyType]);
   
   const { data, isLoading } = useQuery({
-    queryKey: ['user-submissions', projectId, userId, confirmedBy, status, fromDate, toDate, dateField, activeType, page],
+    queryKey: ['user-submissions', projectId, userId, confirmedBy, status, fromDate, toDate, dateField, activeType, activeSurveyType, page],
     queryFn: async () => {
       let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}`;
       let params = [];
@@ -320,6 +321,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
       if (toDate) params.push(`toDate=${toDate}`);
       if (dateField) params.push(`dateField=${dateField}`);
       if (activeType && activeType !== 'all') params.push(`type=${activeType}`);
+      if (isTgpl && activeSurveyType) params.push(`surveyType=${activeSurveyType}`);
       params.push(`page=${page}`);
       params.push(`limit=${limit}`);
       if (params.length > 0) url += `?${params.join('&')}`;
@@ -368,7 +370,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
         <h3 className="text-md font-medium text-gray-900">{status} Submissions ({data?.total || 0})</h3>
         
         {/* Type Filter Tabs */}
-        {!isTgpl && (
+        {!isTgpl ? (
           <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
             <button
               className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeType === 'all' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
@@ -387,6 +389,21 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
               onClick={() => setActiveType('pole')}
             >
               Poles
+            </button>
+          </div>
+        ) : (
+          <div className="inline-flex rounded-lg bg-slate-100 p-1 self-start sm:self-auto">
+            <button
+              className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeSurveyType === 'survey' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              onClick={() => setActiveSurveyType('survey')}
+            >
+              Survey
+            </button>
+            <button
+              className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeSurveyType === 'installation' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              onClick={() => setActiveSurveyType('installation')}
+            >
+              Installation
             </button>
           </div>
         )}

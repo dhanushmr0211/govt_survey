@@ -90,52 +90,68 @@ export const OfflineQueueView = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {submissions.map((sub) => (
-            <div key={sub.id} className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm flex justify-between items-center">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${sub.type === 'pole' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {sub.type}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {new Date(sub.createdAt).toLocaleTimeString()}
-                  </span>
+          {submissions.map((sub) => {
+            const isInstallation = sub.data?.survey_type === 'installation';
+            const badgeText = isInstallation 
+              ? 'INSTALLATION' 
+              : (sub.type === 'pole' ? 'SURVEY POLE' : 'SWITCH POINT');
+            const badgeClass = isInstallation
+              ? 'bg-orange-100 text-orange-700'
+              : (sub.type === 'pole' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700');
+            
+            const displayTitle = isInstallation
+              ? `Ward ${sub.wardNumber} - CCMS ${sub.data?.ccms_number || 'N/A'} (Pole ${sub.data?.pole_number || 'N/A'})`
+              : (sub.type === 'pole' 
+                  ? `Ward ${sub.wardNumber} - Pole ${sub.data?.pole_number || 'N/A'}` 
+                  : `Ward ${sub.wardNumber} - Switch Point ${sub.data?.switch_point_number || 'N/A'}`);
+
+            return (
+              <div key={sub.id} className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm flex justify-between items-center">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${badgeClass}`}>
+                      {badgeText}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {new Date(sub.createdAt).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {displayTitle}
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-500">{sub.images.length} Photos</span>
+                    {sub.status === 'failed' && (
+                      <span className="text-xs text-red-500 flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {sub.errorMessage || 'Failed'}
+                      </span>
+                    )}
+                    {sub.status === 'syncing' && (
+                      <span className="text-xs text-blue-500 flex items-center gap-1">
+                        <RefreshCw size={12} className="animate-spin" />
+                        Uploading...
+                      </span>
+                    )}
+                    {sub.status === 'pending' && (
+                      <span className="text-xs text-amber-500 flex items-center gap-1">
+                        <Clock size={12} />
+                        Waiting
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <p className="text-sm font-semibold text-gray-900">
-                  Ward {sub.wardNumber} - {sub.data.identifier || sub.data.switch_point_type || 'New Entry'}
-                </p>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500">{sub.images.length} Photos</span>
-                  {sub.status === 'failed' && (
-                    <span className="text-xs text-red-500 flex items-center gap-1">
-                      <AlertCircle size={12} />
-                      {sub.errorMessage || 'Failed'}
-                    </span>
-                  )}
-                  {sub.status === 'syncing' && (
-                    <span className="text-xs text-blue-500 flex items-center gap-1">
-                      <RefreshCw size={12} className="animate-spin" />
-                      Uploading...
-                    </span>
-                  )}
-                  {sub.status === 'pending' && (
-                    <span className="text-xs text-amber-500 flex items-center gap-1">
-                      <Clock size={12} />
-                      Waiting
-                    </span>
-                  )}
-                </div>
+                
+                <button
+                  onClick={() => handleDelete(sub.id)}
+                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 size={18} />
+                </button>
               </div>
-              
-              <button
-                onClick={() => handleDelete(sub.id)}
-                className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                title="Delete"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
