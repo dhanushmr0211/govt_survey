@@ -141,7 +141,23 @@ export const InstallationForm = ({ ward, onBack }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert('Installation pole submitted successfully!');
-      onBack();
+      
+      // Keep ward/CCMS, reset pole fields
+      setFormData((prev) => ({
+        ccms_number: prev.ccms_number,
+        pole_number: '',
+        how_many_lights: '0',
+        light_type: '',
+        light_capacity: '',
+        light_type_2: '',
+        light_capacity_2: '',
+        light_type_3: '',
+        light_capacity_3: '',
+        light_type_4: '',
+        light_capacity_4: '',
+        light_type_5: '',
+        light_capacity_5: '',
+      }));
     } catch (error) {
       console.error('Error submitting installation:', error);
 
@@ -159,7 +175,23 @@ export const InstallationForm = ({ ward, onBack }) => {
             wardNumber: ward.name,
           });
           alert('No internet connection. Submission saved locally and will upload automatically when you have signal.');
-          onBack();
+          
+          // Keep ward/CCMS, reset pole fields
+          setFormData((prev) => ({
+            ccms_number: prev.ccms_number,
+            pole_number: '',
+            how_many_lights: '0',
+            light_type: '',
+            light_capacity: '',
+            light_type_2: '',
+            light_capacity_2: '',
+            light_type_3: '',
+            light_capacity_3: '',
+            light_type_4: '',
+            light_capacity_4: '',
+            light_type_5: '',
+            light_capacity_5: '',
+          }));
           return;
         } catch (dbErr) {
           console.error('Failed to save offline:', dbErr);
