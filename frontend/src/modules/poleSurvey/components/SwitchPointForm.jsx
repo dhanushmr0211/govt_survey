@@ -4,6 +4,8 @@ import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 import { offlineDb } from '../../../db/offlineDb';
 import { getCurrentLocation } from '../../../shared/utils/geolocation';
+import { InAppCamera } from '../../../shared/components/InAppCamera';
+import { Camera } from 'lucide-react';
 
 export const SwitchPointForm = ({ ulb, onBack }) => {
   const isBallari = (ulb?.district_name || '').toLowerCase().includes('ballari');
@@ -21,6 +23,7 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
   const [compressing, setCompressing] = useState({ image1: false, image2: false });
   const [uploading, setUploading] = useState(false);
   const [statusText, setStatusText] = useState('');
+  const [cameraTarget, setCameraTarget] = useState(null);
 
   const isCompressing = compressing.image1 || compressing.image2;
 
@@ -209,82 +212,87 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
         )}
 
          <div className="space-y-2">
-          <label className="block text-gray-700 font-medium mb-1">Photos {isBallari && '(Compulsory)'}</label>
-          
-          {[1, 2].map((num) => (
-            <div key={num} className="border border-gray-200 p-2 rounded flex flex-col gap-1">
-              <span className="text-sm font-medium text-gray-600">Image Slot {num}</span>
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={async (e) => {
-                  const file = e.target.files[0];
-                  if (!file) return;
+           <label className="block text-gray-700 font-medium mb-1">Photos {isBallari && '(Compulsory)'}</label>
+           
+           {[1, 2].map((num) => (
+             <div key={num} className="border border-gray-200 p-2 rounded flex flex-col gap-1.5">
+               <span className="text-sm font-medium text-gray-600">Image Slot {num}</span>
+               
+               <div className="flex flex-wrap items-center gap-2 mt-1">
+                 <button
+                   type="button"
+                   onClick={() => setCameraTarget(num)}
+                   className="bg-primary hover:bg-primary-dark text-white text-xs font-bold py-2.5 px-4 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+                 >
+                   <Camera size={14} /> Take Photo
+                 </button>
+               </div>
 
-                  if (file.size > 15 * 1024 * 1024) {
-                    alert("Image too large. Please choose a smaller image.");
-                    return;
-                  }
+               {compressing[`image${num}`] && (
+                 <span className="text-xs text-amber-600 animate-pulse font-medium">Compressing image...</span>
+               )}
+               {photos[`image${num}`] && !compressing[`image${num}`] && (
+                 <div className="flex items-center justify-between bg-green-50 border border-green-100 p-1.5 rounded mt-1">
+                   <span className="text-xs text-green-700 truncate font-medium">Selected: {photos[`image${num}`].name}</span>
+                   <button
+                     type="button"
+                     onClick={() => setPhotos(prev => ({ ...prev, [`image${num}`]: null }))}
+                     className="text-red-500 hover:text-red-700 text-xs font-semibold ml-2"
+                   >
+                     ✕
+                   </button>
+                 </div>
+               )}
+             </div>
+           ))}
+         </div>
 
-                  setCompressing(prev => ({ ...prev, [`image${num}`]: true }));
-                  
-                  const options = {
-                    maxSizeMB: 0.4,
-                    maxWidthOrHeight: 1600,
-                    useWebWorker: true,
-                    fileType: 'image/jpeg',
-                    initialQuality: 0.75,
-                  };
+         <button
+           type="submit"
+           disabled={uploading || isCompressing}
+           className="w-full bg-primary text-white p-3 rounded-lg font-medium hover:bg-primary-dark transition-colors mt-4 disabled:opacity-60"
+         >
+           {statusText ? statusText : uploading ? 'Submitting...' : isCompressing ? 'Compressing image...' : 'Submit Switch Point'}
+         </button>
+       </div>
 
-                  try {
-                    console.log(`Original size for Slot ${num}: ${(file.size / 1024).toFixed(2)} KB`);
-                    const compressedFile = await imageCompression(file, options);
-                    console.log(`Compressed size for Slot ${num}: ${(compressedFile.size / 1024).toFixed(2)} KB`);
-                    
-                    // Preserve original filename if possible, or append .jpg
-                    const fileName = file.name.split('.')[0] + '_compressed.jpg';
-                    const renamedFile = new File([compressedFile], fileName, { type: 'image/jpeg' });
-                    
-                    setPhotos(prev => ({ ...prev, [`image${num}`]: renamedFile }));
-                  } catch (error) {
-                    console.error(`Compression error for Slot ${num}:`, error);
-                    alert(`Failed to compress image in Slot ${num}. Using original.`);
-                    setPhotos(prev => ({ ...prev, [`image${num}`]: file }));
-                  } finally {
-                    setCompressing(prev => ({ ...prev, [`image${num}`]: false }));
-                  }
-                }}
-                className="text-xs"
-                disabled={compressing[`image${num}`]}
-              />
-              {compressing[`image${num}`] && (
-                <span className="text-xs text-amber-600 animate-pulse">Compressing image...</span>
-              )}
-              {photos[`image${num}`] && !compressing[`image${num}`] && (
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-green-600 truncate">Selected: {photos[`image${num}`].name}</span>
-                  <button
-                    type="button"
-                    onClick={() => setPhotos(prev => ({ ...prev, [`image${num}`]: null }))}
-                    className="text-red-500 hover:text-red-700 text-xs font-semibold ml-2"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+       {cameraTarget && (
+         <InAppCamera
+           onClose={() => setCameraTarget(null)}
+           onCapture={async (file) => {
+             const num = cameraTarget;
+             setCameraTarget(null);
+             if (!file) return;
 
-        <button
-          type="submit"
-          disabled={uploading || isCompressing}
-          className="w-full bg-primary text-white p-3 rounded-lg font-medium hover:bg-primary-dark transition-colors mt-4 disabled:opacity-60"
-        >
-          {statusText ? statusText : uploading ? 'Submitting...' : isCompressing ? 'Compressing image...' : 'Submit Switch Point'}
-        </button>
-      </div>
-    </form>
+             setCompressing(prev => ({ ...prev, [`image${num}`]: true }));
+             
+             const options = {
+               maxSizeMB: 0.4,
+               maxWidthOrHeight: 1600,
+               useWebWorker: true,
+               fileType: 'image/jpeg',
+               initialQuality: 0.75,
+             };
+
+             try {
+               console.log(`Original size from camera for Slot ${num}: ${(file.size / 1024).toFixed(2)} KB`);
+               const compressedFile = await imageCompression(file, options);
+               console.log(`Compressed size from camera for Slot ${num}: ${(compressedFile.size / 1024).toFixed(2)} KB`);
+               
+               const fileName = `camera_slot_${num}_${Date.now()}_compressed.jpg`;
+               const renamedFile = new File([compressedFile], fileName, { type: 'image/jpeg' });
+               
+               setPhotos(prev => ({ ...prev, [`image${num}`]: renamedFile }));
+             } catch (error) {
+               console.error(`Compression error for Slot ${num}:`, error);
+               alert(`Failed to compress image in Slot ${num}. Using original.`);
+               setPhotos(prev => ({ ...prev, [`image${num}`]: file }));
+             } finally {
+               setCompressing(prev => ({ ...prev, [`image${num}`]: false }));
+             }
+           }}
+         />
+       )}
+     </form>
   );
 };
