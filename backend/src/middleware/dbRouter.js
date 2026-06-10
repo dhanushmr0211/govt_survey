@@ -2,13 +2,17 @@ const { pool, tgplPool, dbStorage } = require('../config/db');
 const { TGPL_PROJECT_ID } = require('../constants/projects');
 
 function dbRouter(req, res, next) {
-  let projectId = req.headers['x-project-id'];
+  let projectId = null;
 
-  if (!projectId && req.originalUrl) {
+  if (req.originalUrl) {
     const match = req.originalUrl.match(/\/projects\/(\d+)/);
     if (match) {
       projectId = match[1];
     }
+  }
+
+  if (!projectId) {
+    projectId = req.headers['x-project-id'];
   }
 
   // Default to master/default pool (govt_survey)
