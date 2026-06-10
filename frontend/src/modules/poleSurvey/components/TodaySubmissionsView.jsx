@@ -625,9 +625,29 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm flex-1 overflow-y-auto pr-2">
               {/* Left Side: Technical Details */}
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-lg">
+                <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
                   <div>
-                    <p className="text-gray-500 text-xs">ULB</p>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Created By</p>
+                    <p className="font-semibold text-slate-900">{selectedSubmission.user_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Created At</p>
+                    <p className="font-semibold text-slate-900 text-xs">
+                      {selectedSubmission.created_at ? new Date(selectedSubmission.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Confirmed By</p>
+                    <p className="font-semibold text-slate-900">{selectedSubmission.confirmed_by_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Confirmed At</p>
+                    <p className="font-semibold text-slate-900 text-xs">
+                      {selectedSubmission.confirmed_at ? new Date(selectedSubmission.confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">ULB</p>
                     {isEditing ? (
                       <select
                         name="ulb_id"
@@ -651,12 +671,17 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                         ))}
                       </select>
                     ) : (
-                      <p className="font-medium">{selectedSubmission.ulb_name || 'N/A'}</p>
+                      <p className="font-semibold text-slate-900">{selectedSubmission.ulb_name || 'N/A'}</p>
                     )}
                   </div>
-                  <div><p className="text-gray-500 text-xs">Ward Number</p><p className="font-medium">{selectedSubmission.ward_number}</p></div>
-                  <div><p className="text-gray-500 text-xs">Identifier</p><p className="font-medium">{selectedSubmission.identifier}</p></div>
-                  <div><p className="text-gray-500 text-xs">{activeTab === 'confirmed' ? 'Confirmed Time' : 'Time'}</p><p className="font-medium">{new Date(activeTab === 'confirmed' ? (selectedSubmission.confirmed_at || selectedSubmission.created_at) : selectedSubmission.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</p></div>
+                  <div>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Ward Number</p>
+                    <p className="font-semibold text-slate-900">{selectedSubmission.ward_number}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Identifier</p>
+                    <p className="font-semibold text-slate-900">{selectedSubmission.identifier}</p>
+                  </div>
                 </div>
 
                 <div className="border-t pt-2">

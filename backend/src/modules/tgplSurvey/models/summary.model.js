@@ -193,6 +193,8 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', ul
       p.meter_rr_number,
       p.meter_serial_number,
       p.id as pole_id,
+      p.created_by as user_id,
+      p.created_at,
       p.pole_number,
       p.pole_type,
       NULL as pole_condition,
@@ -637,7 +639,9 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         p.light_type_4,
         p.light_capacity_4,
         p.light_type_5,
-        p.light_capacity_5
+        p.light_capacity_5,
+        p.confirmed_by as pole_confirmed_by,
+        p.confirmed_at as pole_confirmed_at
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
       WHERE p.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date = $2 AND p.is_deleted = FALSE

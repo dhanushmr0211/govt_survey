@@ -899,9 +899,47 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
             <div className="grid grid-cols-2 gap-6 text-sm flex-1 overflow-y-auto">
               {/* Left Side: Details */}
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
                   <div>
-                    <p className="text-gray-500 text-xs">ULB</p>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Created By</p>
+                    <p className="font-semibold text-slate-900">
+                      {selectedDetail.type === 'switch_point'
+                        ? (selectedDetail.data.sp_created_by_name || selectedDetail.data.user_name || 'N/A')
+                        : (selectedDetail.data.pole_created_by_name || selectedDetail.data.user_name || 'N/A')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Created At</p>
+                    <p className="font-semibold text-slate-900 text-xs">
+                      {(() => {
+                        const dateVal = selectedDetail.type === 'switch_point'
+                          ? (selectedDetail.data.sp_created_at || selectedDetail.data.created_at)
+                          : (selectedDetail.data.pole_created_at || selectedDetail.data.created_at);
+                        return dateVal ? new Date(dateVal).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A';
+                      })()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Confirmed By</p>
+                    <p className="font-semibold text-slate-900">
+                      {selectedDetail.type === 'switch_point'
+                        ? (selectedDetail.data.sp_confirmed_by_name || 'N/A')
+                        : (selectedDetail.data.pole_confirmed_by_name || 'N/A')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Confirmed At</p>
+                    <p className="font-semibold text-slate-900 text-xs">
+                      {(() => {
+                        const dateVal = selectedDetail.type === 'switch_point'
+                          ? selectedDetail.data.sp_confirmed_at
+                          : selectedDetail.data.pole_confirmed_at;
+                        return dateVal ? new Date(dateVal).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A';
+                      })()}
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">ULB</p>
                     {isEditing ? (
                       <select
                         name="ulb_id"
@@ -925,24 +963,8 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                         ))}
                       </select>
                     ) : (
-                      <p className="font-medium">{ulb?.ulb_name || ulb?.name || 'N/A'}</p>
+                      <p className="font-semibold text-slate-900">{ulb?.ulb_name || ulb?.name || 'N/A'}</p>
                     )}
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs">Confirmed By</p>
-                    <p className="font-medium">
-                      {selectedDetail.type === 'switch_point' 
-                        ? selectedDetail.data.sp_confirmed_by_name || 'N/A'
-                        : selectedDetail.data.pole_confirmed_by_name || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-xs">Confirmed At</p>
-                    <p className="font-medium">
-                      {selectedDetail.type === 'switch_point'
-                        ? selectedDetail.data.sp_confirmed_at ? new Date(selectedDetail.data.sp_confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'
-                        : selectedDetail.data.pole_confirmed_at ? new Date(selectedDetail.data.pole_confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}
-                    </p>
                   </div>
                 </div>
  

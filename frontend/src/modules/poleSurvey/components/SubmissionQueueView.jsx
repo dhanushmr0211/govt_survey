@@ -756,27 +756,27 @@ export const SubmissionQueueView = ({ projectId }) => {
             <div className="grid grid-cols-2 gap-6 text-sm flex-1 overflow-y-auto">
               {/* Left Side: Details */}
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
                   <div>
-                    <p className="text-gray-500 text-xs">Submitted By</p>
-                    <p className="font-medium">{selectedSubmission.user_name}</p>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Created By</p>
+                    <p className="font-semibold text-slate-900">{selectedSubmission.user_name || 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs">Date/Time</p>
-                    <p className="font-medium">{new Date(selectedSubmission.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Created At</p>
+                    <p className="font-semibold text-slate-900 text-xs">
+                      {selectedSubmission.created_at ? new Date(selectedSubmission.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}
+                    </p>
                   </div>
-                  {selectedSubmission.confirmed_by_name && (
-                    <>
-                      <div>
-                        <p className="text-gray-500 text-xs">Confirmed By</p>
-                        <p className="font-medium">{selectedSubmission.confirmed_by_name}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 text-xs">Confirmed At</p>
-                        <p className="font-medium">{selectedSubmission.confirmed_at ? new Date(selectedSubmission.confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</p>
-                      </div>
-                    </>
-                  )}
+                  <div>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Confirmed By</p>
+                    <p className="font-semibold text-slate-900">{selectedSubmission.confirmed_by_name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Confirmed At</p>
+                    <p className="font-semibold text-slate-900 text-xs">
+                      {selectedSubmission.confirmed_at ? new Date(selectedSubmission.confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}
+                    </p>
+                  </div>
                   {selectedSubmission.deleted_by_name && (
                     <>
                       <div>

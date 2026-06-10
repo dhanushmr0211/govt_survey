@@ -245,29 +245,25 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
               <div>
-                <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Submitted By</p>
+                <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Created By</p>
                 <p className="font-semibold text-slate-900">{switchPoint.user_name || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Date/Time</p>
+                <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Created At</p>
                 <p className="font-semibold text-slate-900 text-xs">
                   {switchPoint.created_at ? new Date(switchPoint.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}
                 </p>
               </div>
-              {switchPoint.confirmed_by_name && (
-                <>
-                  <div>
-                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Confirmed By</p>
-                    <p className="font-semibold text-slate-900">{switchPoint.confirmed_by_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Confirmed At</p>
-                    <p className="font-semibold text-slate-900 text-xs">
-                      {switchPoint.confirmed_at ? new Date(switchPoint.confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}
-                    </p>
-                  </div>
-                </>
-              )}
+              <div>
+                <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Confirmed By</p>
+                <p className="font-semibold text-slate-900">{switchPoint.confirmed_by_name || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Confirmed At</p>
+                <p className="font-semibold text-slate-900 text-xs">
+                  {switchPoint.confirmed_at ? new Date(switchPoint.confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}
+                </p>
+              </div>
               <div>
                 <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Ward Number</p>
                 <p className="font-semibold text-slate-900">{switchPoint.ward_number}</p>

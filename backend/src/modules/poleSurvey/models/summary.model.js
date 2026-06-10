@@ -168,6 +168,9 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fr
       sp.confirmed_by as sp_confirmed_by,
       sp.confirmed_at as sp_confirmed_at,
       u1.name as sp_confirmed_by_name,
+      sp.created_at as sp_created_at,
+      sp.created_by as sp_created_by,
+      u3.name as sp_created_by_name,
       sp.latitude as sp_latitude,
       sp.longitude as sp_longitude,
       p.id as pole_id,
@@ -195,6 +198,9 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fr
       p.confirmed_by as pole_confirmed_by,
       p.confirmed_at as pole_confirmed_at,
       u2.name as pole_confirmed_by_name,
+      p.created_at as pole_created_at,
+      p.created_by as pole_created_by,
+      u4.name as pole_created_by_name,
       p.latitude as pole_latitude,
       p.longitude as pole_longitude,
       ulb.name as ulb_name,
@@ -205,6 +211,8 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fr
     LEFT JOIN poles p ON p.switch_point_id = sp.id AND p.is_deleted IS NOT TRUE
     LEFT JOIN users u1 ON sp.confirmed_by = u1.id
     LEFT JOIN users u2 ON p.confirmed_by = u2.id
+    LEFT JOIN users u3 ON sp.created_by = u3.id
+    LEFT JOIN users u4 ON p.created_by = u4.id
     WHERE sp.ulb_id = $1 AND sp.ward_number = $2 AND sp.is_deleted IS NOT TRUE ${dateFilter}
     ORDER BY sp.switch_point_number, p.pole_number;
   `;
@@ -722,6 +730,9 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         sp.created_by as user_id,
         u.name as user_name,
         sp.created_at,
+        sp.confirmed_by,
+        sp.confirmed_at,
+        uc.name as confirmed_by_name,
         sp.ward_number,
         sp.switch_point_number::text as identifier,
         ulb.name as ulb_name,
@@ -754,6 +765,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         NULL as pole_earthing_exists
       FROM switch_points sp
       JOIN users u ON sp.created_by = u.id
+      LEFT JOIN users uc ON sp.confirmed_by = uc.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
       LEFT JOIN districts dist ON ulb.district_id = dist.id
       WHERE sp.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date = $2 AND sp.is_deleted IS NOT TRUE
@@ -768,6 +780,9 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         p.created_by as user_id,
         u.name as user_name,
         p.created_at,
+        p.confirmed_by,
+        p.confirmed_at,
+        uc.name as confirmed_by_name,
         sp.ward_number,
         p.pole_number::text as identifier,
         ulb.name as ulb_name,
@@ -801,6 +816,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
       FROM poles p
       JOIN switch_points sp ON p.switch_point_id = sp.id
       JOIN users u ON p.created_by = u.id
+      LEFT JOIN users uc ON p.confirmed_by = uc.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
       LEFT JOIN districts dist ON ulb.district_id = dist.id
       WHERE p.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date = $2 AND p.is_deleted IS NOT TRUE
