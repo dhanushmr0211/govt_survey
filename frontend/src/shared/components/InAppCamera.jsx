@@ -12,6 +12,9 @@ export const InAppCamera = ({ onCapture, onClose }) => {
   const [zoomValue, setZoomValue] = useState(1);
   const touchStartDistRef = useRef(0);
   const touchStartZoomRef = useRef(1);
+  const containerRef = useRef(null);
+  const zoomValueRef = useRef(1);
+  const zoomRangeRef = useRef({ min: 1, max: 1, step: 0.1 });
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -108,54 +111,77 @@ export const InAppCamera = ({ onCapture, onClose }) => {
     };
   }, [facingMode]);
 
-  const getDistance = (t1, t2) => {
-    const dx = t1.clientX - t2.clientX;
-    const dy = t1.clientY - t2.clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
+  useEffect(() => {
+    zoomValueRef.current = zoomValue;
+  }, [zoomValue]);
 
-  const handleTouchStart = (e) => {
-    if (e.touches.length === 2 && zoomSupported) {
-      const dist = getDistance(e.touches[0], e.touches[1]);
-      touchStartDistRef.current = dist;
-      touchStartZoomRef.current = zoomValue;
-    }
-  };
+  useEffect(() => {
+    zoomRangeRef.current = zoomRange;
+  }, [zoomRange]);
 
-  const handleTouchMove = async (e) => {
-    if (e.touches.length === 2 && zoomSupported && touchStartDistRef.current > 0) {
-      const dist = getDistance(e.touches[0], e.touches[1]);
-      const factor = dist / touchStartDistRef.current;
-      let targetZoom = touchStartZoomRef.current * factor;
-      
-      // Clamp to range
-      targetZoom = Math.max(zoomRange.min, Math.min(zoomRange.max, targetZoom));
-      // Round to nearest step if possible
-      const step = zoomRange.step || 0.1;
-      targetZoom = Math.round(targetZoom / step) * step;
-      // Re-clamp just in case of rounding errors
-      targetZoom = Math.max(zoomRange.min, Math.min(zoomRange.max, targetZoom));
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-      setZoomValue(targetZoom);
+    const getDistance = (t1, t2) => {
+      const dx = t1.clientX - t2.clientX;
+      const dy = t1.clientY - t2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
 
-      if (streamRef.current) {
-        const track = streamRef.current.getVideoTracks()[0];
-        if (track) {
-          try {
-            await track.applyConstraints({
-              advanced: [{ zoom: targetZoom }]
-            });
-          } catch (err) {
-            console.error('Failed to apply pinch zoom constraint:', err);
+    const onTouchStart = (e) => {
+      if (e.touches.length === 2 && zoomSupported) {
+        if (e.cancelable) e.preventDefault();
+        const dist = getDistance(e.touches[0], e.touches[1]);
+        touchStartDistRef.current = dist;
+        touchStartZoomRef.current = zoomValueRef.current;
+      }
+    };
+
+    const onTouchMove = async (e) => {
+      if (e.touches.length === 2 && zoomSupported && touchStartDistRef.current > 0) {
+        if (e.cancelable) e.preventDefault();
+        const dist = getDistance(e.touches[0], e.touches[1]);
+        const factor = dist / touchStartDistRef.current;
+        let targetZoom = touchStartZoomRef.current * factor;
+        
+        const currentRange = zoomRangeRef.current;
+        targetZoom = Math.max(currentRange.min, Math.min(currentRange.max, targetZoom));
+        const step = currentRange.step || 0.1;
+        targetZoom = Math.round(targetZoom / step) * step;
+        targetZoom = Math.max(currentRange.min, Math.min(currentRange.max, targetZoom));
+
+        setZoomValue(targetZoom);
+
+        if (streamRef.current) {
+          const track = streamRef.current.getVideoTracks()[0];
+          if (track) {
+            try {
+              await track.applyConstraints({
+                advanced: [{ zoom: targetZoom }]
+              });
+            } catch (err) {
+              console.error('Failed to apply pinch zoom constraint:', err);
+            }
           }
         }
       }
-    }
-  };
+    };
 
-  const handleTouchEnd = () => {
-    touchStartDistRef.current = 0;
-  };
+    const onTouchEnd = () => {
+      touchStartDistRef.current = 0;
+    };
+
+    container.addEventListener('touchstart', onTouchStart, { passive: false });
+    container.addEventListener('touchmove', onTouchMove, { passive: false });
+    container.addEventListener('touchend', onTouchEnd, { passive: false });
+
+    return () => {
+      container.removeEventListener('touchstart', onTouchStart);
+      container.removeEventListener('touchmove', onTouchMove);
+      container.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [zoomSupported]);
 
   const handleCapture = () => {
     if (!videoRef.current || !streamRef.current) return;
@@ -213,10 +239,8 @@ export const InAppCamera = ({ onCapture, onClose }) => {
 
       {/* Main Area (Video / Error / Loader) */}
       <div 
+        ref={containerRef}
         className="flex-1 flex items-center justify-center relative my-4 rounded-xl overflow-hidden bg-slate-900 border border-white/5 shadow-inner"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         {isInitializing && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2">
