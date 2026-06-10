@@ -10,6 +10,8 @@ export const InAppCamera = ({ onCapture, onClose }) => {
   const [zoomSupported, setZoomSupported] = useState(false);
   const [zoomRange, setZoomRange] = useState({ min: 1, max: 1, step: 0.1 });
   const [zoomValue, setZoomValue] = useState(1);
+  const touchStartDistRef = useRef(0);
+  const touchStartZoomRef = useRef(1);
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -106,25 +108,53 @@ export const InAppCamera = ({ onCapture, onClose }) => {
     };
   }, [facingMode]);
 
-  const handleZoomChange = async (e) => {
-    const value = parseFloat(e.target.value);
-    setZoomValue(value);
-    
-    if (streamRef.current) {
-      const track = streamRef.current.getVideoTracks()[0];
-      if (track) {
-        try {
-          const capabilities = typeof track.getCapabilities === 'function' ? track.getCapabilities() : {};
-          if (capabilities.zoom) {
+  const getDistance = (t1, t2) => {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2 && zoomSupported) {
+      const dist = getDistance(e.touches[0], e.touches[1]);
+      touchStartDistRef.current = dist;
+      touchStartZoomRef.current = zoomValue;
+    }
+  };
+
+  const handleTouchMove = async (e) => {
+    if (e.touches.length === 2 && zoomSupported && touchStartDistRef.current > 0) {
+      const dist = getDistance(e.touches[0], e.touches[1]);
+      const factor = dist / touchStartDistRef.current;
+      let targetZoom = touchStartZoomRef.current * factor;
+      
+      // Clamp to range
+      targetZoom = Math.max(zoomRange.min, Math.min(zoomRange.max, targetZoom));
+      // Round to nearest step if possible
+      const step = zoomRange.step || 0.1;
+      targetZoom = Math.round(targetZoom / step) * step;
+      // Re-clamp just in case of rounding errors
+      targetZoom = Math.max(zoomRange.min, Math.min(zoomRange.max, targetZoom));
+
+      setZoomValue(targetZoom);
+
+      if (streamRef.current) {
+        const track = streamRef.current.getVideoTracks()[0];
+        if (track) {
+          try {
             await track.applyConstraints({
-              advanced: [{ zoom: value }]
+              advanced: [{ zoom: targetZoom }]
             });
+          } catch (err) {
+            console.error('Failed to apply pinch zoom constraint:', err);
           }
-        } catch (err) {
-          console.error('Failed to apply zoom constraint:', err);
         }
       }
     }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartDistRef.current = 0;
   };
 
   const handleCapture = () => {
@@ -182,7 +212,12 @@ export const InAppCamera = ({ onCapture, onClose }) => {
       </div>
 
       {/* Main Area (Video / Error / Loader) */}
-      <div className="flex-1 flex items-center justify-center relative my-4 rounded-xl overflow-hidden bg-slate-900 border border-white/5 shadow-inner">
+      <div 
+        className="flex-1 flex items-center justify-center relative my-4 rounded-xl overflow-hidden bg-slate-900 border border-white/5 shadow-inner"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {isInitializing && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-2">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent animate-spin rounded-full"></div>
@@ -212,22 +247,10 @@ export const InAppCamera = ({ onCapture, onClose }) => {
           className={`w-full h-full object-cover ${isInitializing || error ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
         />
 
-        {/* Zoom Control Overlay */}
-        {!isInitializing && !error && zoomSupported && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-3/4 max-w-[280px] bg-slate-950/75 backdrop-blur-md py-2 px-4 rounded-full flex items-center gap-3 border border-white/10 shadow-lg z-20">
-            <span className="text-[11px] font-bold text-white/50 select-none">1x</span>
-            <input
-              type="range"
-              min={zoomRange.min}
-              max={zoomRange.max}
-              step={zoomRange.step}
-              value={zoomValue}
-              onChange={handleZoomChange}
-              className="flex-1 accent-white h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
-            />
-            <span className="text-[11px] font-bold text-white select-none min-w-[32px] text-right">
-              {zoomValue.toFixed(1)}x
-            </span>
+        {/* Zoom Value Overlay */}
+        {!isInitializing && !error && zoomSupported && zoomValue > 1 && (
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-slate-950/75 backdrop-blur-md py-1.5 px-3 rounded-full border border-white/10 shadow-lg z-20 text-white text-[11px] font-bold tracking-wider select-none animate-fade-in">
+            {zoomValue.toFixed(1)}x
           </div>
         )}
       </div>
