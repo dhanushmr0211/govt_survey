@@ -112,6 +112,27 @@ export const InAppCamera = ({ onCapture, onClose }) => {
   }, [facingMode]);
 
   useEffect(() => {
+    // Push a custom state to intercept the back button
+    const statePushed = { modalOpen: 'in-app-camera' };
+    window.history.pushState(statePushed, '');
+
+    const handlePopState = (e) => {
+      // Intercept the back navigation and close the modal
+      onClose();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      // Clean up the dummy history state if closed programmatically
+      if (window.history.state && window.history.state.modalOpen === 'in-app-camera') {
+        window.history.back();
+      }
+    };
+  }, [onClose]);
+
+  useEffect(() => {
     zoomValueRef.current = zoomValue;
   }, [zoomValue]);
 

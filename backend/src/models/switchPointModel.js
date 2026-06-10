@@ -1,6 +1,12 @@
 const { query } = require('../config/db');
 
-async function createSwitchPoint(data) {
+async function createSwitchPoint(rawData) {
+  const data = { ...rawData };
+  for (const key in data) {
+    if (data[key] === '') {
+      data[key] = null;
+    }
+  }
   const result = await query(
     `INSERT INTO switch_points
       (project_id, ulb_id, ward_number, switch_point_number, latitude, longitude, switch_point_type, meter_exists, meter_type, meter_rr_number, meter_serial_number, meter_condition, created_by)

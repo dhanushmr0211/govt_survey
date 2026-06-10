@@ -1,6 +1,12 @@
 const { query, dbStorage, tgplPool } = require('../config/db');
 
-async function createPole(data) {
+async function createPole(rawData) {
+  const data = { ...rawData };
+  for (const key in data) {
+    if (data[key] === '') {
+      data[key] = null;
+    }
+  }
   const isTgpl = dbStorage.getStore() === tgplPool;
   if (isTgpl) {
     const result = await query(

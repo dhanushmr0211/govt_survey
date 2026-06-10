@@ -594,14 +594,11 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
               <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">
                 <p>Loading images...</p>
               </div>
-            ) : (isTgpl ? (pole.image_url_1 || pole.image_url_2) : (images && images.length > 0)) ? (
+            ) : (images && images.length > 0) || pole.image_url_1 || pole.image_url_2 ? (
               <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
-                {(isTgpl ? [0, 1] : [0, 1, 2]).map((index) => {
-                  const imgCol = isTgpl ? pole[`image_url_${index + 1}`] : null;
-                  const img = imgCol ? { signed_url: imgCol } : images[index];
-                  if (!img) return null;
-                  return (
-                    <div key={index} className="border border-gray-100 rounded-lg overflow-hidden relative">
+                {images && images.length > 0 ? (
+                  images.map((img, index) => (
+                    <div key={img.id || index} className="border border-gray-100 rounded-lg overflow-hidden relative">
                       <img
                         src={img.signed_url}
                         alt="Survey"
@@ -613,12 +610,31 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                       />
                       <p className="text-xs text-gray-400 p-1 text-center">
                         {isTgpl
-                          ? (index === 0 ? 'Pole View 1' : 'Pole View 2')
+                          ? `Pole View ${index + 1}`
                           : (index === 0 ? 'Switch Point / Meter' : index === 1 ? 'Pole View' : 'Light / Bracket View')}
                       </p>
                     </div>
-                  );
-                })}
+                  ))
+                ) : (
+                  [pole.image_url_1, pole.image_url_2].filter(Boolean).map((imgUrl, index) => (
+                    <div key={index} className="border border-gray-100 rounded-lg overflow-hidden relative">
+                      <img
+                        src={imgUrl}
+                        alt="Survey"
+                        className="w-full h-auto object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                        }}
+                      />
+                      <p className="text-xs text-gray-400 p-1 text-center">
+                        {isTgpl
+                          ? `Pole View ${index + 1}`
+                          : (index === 0 ? 'Switch Point / Meter' : index === 1 ? 'Pole View' : 'Light / Bracket View')}
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
             ) : (
               <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">

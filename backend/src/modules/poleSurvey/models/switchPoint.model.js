@@ -20,24 +20,40 @@ async function getSwitchPoints(projectId, status, limit, offset) {
 }
 
 async function updateSwitchPoint(id, projectId, data) {
-  const result = await query(
-    `UPDATE switch_points 
-     SET ward_number = COALESCE($3, ward_number),
-         switch_point_number = COALESCE($4, switch_point_number),
-         switch_point_type = COALESCE($5, switch_point_type),
-         meter_exists = COALESCE($6, meter_exists),
-         meter_type = COALESCE($7, meter_type),
-         meter_rr_number = COALESCE($8, meter_rr_number),
-         meter_serial_number = COALESCE($9, meter_serial_number),
-         meter_condition = COALESCE($10, meter_condition),
-         ulb_id = COALESCE($11, ulb_id),
-         latitude = COALESCE($12, latitude),
-         longitude = COALESCE($13, longitude),
-         updated_at = NOW()
-     WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE
-     RETURNING *`,
-    [id, projectId, data.ward_number, data.switch_point_number, data.switch_point_type, data.meter_exists, data.meter_type, data.meter_rr_number, data.meter_serial_number, data.meter_condition, data.ulb_id, data.latitude, data.longitude]
-  );
+  const allowedFields = [
+    'ward_number', 'switch_point_number', 'switch_point_type', 'meter_exists',
+    'meter_type', 'meter_rr_number', 'meter_serial_number', 'meter_condition',
+    'ulb_id', 'latitude', 'longitude'
+  ];
+
+  const setClauses = [];
+  const values = [id, projectId];
+  let paramIndex = 3;
+
+  for (const field of allowedFields) {
+    if (data[field] !== undefined) {
+      setClauses.push(`${field} = $${paramIndex++}`);
+      const val = data[field] === '' ? null : data[field];
+      values.push(val);
+    }
+  }
+
+  if (setClauses.length === 0) {
+    const existing = await query(
+      `SELECT * FROM switch_points WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE`,
+      [id, projectId]
+    );
+    return existing.rows[0];
+  }
+
+  const queryText = `
+    UPDATE switch_points 
+    SET ${setClauses.join(', ')}, updated_at = NOW()
+    WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE
+    RETURNING *
+  `;
+
+  const result = await query(queryText, values);
   return result.rows[0];
 }
 

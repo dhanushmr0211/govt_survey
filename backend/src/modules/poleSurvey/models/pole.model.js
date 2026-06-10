@@ -32,39 +32,43 @@ async function getPoles(projectId, status, limit, offset) {
 }
 
 async function updatePole(id, projectId, data) {
-  const result = await query(
-    `UPDATE poles 
-     SET ward_number = COALESCE($3, ward_number),
-         switch_point_number = COALESCE($4, switch_point_number),
-         conductor_type = COALESCE($5, conductor_type),
-         pole_number = COALESCE($6, pole_number),
-         pole_type = COALESCE($7, pole_type),
-         pole_height_mtrs = COALESCE($8, pole_height_mtrs),
-         pole_condition = COALESCE($9, pole_condition),
-         pole_to_pole_distance_mtrs = COALESCE($10, pole_to_pole_distance_mtrs),
-         arm_type = COALESCE($11, arm_type),
-         arm_status = COALESCE($12, arm_status),
-         present_arm_no = COALESCE($13, present_arm_no),
-         present_arm_length_mtrs = COALESCE($14, present_arm_length_mtrs),
-         how_many_lights_in_pole = COALESCE($15, how_many_lights_in_pole),
-         light_mounting_height = COALESCE($16, light_mounting_height),
-         light_type = COALESCE($17, light_type),
-         light_capacity = COALESCE($18, light_capacity),
-         light_type_2 = COALESCE($19, light_type_2),
-         light_capacity_2 = COALESCE($20, light_capacity_2),
-         light_working_status = COALESCE($21, light_working_status),
-         road_category = COALESCE($22, road_category),
-         road_type = COALESCE($23, road_type),
-         road_width_mtrs = COALESCE($24, road_width_mtrs),
-         pole_earthing_exists = COALESCE($25, pole_earthing_exists),
-         switch_point_id = COALESCE($26, switch_point_id),
-         latitude = COALESCE($27, latitude),
-         longitude = COALESCE($28, longitude),
-         updated_at = NOW()
-     WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE
-     RETURNING *`,
-    [id, projectId, data.ward_number, data.switch_point_number, data.conductor_type, data.pole_number, data.pole_type, data.pole_height_mtrs, data.pole_condition, data.pole_to_pole_distance_mtrs, data.arm_type, data.arm_status, data.present_arm_no, data.present_arm_length_mtrs, data.how_many_lights_in_pole, data.light_mounting_height, data.light_type, data.light_capacity, data.light_type_2, data.light_capacity_2, data.light_working_status, data.road_category, data.road_type, data.road_width_mtrs, data.pole_earthing_exists, data.switch_point_id, data.latitude, data.longitude]
-  );
+  const allowedFields = [
+    'ward_number', 'switch_point_number', 'conductor_type', 'pole_number', 'pole_type',
+    'pole_height_mtrs', 'pole_condition', 'pole_to_pole_distance_mtrs', 'arm_type',
+    'arm_status', 'present_arm_no', 'present_arm_length_mtrs', 'how_many_lights_in_pole',
+    'light_mounting_height', 'light_type', 'light_capacity', 'light_type_2',
+    'light_capacity_2', 'light_working_status', 'road_category', 'road_type',
+    'road_width_mtrs', 'pole_earthing_exists', 'switch_point_id', 'latitude', 'longitude'
+  ];
+
+  const setClauses = [];
+  const values = [id, projectId];
+  let paramIndex = 3;
+
+  for (const field of allowedFields) {
+    if (data[field] !== undefined) {
+      setClauses.push(`${field} = $${paramIndex++}`);
+      const val = data[field] === '' ? null : data[field];
+      values.push(val);
+    }
+  }
+
+  if (setClauses.length === 0) {
+    const existing = await query(
+      `SELECT * FROM poles WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE`,
+      [id, projectId]
+    );
+    return existing.rows[0];
+  }
+
+  const queryText = `
+    UPDATE poles 
+    SET ${setClauses.join(', ')}, updated_at = NOW()
+    WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE
+    RETURNING *
+  `;
+
+  const result = await query(queryText, values);
   return result.rows[0];
 }
 
