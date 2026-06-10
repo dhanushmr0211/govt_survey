@@ -7,6 +7,9 @@ export const InAppCamera = ({ onCapture, onClose }) => {
   const [error, setError] = useState(null);
   const [facingMode, setFacingMode] = useState('environment'); // 'environment' or 'user'
   const [isInitializing, setIsInitializing] = useState(true);
+  const [zoomSupported, setZoomSupported] = useState(false);
+  const [zoomRange, setZoomRange] = useState({ min: 1, max: 1, step: 0.1 });
+  const [zoomValue, setZoomValue] = useState(1);
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -18,6 +21,9 @@ export const InAppCamera = ({ onCapture, onClose }) => {
   const startCamera = async () => {
     setIsInitializing(true);
     setError(null);
+    setZoomSupported(false);
+    setZoomRange({ min: 1, max: 1, step: 0.1 });
+    setZoomValue(1);
     stopCamera();
 
     const constraints = {
@@ -35,6 +41,25 @@ export const InAppCamera = ({ onCapture, onClose }) => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
+      
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+        try {
+          const capabilities = typeof track.getCapabilities === 'function' ? track.getCapabilities() : {};
+          if (capabilities.zoom) {
+            setZoomSupported(true);
+            setZoomRange({
+              min: capabilities.zoom.min || 1,
+              max: capabilities.zoom.max || 1,
+              step: capabilities.zoom.step || 0.1,
+            });
+            const settings = typeof track.getSettings === 'function' ? track.getSettings() : {};
+            setZoomValue(settings.zoom || capabilities.zoom.min || 1);
+          }
+        } catch (e) {
+          console.warn('Failed to get track capabilities:', e);
+        }
+      }
       setIsInitializing(false);
     } catch (err) {
       console.error('Failed to access camera with facingMode:', facingMode, err);
@@ -45,6 +70,25 @@ export const InAppCamera = ({ onCapture, onClose }) => {
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+        }
+        
+        const track = stream.getVideoTracks()[0];
+        if (track) {
+          try {
+            const capabilities = typeof track.getCapabilities === 'function' ? track.getCapabilities() : {};
+            if (capabilities.zoom) {
+              setZoomSupported(true);
+              setZoomRange({
+                min: capabilities.zoom.min || 1,
+                max: capabilities.zoom.max || 1,
+                step: capabilities.zoom.step || 0.1,
+              });
+              const settings = typeof track.getSettings === 'function' ? track.getSettings() : {};
+              setZoomValue(settings.zoom || capabilities.zoom.min || 1);
+            }
+          } catch (e) {
+            console.warn('Failed to get track capabilities in fallback:', e);
+          }
         }
         setIsInitializing(false);
       } catch (fallbackErr) {
@@ -61,6 +105,27 @@ export const InAppCamera = ({ onCapture, onClose }) => {
       stopCamera();
     };
   }, [facingMode]);
+
+  const handleZoomChange = async (e) => {
+    const value = parseFloat(e.target.value);
+    setZoomValue(value);
+    
+    if (streamRef.current) {
+      const track = streamRef.current.getVideoTracks()[0];
+      if (track) {
+        try {
+          const capabilities = typeof track.getCapabilities === 'function' ? track.getCapabilities() : {};
+          if (capabilities.zoom) {
+            await track.applyConstraints({
+              advanced: [{ zoom: value }]
+            });
+          }
+        } catch (err) {
+          console.error('Failed to apply zoom constraint:', err);
+        }
+      }
+    }
+  };
 
   const handleCapture = () => {
     if (!videoRef.current || !streamRef.current) return;
@@ -144,6 +209,25 @@ export const InAppCamera = ({ onCapture, onClose }) => {
           muted
           className={`w-full h-full object-cover ${isInitializing || error ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
         />
+
+        {/* Zoom Control Overlay */}
+        {!isInitializing && !error && zoomSupported && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-3/4 max-w-[280px] bg-slate-950/75 backdrop-blur-md py-2 px-4 rounded-full flex items-center gap-3 border border-white/10 shadow-lg z-20">
+            <span className="text-[11px] font-bold text-white/50 select-none">1x</span>
+            <input
+              type="range"
+              min={zoomRange.min}
+              max={zoomRange.max}
+              step={zoomRange.step}
+              value={zoomValue}
+              onChange={handleZoomChange}
+              className="flex-1 accent-white h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
+            />
+            <span className="text-[11px] font-bold text-white select-none min-w-[32px] text-right">
+              {zoomValue.toFixed(1)}x
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Bottom Controls */}
