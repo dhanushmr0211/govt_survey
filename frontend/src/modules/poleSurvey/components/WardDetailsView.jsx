@@ -489,6 +489,8 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
           ward_number: item.ward_number,
           sp_confirmed_by_name: item.sp_confirmed_by_name,
           sp_confirmed_at: item.sp_confirmed_at,
+          sp_created_by_name: item.sp_created_by_name,
+          sp_created_at: item.sp_created_at,
           latitude: item.sp_latitude,
           longitude: item.sp_longitude,
           poles: [],
