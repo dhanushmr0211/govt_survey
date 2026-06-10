@@ -170,6 +170,7 @@ export const InAppCamera = ({ onCapture, onClose }) => {
       <div className="flex justify-between items-center z-10 text-white">
         <h3 className="text-sm font-semibold tracking-wide">In-App Camera</h3>
         <button
+          type="button"
           onClick={() => {
             stopCamera();
             onClose();
@@ -194,6 +195,7 @@ export const InAppCamera = ({ onCapture, onClose }) => {
             <AlertTriangle size={36} />
             <p className="text-sm font-medium">{error}</p>
             <button
+              type="button"
               onClick={startCamera}
               className="mt-4 px-4 py-2 bg-white/10 text-white rounded-lg text-xs hover:bg-white/20"
             >
@@ -233,6 +235,7 @@ export const InAppCamera = ({ onCapture, onClose }) => {
       {/* Bottom Controls */}
       <div className="flex justify-around items-center py-4 z-10 text-white">
         <button
+          type="button"
           onClick={toggleCamera}
           className="p-4 rounded-full bg-white/10 hover:bg-white/20 transition-all flex items-center justify-center"
           title="Switch Camera"
@@ -241,6 +244,7 @@ export const InAppCamera = ({ onCapture, onClose }) => {
         </button>
 
         <button
+          type="button"
           onClick={handleCapture}
           disabled={isInitializing || !!error}
           className="w-20 h-20 rounded-full border-4 border-white bg-red-600 hover:bg-red-500 active:scale-95 transition-all flex items-center justify-center disabled:opacity-50"
