@@ -42,7 +42,7 @@ async function resolveUserNames(rows) {
   return rows;
 }
 
-async function getDistrictSummary(projectId, date = null, mode = 'exact', districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
+async function getDistrictSummary(projectId, date = null, mode = 'exact', _districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
   let dateFilter = '';
   const tgplParams = [];
   let pIdx = 1;
@@ -103,7 +103,7 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', distri
   return result.rows;
 }
 
-async function getWardSummary(ulbId, date = null, mode = 'exact', ulbScope = null, fromDate = null, toDate = null) {
+async function getWardSummary(ulbId, date = null, mode = 'exact', _districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
   let dateFilter = '';
   const tgplParams = [ulbId];
   let pIdx = 2;
@@ -152,7 +152,7 @@ async function getWardSummary(ulbId, date = null, mode = 'exact', ulbScope = nul
   return result.rows;
 }
 
-async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', ulbScope = null, fromDate = null, toDate = null) {
+async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', _districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
   let dateFilter = '';
   const tgplParams = [ulbId];
   let pIdx = 2;
@@ -248,7 +248,7 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', ul
   return resolveUserNames(result.rows);
 }
 
-async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at', type = null, surveyType = null) {
+async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = null, _districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at', type = null, surveyType = null) {
   const offset = (page - 1) * limit;
   let scopeFilter = '';
   const params = [projectId, limit, offset, userId];
@@ -403,7 +403,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
   return { rows, total };
 }
 
-async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null, districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at', type = null, surveyType = null) {
+async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId = null, confirmedBy = null, _districtScope = null, ulbScope = null, fromDate = null, toDate = null, dateField = 'created_at', type = null, surveyType = null) {
   const offset = (page - 1) * limit;
   let scopeFilter = '';
   const params = [projectId, limit, offset, userId, confirmedBy];
@@ -569,7 +569,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
   return { rows, total };
 }
 
-async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = null, districtScope = null, ulbScope = null) {
+async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = null, _districtScope = null, ulbScope = null) {
   const today = getLocalDateString();
   const offset = (page - 1) * limit;
   let scopeFilter = '';
@@ -833,7 +833,7 @@ async function getMobileUserTracking(projectId) {
   return result;
 }
 
-async function getReportData(projectId, districtId, tillDate, ulbId, districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
+async function getReportData(projectId, districtId, tillDate, ulbId, _districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
   const params = [projectId, tillDate || null, ulbId || null];
   let pIdx = 4;
   let scopeFilter = '';
@@ -879,7 +879,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
   };
 }
 
-async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtScope = null, ulbScope = null, fromDate = null, toDate = null, type = null, surveyType = null) {
+async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtScope = null, ulbScope = null, fromDate = null, toDate = null, type = null, surveyType = null) {
   const offset = (page - 1) * limit;
   let scopeFilter = '';
   const params = [projectId, limit, offset];

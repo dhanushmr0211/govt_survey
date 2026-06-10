@@ -139,7 +139,7 @@ async function confirmPoleHandler(req, res, next) {
 async function validateMoveHandler(req, res, next) {
   try {
     const { projectId } = req.params;
-    const { type, id, ulb_id, ward_number, switch_point_number, ccms_number } = req.body;
+    const { type, id, ulb_id, switch_point_number, ccms_number } = req.body;
 
     const targetWardId = Number(ulb_id);
     const targetCcmsNum = ccms_number !== undefined ? ccms_number : switch_point_number;

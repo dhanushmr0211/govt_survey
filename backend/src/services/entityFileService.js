@@ -1,10 +1,10 @@
 const entityFileModel = require('../models/entityFileModel');
-const { buildObjectName, uploadBuffer, getSignedReadUrl, deleteObject } = require('../config/gcs');
+const { buildObjectName, uploadBuffer, deleteObject } = require('../config/gcs');
 const { query } = require('../config/db');
 const { env } = require('../config/env');
 
 async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
-  const objectName = buildObjectName(`${projectId}_${entityType}_${entityId}`, file.originalname);
+  const objectName = await buildObjectName(`${projectId}_${entityType}_${entityId}`, file.originalname);
   const uploaded = await uploadBuffer(file.buffer, objectName, file.mimetype);
   
   const entityFile = await entityFileModel.createEntityFile(

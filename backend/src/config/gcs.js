@@ -10,14 +10,37 @@ const storage = new Storage({
 
 const bucket = storage.bucket(env.gcsBucketName);
 
-function buildObjectName(recordId, originalName) {
+async function buildObjectName(recordId, originalName) {
   const safeName = path.basename(originalName).replace(/[^a-zA-Z0-9._-]/g, '_');
   const timestamp = Date.now();
   
   // Dynamically require db config to avoid circular dependency
   const { dbStorage, tgplPool } = require('./db');
   const isTgpl = dbStorage.getStore() === tgplPool;
-  const folder = isTgpl ? 'TGPL-IMAGES' : 'survey-records';
+  let folder = isTgpl ? 'TGPL-IMAGES' : 'survey-records';
+  
+  if (recordId) {
+    const parts = recordId.split('_');
+    if (parts.length >= 3) {
+      const projectId = parts[0];
+      const entityType = parts[1];
+      const entityId = parts[2];
+      
+      if (projectId === '3') {
+        folder = 'TGPL-IMAGES';
+        if (entityType === 'pole') {
+          try {
+            const poleRes = await tgplPool.query('SELECT survey_type FROM poles WHERE id = $1', [Number(entityId)]);
+            if (poleRes.rows.length > 0 && poleRes.rows[0].survey_type === 'installation') {
+              folder = 'tgpl_istallation';
+            }
+          } catch (err) {
+            console.error('Error querying survey_type in buildObjectName:', err);
+          }
+        }
+      }
+    }
+  }
   
   return `${folder}/${recordId}/${timestamp}-${safeName}`;
 }

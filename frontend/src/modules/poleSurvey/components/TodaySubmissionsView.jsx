@@ -39,6 +39,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   const [activeTab, setActiveTab] = useState('pending');
   const queryClient = useQueryClient();
   const addToast = useToastStore((state) => state.addToast);
+  const user = useAuthStore((state) => state.user);
 
   const [ulbs, setUlbs] = useState([]);
   const activeProject = useAuthStore((state) => state.activeProject);
@@ -46,7 +47,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
 
   useEffect(() => {
     const fetchUlbs = async () => {
-      if (!projectId) return;
+      if (!projectId || user?.role === 'MOBILE_USER') return;
       try {
         const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/structure`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -57,13 +58,12 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
       }
     };
     fetchUlbs();
-  }, [projectId, token]);
+  }, [projectId, token, user]);
 
   const [page, setPage] = useState(1);
   const limit = 50;
 
   const [isEditing, setIsEditing] = useState(false);
-  const user = useAuthStore((state) => state.user);
   const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';

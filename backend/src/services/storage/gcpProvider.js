@@ -1,4 +1,4 @@
-const { uploadBuffer, deleteObject, getSignedReadUrl } = require('../../config/gcs');
+const { uploadBuffer, deleteObject } = require('../../config/gcs');
 const { env } = require('../../config/env');
 
 async function upload(file) {

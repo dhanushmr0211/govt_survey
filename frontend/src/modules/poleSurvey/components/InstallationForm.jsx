@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 import { offlineDb } from '../../../db/offlineDb';
 import { getCurrentLocation } from '../../../shared/utils/geolocation';
 import { useAuthStore } from '../../../store/authStore';
+import { InAppCamera } from '../../../shared/components/InAppCamera';
+import { Camera } from 'lucide-react';
 
 export const InstallationForm = ({ ward, onBack }) => {
   const user = useAuthStore((state) => state.user);
@@ -30,6 +33,11 @@ export const InstallationForm = ({ ward, onBack }) => {
   const [isCustomCcms, setIsCustomCcms] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [statusText, setStatusText] = useState('');
+  const [photos, setPhotos] = useState({ image1: null, image2: null });
+  const [compressing, setCompressing] = useState({ image1: false, image2: false });
+  const [cameraTarget, setCameraTarget] = useState(null);
+
+  const isCompressing = compressing.image1 || compressing.image2;
 
   // Fetch CCMS list in this ward
   const { data: ccmsList = [], isLoading: isLoadingCcms } = useQuery({
@@ -136,11 +144,36 @@ export const InstallationForm = ({ ward, onBack }) => {
       light_capacity_5: lightCount >= 5 ? formData.light_capacity_5 : '',
     };
 
+    const imageFiles = Object.values(photos)
+      .filter(Boolean)
+      .map(file => ({ file, type: 'pole' }));
+
     try {
-      await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/pole`, payload, {
+      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/pole`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      const poleId = res.data.id;
+      if (poleId && imageFiles.length > 0) {
+        setStatusText('Uploading photos...');
+        for (let i = 0; i < imageFiles.length; i++) {
+          const img = imageFiles[i];
+          const formDataUpload = new FormData();
+          formDataUpload.append('file', img.file);
+          formDataUpload.append('entity_type', 'pole');
+          formDataUpload.append('entity_id', poleId);
+          await axios.post(
+            `${API_BASE_URL}/projects/${projectId}/pole-survey/files`,
+            formDataUpload,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        }
+      }
+
       alert('Installation pole submitted successfully!');
+      
+      // Reset images
+      setPhotos({ image1: null, image2: null });
       
       // Keep ward/CCMS, reset pole fields
       setFormData((prev) => ({
@@ -167,7 +200,7 @@ export const InstallationForm = ({ ward, onBack }) => {
           await offlineDb.submissions.add({
             type: 'pole',
             data: payload,
-            images: [],
+            images: imageFiles,
             status: 'pending',
             createdAt: Date.now(),
             projectId,
@@ -176,6 +209,9 @@ export const InstallationForm = ({ ward, onBack }) => {
           });
           alert('No internet connection. Submission saved locally and will upload automatically when you have signal.');
           
+          // Reset images
+          setPhotos({ image1: null, image2: null });
+
           // Keep ward/CCMS, reset pole fields
           setFormData((prev) => ({
             ccms_number: prev.ccms_number,
@@ -349,14 +385,87 @@ export const InstallationForm = ({ ward, onBack }) => {
           </div>
         )}
 
+        <div className="space-y-2 pt-2 border-t border-gray-100">
+          <label className="block text-gray-700 font-semibold mb-1">Photos</label>
+          {[1, 2].map((num) => (
+            <div key={num} className="border border-gray-200 p-3 rounded-xl flex flex-col gap-1.5 bg-gray-50/30">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Image Slot {num}</span>
+              
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setCameraTarget(num)}
+                  className="bg-primary hover:bg-primary-dark text-white text-xs font-bold py-2.5 px-4 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+                >
+                  <Camera size={14} /> Take Photo
+                </button>
+              </div>
+
+              {compressing[`image${num}`] && (
+                <span className="text-xs text-amber-600 animate-pulse font-semibold mt-1">Compressing image...</span>
+              )}
+              {photos[`image${num}`] && !compressing[`image${num}`] && (
+                <div className="flex items-center justify-between bg-green-50 border border-green-100 p-2 rounded-lg mt-1">
+                  <span className="text-xs text-green-700 truncate font-semibold">Selected: {photos[`image${num}`].name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPhotos(prev => ({ ...prev, [`image${num}`]: null }))}
+                    className="text-red-500 hover:text-red-700 text-xs font-bold ml-2"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
         <button
           type="submit"
-          disabled={uploading}
+          disabled={uploading || isCompressing}
           className="w-full bg-primary text-white p-3.5 rounded-xl font-bold hover:bg-primary-dark transition-all mt-6 shadow-md shadow-primary/20 disabled:opacity-60 text-sm"
         >
-          {statusText ? statusText : uploading ? 'Submitting...' : 'Submit Installation'}
+          {statusText ? statusText : uploading ? 'Submitting...' : isCompressing ? 'Compressing image...' : 'Submit Installation'}
         </button>
       </div>
+
+      {cameraTarget && (
+        <InAppCamera
+          onClose={() => setCameraTarget(null)}
+          onCapture={async (file) => {
+            const num = cameraTarget;
+            setCameraTarget(null);
+            if (!file) return;
+
+            setCompressing(prev => ({ ...prev, [`image${num}`]: true }));
+            
+            const options = {
+              maxSizeMB: 0.4,
+              maxWidthOrHeight: 1600,
+              useWebWorker: true,
+              fileType: 'image/jpeg',
+              initialQuality: 0.75,
+            };
+
+            try {
+              console.log(`Original size from camera for Slot ${num}: ${(file.size / 1024).toFixed(2)} KB`);
+              const compressedFile = await imageCompression(file, options);
+              console.log(`Compressed size from camera for Slot ${num}: ${(compressedFile.size / 1024).toFixed(2)} KB`);
+              
+              const fileName = `camera_slot_${num}_${Date.now()}_compressed.jpg`;
+              const renamedFile = new File([compressedFile], fileName, { type: 'image/jpeg' });
+              
+              setPhotos(prev => ({ ...prev, [`image${num}`]: renamedFile }));
+            } catch (error) {
+              console.error(`Compression error for Slot ${num}:`, error);
+              alert(`Failed to compress image in Slot ${num}. Using original.`);
+              setPhotos(prev => ({ ...prev, [`image${num}`]: file }));
+            } finally {
+              setCompressing(prev => ({ ...prev, [`image${num}`]: false }));
+            }
+          }}
+        />
+      )}
     </form>
   );
 };

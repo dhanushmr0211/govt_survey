@@ -1,4 +1,4 @@
-const { query, pool } = require('../../../config/db');
+const { query } = require('../../../config/db');
 const { getLocalDateString } = require('../../../utils/date');
 
 async function getDistrictSummary(projectId, date = null, mode = 'exact', districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
