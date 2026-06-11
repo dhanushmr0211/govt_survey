@@ -16,6 +16,8 @@ export const InAppCamera = ({ onCapture, onClose }) => {
   const zoomValueRef = useRef(1);
   const zoomRangeRef = useRef({ min: 1, max: 1, step: 0.1 });
 
+  const activeInitRef = useRef(0);
+
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
@@ -24,6 +26,7 @@ export const InAppCamera = ({ onCapture, onClose }) => {
   };
 
   const startCamera = async () => {
+    const initId = ++activeInitRef.current;
     setIsInitializing(true);
     setError(null);
     setZoomSupported(false);
@@ -42,6 +45,11 @@ export const InAppCamera = ({ onCapture, onClose }) => {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (initId !== activeInitRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -67,11 +75,17 @@ export const InAppCamera = ({ onCapture, onClose }) => {
       }
       setIsInitializing(false);
     } catch (err) {
+      if (initId !== activeInitRef.current) return;
       console.error('Failed to access camera with facingMode:', facingMode, err);
       
       // Fallback: try without facingMode restriction (might open front camera)
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        if (initId !== activeInitRef.current) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -97,9 +111,11 @@ export const InAppCamera = ({ onCapture, onClose }) => {
         }
         setIsInitializing(false);
       } catch (fallbackErr) {
+        if (initId !== activeInitRef.current) return;
         console.error('All camera access options failed:', fallbackErr);
-        setError('Could not access camera. Please ensure permissions are granted.');
         setIsInitializing(false);
+        alert('Camera permission is required. Please ensure camera access is enabled in browser settings.');
+        onClose();
       }
     }
   };
@@ -107,6 +123,7 @@ export const InAppCamera = ({ onCapture, onClose }) => {
   useEffect(() => {
     startCamera();
     return () => {
+      activeInitRef.current = 0;
       stopCamera();
     };
   }, [facingMode]);
