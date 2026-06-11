@@ -1,6 +1,7 @@
 const { getSwitchPointsByWard, updateSwitchPoint, confirmSwitchPoint } = require('../models/switchPoint.model');
 const { getPoles, updatePole, confirmPole } = require('../models/pole.model');
 const { query } = require('../../../config/db');
+const { ROLES } = require('../../../constants/roles');
 
 async function getSwitchPointsHandler(req, res, next) {
   try {
@@ -149,7 +150,7 @@ async function updateSwitchPointHandler(req, res, next) {
     const data = req.body;
 
     const existingSpRes = await query(
-      `SELECT id, ulb_id, ward_number, switch_point_number, latitude, longitude 
+      `SELECT id, ulb_id, ward_number, switch_point_number, latitude, longitude, status 
        FROM switch_points 
        WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE`,
       [id, projectId]
@@ -157,6 +158,20 @@ async function updateSwitchPointHandler(req, res, next) {
     const existingSp = existingSpRes.rows[0];
     if (!existingSp) {
       return res.status(404).json({ message: 'Switch Point not found' });
+    }
+
+    // Permission check for editing
+    const isMasterAdmin = req.user?.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
+    const currentStatus = (existingSp.status || '').toLowerCase();
+
+    if (!isMasterAdmin) {
+      if (currentStatus === 'pending' && !permissions.section_i) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit pending survey data (requires section i access)' });
+      }
+      if (currentStatus === 'confirmed' && !permissions.section_j) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit confirmed data (requires section j access)' });
+      }
     }
 
     // Check if coordinates have changed
@@ -238,7 +253,7 @@ async function updatePoleHandler(req, res, next) {
     const data = req.body;
 
     const existingPoleRes = await query(
-      `SELECT p.id, p.ward_number, p.switch_point_number, p.switch_point_id, p.latitude, p.longitude, sp.ulb_id 
+      `SELECT p.id, p.ward_number, p.switch_point_number, p.switch_point_id, p.latitude, p.longitude, p.status, sp.ulb_id 
        FROM poles p 
        JOIN switch_points sp ON p.switch_point_id = sp.id 
        WHERE p.id = $1 AND p.project_id = $2`,
@@ -247,6 +262,20 @@ async function updatePoleHandler(req, res, next) {
     const existingPole = existingPoleRes.rows[0];
     if (!existingPole) {
       return res.status(404).json({ message: 'Pole not found' });
+    }
+
+    // Permission check for editing
+    const isMasterAdmin = req.user?.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
+    const currentStatus = (existingPole.status || '').toLowerCase();
+
+    if (!isMasterAdmin) {
+      if (currentStatus === 'pending' && !permissions.section_i) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit pending survey data (requires section i access)' });
+      }
+      if (currentStatus === 'confirmed' && !permissions.section_j) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit confirmed data (requires section j access)' });
+      }
     }
 
     // Check if coordinates have changed

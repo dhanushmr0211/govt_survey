@@ -1,5 +1,6 @@
 const { getPoles, updatePole, confirmPole } = require('../models/pole.model');
 const { query } = require('../../../config/db');
+const { ROLES } = require('../../../constants/roles');
 
 function normalizeIdentifier(val) {
   if (!val) return '';
@@ -65,8 +66,26 @@ async function updatePoleHandler(req, res, next) {
     if (data.ulb_name) data.ward_number = data.ulb_name;
 
     // Retrieve current pole fields to handle partial updates correctly
-    const poleRes = await query(`SELECT ward_id, ccms_number, pole_number, survey_type FROM poles WHERE id = $1`, [Number(id)]);
+    const poleRes = await query(`SELECT ward_id, ccms_number, pole_number, survey_type, status FROM poles WHERE id = $1`, [Number(id)]);
     const currentPole = poleRes.rows[0];
+
+    if (!currentPole) {
+      return res.status(404).json({ message: 'Pole not found' });
+    }
+
+    // Permission check for editing
+    const isMasterAdmin = req.user?.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
+    const currentStatus = (currentPole.status || '').toLowerCase();
+
+    if (!isMasterAdmin) {
+      if (currentStatus === 'pending' && !permissions.section_i) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit pending survey data (requires section i access)' });
+      }
+      if (currentStatus === 'confirmed' && !permissions.section_j) {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit confirmed data (requires section j access)' });
+      }
+    }
 
     if (currentPole) {
       const checkWardId = data.ward_id || currentPole.ward_id;

@@ -116,7 +116,7 @@ async function getPendingSubmissionsHandler(req, res, next) {
     const isMobileUser = projectRole === ROLES.MOBILE_USER;
     const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !permissions.section_c && !isMobileUser) {
+    if (!isMasterAdmin && !permissions.section_c && !permissions.section_e && !permissions.section_f && !isMobileUser) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access the pending queue' });
     }
 
@@ -184,7 +184,7 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
     const isMobileUser = projectRole === ROLES.MOBILE_USER;
     const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !permissions.section_c && !isMobileUser) {
+    if (!isMasterAdmin && !permissions.section_c && !permissions.section_e && !permissions.section_f && !isMobileUser) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access confirmed submissions' });
     }
 
@@ -192,7 +192,7 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
     const filterUserId = isMobileUser ? Number(req.user.sub) : (userId ? Number(userId) : null);
 
     const isEmployee = projectRole === ROLES.EMPLOYEE;
-    const filterConfirmedBy = isEmployee ? Number(req.user.sub) : (confirmedBy ? Number(confirmedBy) : null);
+    const filterConfirmedBy = (isEmployee && !permissions.section_e) ? Number(req.user.sub) : (confirmedBy ? Number(confirmedBy) : null);
 
     const { rows, total } = await getConfirmedSubmissions(
       Number(projectId), 
