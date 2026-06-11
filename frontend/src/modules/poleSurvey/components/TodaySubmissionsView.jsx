@@ -64,7 +64,12 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   const limit = 50;
 
   const [isEditing, setIsEditing] = useState(false);
-  const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
+  const isAutofillUser = new Set([
+    'pratheekar1997@gmail.com',
+    'sinchudev3@gmail.com',
+    'sameershaik99495@gmail.com',
+    'usharanik209@gmail.com'
+  ]).has((user?.email || '').toLowerCase());
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;

@@ -12,7 +12,12 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
 
   const user = useAuthStore((state) => state.user);
   const [isEditing, setIsEditing] = useState(false);
-  const isAutofillUser = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'pratheekar1997gmail.com';
+  const isAutofillUser = new Set([
+    'pratheekar1997@gmail.com',
+    'sinchudev3@gmail.com',
+    'sameershaik99495@gmail.com',
+    'usharanik209@gmail.com'
+  ]).has((user?.email || '').toLowerCase());
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = activeProject?.id;
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
