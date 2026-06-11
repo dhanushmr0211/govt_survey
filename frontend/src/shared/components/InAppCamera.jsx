@@ -114,7 +114,7 @@ export const InAppCamera = ({ onCapture, onClose }) => {
         if (initId !== activeInitRef.current) return;
         console.error('All camera access options failed:', fallbackErr);
         setIsInitializing(false);
-        alert('Camera permission is required. Please ensure camera access is enabled in browser settings.');
+        alert('Camera permission is blocked or denied.\n\nTo take photos, please allow camera access by clicking the lock/settings icon next to the website address in your browser address bar, then click "Take Photo" again.');
         onClose();
       }
     }
