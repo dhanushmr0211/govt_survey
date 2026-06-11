@@ -118,9 +118,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
         });
       }
 
+      const surveyPath = isTgpl ? 'tgpl-survey' : 'pole-survey';
       const endpoint = selectedDetail.type === 'switch_point'
         ? `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${selectedDetail.data.id}`
-        : `${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${selectedDetail.data.pole_id}`;
+        : `${API_BASE_URL}/projects/${projectId}/${surveyPath}/poles/${selectedDetail.data.pole_id || selectedDetail.data.id}`;
       
       const res = await axios.patch(endpoint, sanitized, {
         headers: { Authorization: `Bearer ${token}` },
@@ -129,6 +130,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['wardDetails']);
+      queryClient.invalidateQueries(['wardSummary']);
+      queryClient.invalidateQueries(['poles']);
+      queryClient.invalidateQueries(['submissions']);
+      queryClient.invalidateQueries(['user-submissions']);
       addToast('Changes saved successfully!', 'success');
       setIsEditing(false);
       const updatedEntity = data?.switchPoint || data?.pole;

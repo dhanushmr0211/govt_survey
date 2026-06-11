@@ -103,7 +103,6 @@ export function EmployeeTrackingView({ projectId }) {
                   <button
                     onClick={() => {
                       setSelectedEmp(emp);
-                      setActiveTab('pending');
                       setFromDate(today);
                       setToDate(today);
                     }}
@@ -386,6 +385,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
               {!isTgpl && <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Type</th>}
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Time</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Identifier</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ward</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">ULB Name</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
@@ -409,6 +409,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {displayDate ? new Date(displayDate).toLocaleTimeString() : 'N/A'}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{sub.pole_number || sub.identifier || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sub.ward_number}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{sub.ulb_name || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold">

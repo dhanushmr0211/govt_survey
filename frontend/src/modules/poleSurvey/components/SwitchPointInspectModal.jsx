@@ -112,6 +112,8 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
     onSuccess: () => {
       queryClient.invalidateQueries(['user-submissions']);
       queryClient.invalidateQueries(['submissions']);
+      queryClient.invalidateQueries(['poles']);
+      queryClient.invalidateQueries(['wardDetails']);
       onSuccess();
     },
     onError: (err) => {
@@ -158,6 +160,9 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
         }));
       }
       queryClient.invalidateQueries(['user-submissions']);
+      queryClient.invalidateQueries(['submissions']);
+      queryClient.invalidateQueries(['poles']);
+      queryClient.invalidateQueries(['wardDetails']);
     },
   });
 

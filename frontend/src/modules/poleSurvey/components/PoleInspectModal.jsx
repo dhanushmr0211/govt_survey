@@ -33,7 +33,7 @@ const getAutoRoadCategory = (roadType, roadWidthStr) => {
 };
 
 export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
-  const [pole, setPole] = useState(initialPole);
+  const [pole, setPole] = useState({ ...initialPole, pole_number: initialPole.pole_number || initialPole.identifier });
   const queryClient = useQueryClient();
 
   const user = useAuthStore((state) => state.user);
@@ -79,7 +79,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setPole(initialPole);
+      setPole({ ...initialPole, pole_number: initialPole.pole_number || initialPole.identifier });
       setFormData({
         ...initialPole,
         ulb_id: initialPole.ulb_id || ulbs.find(u => u.name === initialPole.ulb_name)?.id || '',
@@ -140,6 +140,8 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
     onSuccess: () => {
       queryClient.invalidateQueries(['poles']);
       queryClient.invalidateQueries(['submissions']);
+      queryClient.invalidateQueries(['user-submissions']);
+      queryClient.invalidateQueries(['wardDetails']);
       onSuccess();
     },
     onError: (err) => {
@@ -161,7 +163,8 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
         });
       }
 
-      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${pole.id}`, {
+      const surveyPath = isTgpl ? 'tgpl-survey' : 'pole-survey';
+      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/${surveyPath}/poles/${pole.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -187,6 +190,9 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
         }));
       }
       queryClient.invalidateQueries(['poles']);
+      queryClient.invalidateQueries(['user-submissions']);
+      queryClient.invalidateQueries(['submissions']);
+      queryClient.invalidateQueries(['wardDetails']);
     },
   });
 

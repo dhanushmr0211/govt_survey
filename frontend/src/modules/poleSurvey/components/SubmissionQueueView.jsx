@@ -168,9 +168,10 @@ export const SubmissionQueueView = ({ projectId }) => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const surveyPath = isTgpl ? 'tgpl-survey' : 'pole-survey';
       const endpoint = selectedSubmission.type === 'switch_point'
         ? `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${selectedSubmission.id}`
-        : `${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${selectedSubmission.id}`;
+        : `${API_BASE_URL}/projects/${projectId}/${surveyPath}/poles/${selectedSubmission.id}`;
       
       const res = await axios.patch(endpoint, formData, {
         headers: { Authorization: `Bearer ${token}` },
@@ -179,6 +180,9 @@ export const SubmissionQueueView = ({ projectId }) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries(['submissions']);
+      queryClient.invalidateQueries(['poles']);
+      queryClient.invalidateQueries(['user-submissions']);
+      queryClient.invalidateQueries(['wardDetails']);
       addToast('Changes saved successfully!', 'success');
       setIsEditing(false);
       const updatedEntity = data?.switchPoint || data?.pole;
