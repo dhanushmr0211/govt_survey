@@ -302,6 +302,16 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
       return res.data;
     }
   });
+  
+  // Keep selectedSub in sync with the updated data in the query to prevent resetting to old values
+  useEffect(() => {
+    if (selectedSub && data?.queue) {
+      const latest = data.queue.find(item => item.id === selectedSub.id && item.type === selectedSub.type);
+      if (latest && latest !== selectedSub) {
+        setSelectedSub(latest);
+      }
+    }
+  }, [data, selectedSub]);
 
   useEffect(() => {
     const fetchImages = async () => {
