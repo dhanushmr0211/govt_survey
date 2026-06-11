@@ -11,7 +11,6 @@ import { SwitchPointInspectModal } from '../modules/poleSurvey/components/Switch
 export function EmployeeTrackingView({ projectId }) {
   const { data: tracking = [], isLoading } = useEmployeeTracking(projectId);
   const [selectedEmp, setSelectedEmp] = useState(null);
-  const [activeTab, setActiveTab] = useState('pending');
   const today = getLocalDateString();
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
@@ -25,29 +24,6 @@ export function EmployeeTrackingView({ projectId }) {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Tracking for {selectedEmp.name}</h2>
           <button onClick={() => setSelectedEmp(null)} className="text-sm text-primary hover:text-primary/80 font-bold">← Back to List</button>
-        </div>
-        
-        <div className="flex space-x-4 mb-4 border-b border-gray-100">
-          <button
-            onClick={() => {
-              setActiveTab('pending');
-              setFromDate(today);
-              setToDate(today);
-            }}
-            className={`pb-2 text-sm font-medium ${activeTab === 'pending' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            Pending (Open)
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('confirmed');
-              setFromDate(today);
-              setToDate(today);
-            }}
-            className={`pb-2 text-sm font-medium ${activeTab === 'confirmed' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            Confirmed (Resolved)
-          </button>
         </div>
 
         <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
@@ -71,12 +47,7 @@ export function EmployeeTrackingView({ projectId }) {
           </div>
         </div>
 
-        {activeTab === 'pending' && (
-          <UserSubmissionsList projectId={projectId} userId={selectedEmp.id} status="PENDING" fromDate={fromDate} toDate={toDate} dateField="created_at" />
-        )}
-        {activeTab === 'confirmed' && (
-          <UserSubmissionsList projectId={projectId} confirmedBy={selectedEmp.id} status="CONFIRMED" fromDate={fromDate} toDate={toDate} dateField="confirmed_at" />
-        )}
+        <UserSubmissionsList projectId={projectId} confirmedBy={selectedEmp.id} status="CONFIRMED" fromDate={fromDate} toDate={toDate} dateField="confirmed_at" />
       </div>
     );
   }
@@ -478,7 +449,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
 
       {selectedSub && selectedSub.type === 'pole' && (
         <PoleInspectModal
-          pole={selectedSub}
+          pole={{ ...selectedSub, status: selectedSub.status || status }}
           onClose={() => setSelectedSub(null)}
           onSuccess={() => {
             setSelectedSub(null);
@@ -489,7 +460,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
 
       {selectedSub && selectedSub.type === 'switch_point' && (
         <SwitchPointInspectModal
-          switchPoint={selectedSub}
+          switchPoint={{ ...selectedSub, status: selectedSub.status || status }}
           onClose={() => setSelectedSub(null)}
           onSuccess={() => {
             setSelectedSub(null);

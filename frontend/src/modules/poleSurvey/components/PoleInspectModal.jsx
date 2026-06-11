@@ -44,9 +44,10 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
+  const statusLower = (pole?.status || '').toLowerCase();
   const canEdit = user?.role === 'MASTER_ADMIN' || 
-    (activeProject?.section_i && pole?.status === 'pending') || 
-    (activeProject?.section_j && pole?.status === 'confirmed');
+    (activeProject?.section_i && statusLower === 'pending') || 
+    (activeProject?.section_j && statusLower === 'confirmed');
   const [formData, setFormData] = useState({
     ...initialPole,
     pole_number: initialPole.pole_number || initialPole.identifier
@@ -688,7 +689,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                 <span>{saveMutation.isLoading ? 'Saving...' : 'Save Changes'}</span>
               </button>
             ) : (
-              pole.status === 'pending' && (
+              statusLower === 'pending' && (
                 <button
                   onClick={() => {
                     if (window.confirm('Are you sure you want to confirm this submission?')) {

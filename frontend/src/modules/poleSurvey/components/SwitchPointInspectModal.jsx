@@ -18,9 +18,10 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
+  const statusLower = (switchPoint?.status || '').toLowerCase();
   const canEdit = user?.role === 'MASTER_ADMIN' || 
-    (activeProject?.section_i && switchPoint?.status === 'pending') || 
-    (activeProject?.section_j && switchPoint?.status === 'confirmed');
+    (activeProject?.section_i && statusLower === 'pending') || 
+    (activeProject?.section_j && statusLower === 'confirmed');
   const [formData, setFormData] = useState({
     ...initialSwitchPoint
   });
@@ -454,7 +455,7 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
                 <span>{saveMutation.isLoading ? 'Saving...' : 'Save Changes'}</span>
               </button>
             ) : (
-              switchPoint.status === 'pending' && (
+              statusLower === 'pending' && (
                 <button
                   onClick={() => {
                     if (window.confirm('Are you sure you want to confirm this submission?')) {
