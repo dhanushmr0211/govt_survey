@@ -884,6 +884,20 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                       </div>
                     ))}
                   </div>
+                ) : (selectedSubmission.image_url_1 || selectedSubmission.image_url_2) ? (
+                  <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto pr-1">
+                    {[selectedSubmission.image_url_1, selectedSubmission.image_url_2].filter(Boolean).map((imgUrl, index) => (
+                      <div key={index} className="relative group rounded-lg overflow-hidden border border-gray-200">
+                        <img
+                          src={imgUrl}
+                          alt="Survey"
+                          className="w-full h-auto object-cover"
+                          onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load'; }}
+                        />
+                        <p className="text-xs text-gray-400 p-1 text-center">Pole View {index + 1}</p>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div className="h-64 flex flex-col items-center justify-center bg-gray-50 border-2 border-dashed rounded-lg text-gray-400">
                     <SearchCheck size={48} className="mb-2 opacity-20" />

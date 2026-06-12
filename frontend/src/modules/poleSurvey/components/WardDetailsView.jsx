@@ -1158,7 +1158,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                   )}
                 </div>
               </div>
-              {/* Right Side: Images */}
+                {/* Right Side: Images */}
               <div className="space-y-2">
                 <p className="font-semibold text-gray-700">Images</p>
                 {loadingImages ? (
@@ -1192,6 +1192,23 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                       </div>
                     ))}
                   </div>
+                ) : (selectedDetail.data.image_url_1 || selectedDetail.data.image_url_2) ? (
+                  <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
+                    {[selectedDetail.data.image_url_1, selectedDetail.data.image_url_2].filter(Boolean).map((imgUrl, index) => (
+                      <div key={index} className="border border-gray-100 rounded-lg overflow-hidden relative">
+                        <img
+                          src={imgUrl}
+                          alt="Survey"
+                          className="w-full h-auto object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                          }}
+                        />
+                        <p className="text-xs text-gray-400 p-1 text-center">Pole View {index + 1}</p>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">
                     <div className="text-center">
@@ -1202,6 +1219,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                     </div>
                   </div>
                 )}
+
 
                 {/* Upload New Photo (Only in Edit Mode) */}
                 {isEditing && (

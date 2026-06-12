@@ -51,7 +51,8 @@ async function getFilesHandler(req, res, next) {
 async function deleteFileHandler(req, res, next) {
   try {
     const fileId = req.params.id;
-    await entityFileService.deleteFile(fileId);
+    const projectId = req.params.projectId ? Number(req.params.projectId) : null;
+    await entityFileService.deleteFile(fileId, projectId);
     return res.json({ message: 'File deleted successfully' });
   } catch (error) {
     return next(error);

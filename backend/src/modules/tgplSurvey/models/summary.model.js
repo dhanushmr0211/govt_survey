@@ -372,6 +372,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         p.req_led_lights_no,
         p.req_led_wattage,
         p.req_dedicated_wire,
+        p.image_url_1,
+        p.image_url_2,
         p.survey_type,
         p.light_type_3,
         p.light_capacity_3,
