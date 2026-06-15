@@ -32,6 +32,9 @@ async function updateSwitchPoint(id, projectId, data) {
 
   for (const field of allowedFields) {
     if (data[field] !== undefined) {
+      if (field === 'switch_point_type' && data[field] === '') {
+        continue;
+      }
       setClauses.push(`${field} = $${paramIndex++}`);
       const val = data[field] === '' ? null : data[field];
       values.push(val);

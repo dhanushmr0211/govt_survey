@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
@@ -8,6 +9,7 @@ import { InAppCamera } from '../../../shared/components/InAppCamera';
 import { Camera } from 'lucide-react';
 
 export const SwitchPointForm = ({ ulb, onBack }) => {
+  const queryClient = useQueryClient();
   const isBallari = (ulb?.district_name || '').toLowerCase().includes('ballari');
   const [formData, setFormData] = useState({
     ward_number: '',
@@ -112,6 +114,8 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
       }
 
       console.log(`🚀 Total submission time: ${(performance.now() - startTotal).toFixed(2)}ms`);
+      queryClient.invalidateQueries(['submissions']);
+      queryClient.invalidateQueries(['my-stats']);
       alert('Switch Point submitted successfully!');
       onBack();
     } catch (error) {

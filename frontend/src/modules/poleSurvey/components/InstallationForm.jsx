@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
@@ -10,6 +10,7 @@ import { InAppCamera } from '../../../shared/components/InAppCamera';
 import { Camera } from 'lucide-react';
 
 export const InstallationForm = ({ ward, onBack }) => {
+  const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = activeProject?.id || 3;
@@ -170,6 +171,8 @@ export const InstallationForm = ({ ward, onBack }) => {
         }
       }
 
+      queryClient.invalidateQueries(['submissions']);
+      queryClient.invalidateQueries(['my-stats']);
       alert('Installation pole submitted successfully!');
       
       // Reset images

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
@@ -37,6 +37,7 @@ const getAutoRoadCategory = (roadType, roadWidthStr) => {
 };
 
 export const PoleForm = ({ ulb, onBack }) => {
+  const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const isAutofillUser = new Set([
     'pratheekar1997@gmail.com',
@@ -327,7 +328,7 @@ export const PoleForm = ({ ulb, onBack }) => {
     const submitForm = { ...formData };
     if (isRestricted) {
       Object.keys(submitForm).forEach((k) => {
-        if (!allowed.has(k)) submitForm[k] = '';
+        if (!allowed.has(k)) delete submitForm[k];
       });
     }
 
@@ -417,6 +418,8 @@ export const PoleForm = ({ ulb, onBack }) => {
       }
 
       console.log(`🚀 Total submission time: ${(performance.now() - startTotal).toFixed(2)}ms`);
+      queryClient.invalidateQueries(['submissions']);
+      queryClient.invalidateQueries(['my-stats']);
       alert('Pole submitted successfully!');
       onBack();
     } catch (error) {
