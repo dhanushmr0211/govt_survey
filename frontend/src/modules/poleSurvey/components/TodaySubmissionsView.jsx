@@ -78,9 +78,11 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
 
   const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
 
-  const canShowEdit = user?.role === 'MASTER_ADMIN' || 
-    (activeProject?.section_i && activeTab === 'pending') || 
-    (activeProject?.section_j && activeTab === 'confirmed');
+  const canShowEdit = user?.role !== 'MOBILE_USER' && 
+    activeProject?.project_role !== 'MOBILE_USER' && 
+    (user?.role === 'MASTER_ADMIN' || 
+      (activeProject?.section_i && activeTab === 'pending') || 
+      (activeProject?.section_j && activeTab === 'confirmed'));
 
   const canShowConfirm = (user?.role === 'MASTER_ADMIN' || 
     (activeProject?.section_i && activeTab === 'pending') || 
@@ -166,7 +168,17 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
         ? `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${selectedSubmission.id}`
         : `${API_BASE_URL}/projects/${projectId}/${surveyPath}/poles/${selectedSubmission.id}`;
       
-      const res = await axios.patch(endpoint, formData, {
+      let payload = { ...formData };
+      if (selectedSubmission.type === 'pole' && !isTgpl) {
+        delete payload.switch_point_type;
+        delete payload.meter_exists;
+        delete payload.meter_type;
+        delete payload.meter_rr_number;
+        delete payload.meter_serial_number;
+        delete payload.meter_condition;
+      }
+
+      const res = await axios.patch(endpoint, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data;

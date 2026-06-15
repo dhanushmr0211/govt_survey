@@ -124,6 +124,15 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
         });
       }
 
+      if (selectedDetail.type === 'pole' && !isTgpl) {
+        delete sanitized.switch_point_type;
+        delete sanitized.meter_exists;
+        delete sanitized.meter_type;
+        delete sanitized.meter_rr_number;
+        delete sanitized.meter_serial_number;
+        delete sanitized.meter_condition;
+      }
+
       const surveyPath = isTgpl ? 'tgpl-survey' : 'pole-survey';
       const endpoint = selectedDetail.type === 'switch_point'
         ? `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${selectedDetail.data.id}`

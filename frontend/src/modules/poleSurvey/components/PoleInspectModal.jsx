@@ -169,6 +169,15 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
         });
       }
 
+      if (!isTgpl) {
+        delete sanitized.switch_point_type;
+        delete sanitized.meter_exists;
+        delete sanitized.meter_type;
+        delete sanitized.meter_rr_number;
+        delete sanitized.meter_serial_number;
+        delete sanitized.meter_condition;
+      }
+
       const surveyPath = isTgpl ? 'tgpl-survey' : 'pole-survey';
       const response = await fetch(`${API_BASE_URL}/projects/${projectId}/${surveyPath}/poles/${pole.id}`, {
         method: 'PATCH',

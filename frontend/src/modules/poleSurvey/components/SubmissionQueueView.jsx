@@ -95,9 +95,11 @@ export const SubmissionQueueView = ({ projectId }) => {
   const showDeletedTab = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'prelectricals01@gmail.com';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
-  const canShowEdit = user?.role === 'MASTER_ADMIN' || 
-    (activeProject?.section_i && activeTab === 'pending') || 
-    (activeProject?.section_j && activeTab === 'confirmed');
+  const canShowEdit = user?.role !== 'MOBILE_USER' && 
+    activeProject?.project_role !== 'MOBILE_USER' && 
+    (user?.role === 'MASTER_ADMIN' || 
+      (activeProject?.section_i && activeTab === 'pending') || 
+      (activeProject?.section_j && activeTab === 'confirmed'));
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
@@ -179,7 +181,17 @@ export const SubmissionQueueView = ({ projectId }) => {
         ? `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${selectedSubmission.id}`
         : `${API_BASE_URL}/projects/${projectId}/${surveyPath}/poles/${selectedSubmission.id}`;
       
-      const res = await axios.patch(endpoint, formData, {
+      let payload = { ...formData };
+      if (selectedSubmission.type === 'pole' && !isTgpl) {
+        delete payload.switch_point_type;
+        delete payload.meter_exists;
+        delete payload.meter_type;
+        delete payload.meter_rr_number;
+        delete payload.meter_serial_number;
+        delete payload.meter_condition;
+      }
+
+      const res = await axios.patch(endpoint, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data;
