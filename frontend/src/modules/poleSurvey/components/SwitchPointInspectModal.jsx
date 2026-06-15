@@ -149,7 +149,10 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
         },
         body: JSON.stringify(sanitized)
       });
-      if (!response.ok) throw new Error('Failed to save changes');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to save changes');
+      }
       return response.json();
     },
     onSuccess: (data) => {
@@ -170,6 +173,10 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
       queryClient.invalidateQueries(['poles']);
       queryClient.invalidateQueries(['wardDetails']);
     },
+    onError: (err) => {
+      console.error('Save error:', err);
+      alert(err.message || 'Failed to save changes');
+    }
   });
 
   const handleChange = (e) => {
@@ -458,7 +465,17 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
             </button>
             {isEditing ? (
               <button
-                onClick={() => saveMutation.mutate()}
+                onClick={() => {
+                  if (!formData.ward_number?.toString().trim()) {
+                    alert('Ward Number is required');
+                    return;
+                  }
+                  if (!formData.switch_point_number?.toString().trim()) {
+                    alert('Switch Point / CCMS Number is required');
+                    return;
+                  }
+                  saveMutation.mutate();
+                }}
                 disabled={saveMutation.isLoading}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
               >

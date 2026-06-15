@@ -178,7 +178,10 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
         },
         body: JSON.stringify(sanitized)
       });
-      if (!response.ok) throw new Error('Failed to save changes');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to save changes');
+      }
       return response.json();
     },
     onSuccess: (data) => {
@@ -200,6 +203,10 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
       queryClient.invalidateQueries(['submissions']);
       queryClient.invalidateQueries(['wardDetails']);
     },
+    onError: (err) => {
+      console.error('Save error:', err);
+      alert(err.message || 'Failed to save changes');
+    }
   });
 
   const handleChange = (e) => {

@@ -193,6 +193,17 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     const targetWard = formData.ward_number;
     const targetSpNum = isTgpl ? formData.ccms_number : formData.switch_point_number;
 
+    if (selectedDetail.type === 'switch_point') {
+      if (!targetWard?.toString().trim()) {
+        addToast('Ward Number is required', 'error');
+        return;
+      }
+      if (!targetSpNum?.toString().trim()) {
+        addToast(isTgpl ? 'CCMS Number is required' : 'Switch Point Number is required', 'error');
+        return;
+      }
+    }
+
     const currentUlbId = ulb.ulb_id;
     const currentWard = selectedDetail.data.ward_number;
     const currentSpNum = isTgpl ? selectedDetail.data.ccms_number : selectedDetail.data.switch_point_number;
