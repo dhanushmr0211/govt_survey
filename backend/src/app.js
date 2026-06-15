@@ -268,6 +268,9 @@ function createApp() {
     }
     return poleSurveyRouter(req, res, next);
   });
+  apiRouter.use('/projects/:projectId/tgpl-survey', requireProjectMember(), (req, res, next) => {
+    return tgplSurveyRouter(req, res, next);
+  });
   apiRouter.use('/projects/:projectId/issues', requireProjectMember(), issueRouter);
   app.use('/api/v1', apiRouter);
 
