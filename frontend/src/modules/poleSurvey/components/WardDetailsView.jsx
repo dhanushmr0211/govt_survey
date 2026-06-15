@@ -120,7 +120,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
       let sanitized = { ...formData };
       if (isRestricted) {
         Object.keys(sanitized).forEach((k) => {
-          if (!MOBILE_ALLOWED.has(k)) sanitized[k] = '';
+          if (!MOBILE_ALLOWED.has(k)) delete sanitized[k];
         });
       }
 

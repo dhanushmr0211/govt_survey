@@ -137,7 +137,7 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
       let sanitized = { ...formData };
       if (isRestricted) {
         Object.keys(sanitized).forEach((k) => {
-          if (!MOBILE_ALLOWED.has(k)) sanitized[k] = '';
+          if (!MOBILE_ALLOWED.has(k)) delete sanitized[k];
         });
       }
 
