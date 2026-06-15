@@ -115,7 +115,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     mutationFn: async () => {
       const isBallari = (ulb?.district_name || '').toLowerCase().includes('ballari');
       const isRestricted = !isTgpl && !isBallari && isMobileEditRestricted();
-      const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
+      const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width', 'latitude', 'longitude']);
       
       let sanitized = { ...formData };
       if (isRestricted) {
@@ -446,8 +446,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const renderField = (label, name, value, options = null) => {
     const isBallari = (ulb?.district_name || '').toLowerCase().includes('ballari');
     const isRestricted = !isTgpl && !isBallari && isMobileEditRestricted();
-    const MOBILE_ALLOWED = new Set(['pole_number', 'latitude', 'longitude', 'is_working', 'is_metered', 'remarks']);
-    const isDisabled = isRestricted && !MOBILE_ALLOWED.has(name);
+    const allowedSet = selectedDetail?.type === 'switch_point'
+      ? new Set(['switch_point_number', 'latitude', 'longitude', 'remarks'])
+      : new Set(['pole_number', 'latitude', 'longitude', 'is_working', 'is_metered', 'remarks']);
+    const isDisabled = isRestricted && !allowedSet.has(name);
 
     if (!isEditing) {
       return (

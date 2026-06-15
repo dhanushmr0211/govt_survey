@@ -160,7 +160,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
     mutationFn: async () => {
       const isBallari = (pole?.district_name || '').toLowerCase().includes('ballari');
       const isRestricted = !isTgpl && !isBallari && isMobileEditRestricted();
-      const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width']);
+      const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width', 'latitude', 'longitude']);
       
       let sanitized = { ...formData };
       if (isRestricted) {

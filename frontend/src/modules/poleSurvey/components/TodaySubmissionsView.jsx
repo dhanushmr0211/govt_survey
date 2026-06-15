@@ -79,7 +79,6 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
 
   const canShowEdit = user?.role === 'MASTER_ADMIN' || 
-    (isMobileSurveyor && activeTab === 'pending') ||
     (activeProject?.section_i && activeTab === 'pending') || 
     (activeProject?.section_j && activeTab === 'confirmed');
 
