@@ -25,19 +25,23 @@ class OfflineSyncService {
     window.addEventListener('online', () => this.sync());
   }
 
-  async sync() {
+  async sync(force = false) {
     if (!navigator.onLine || this.isSyncing) return;
 
-    const pendingCount = await offlineDb.submissions.where('status').equals('pending').count();
+    const targetStatuses = force ? ['pending', 'failed'] : ['pending'];
+    const pendingCount = await offlineDb.submissions
+      .where('status')
+      .anyOf(targetStatuses)
+      .count();
     if (pendingCount === 0) return;
 
     this.isSyncing = true;
-    console.log(`Starting sync of ${pendingCount} pending submissions...`);
+    console.log(`Starting sync of ${pendingCount} submissions (force: ${force})...`);
 
     try {
       const pendingSubmissions = await offlineDb.submissions
         .where('status')
-        .equals('pending')
+        .anyOf(targetStatuses)
         .toArray();
 
       for (const sub of pendingSubmissions) {

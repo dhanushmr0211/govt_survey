@@ -35,7 +35,7 @@ export const OfflineQueueView = () => {
 
   const handleSync = async () => {
     setIsSyncing(true);
-    await offlineSyncService.sync();
+    await offlineSyncService.sync(true);
     await fetchSubmissions();
     setIsSyncing(false);
   };
