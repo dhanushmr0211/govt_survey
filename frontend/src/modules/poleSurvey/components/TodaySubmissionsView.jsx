@@ -47,7 +47,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
 
   useEffect(() => {
     const fetchUlbs = async () => {
-      if (!projectId || user?.role === 'MOBILE_USER') return;
+      if (!projectId) return;
       try {
         const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/structure`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -58,7 +58,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
       }
     };
     fetchUlbs();
-  }, [projectId, token, user]);
+  }, [projectId, token]);
 
   const [page, setPage] = useState(1);
   const limit = 50;
