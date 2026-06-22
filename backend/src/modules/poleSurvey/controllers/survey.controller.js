@@ -385,6 +385,13 @@ async function deleteSubmissionHandler(req, res, next) {
          WHERE id = $2 AND project_id = $3`,
         [userId, id, projectId]
       );
+      // Cascade soft-delete to associated poles
+      await query(
+        `UPDATE poles 
+         SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $1 
+         WHERE switch_point_id = $2 AND project_id = $3`,
+        [userId, id, projectId]
+      );
     } else {
       await query(
         `UPDATE poles 
