@@ -217,6 +217,55 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
       alert(err.message || 'Failed to save changes');
     }
   });
+  const handleSave = async () => {
+    const targetUlbId = formData.ulb_id;
+    const targetWard = formData.ward_number;
+    const targetSpNum = formData.switch_point_number;
+
+    const currentUlbId = pole.ulb_id || '';
+    const currentWard = pole.ward_number || '';
+    const currentSpNum = pole.switch_point_number || '';
+
+    const locationChanged =
+      Number(targetUlbId) !== Number(currentUlbId) ||
+      targetWard !== currentWard ||
+      targetSpNum !== currentSpNum;
+
+    if (locationChanged) {
+      try {
+        const token = useAuthStore.getState().token || localStorage.getItem('token');
+        const res = await fetch(`${API_BASE_URL}/projects/${projectId}/pole-survey/validate-move`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            type: 'pole',
+            id: pole.id,
+            ulb_id: targetUlbId,
+            ward_number: targetWard,
+            switch_point_number: targetSpNum
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.shouldWarn) {
+            if (!window.confirm(data.message)) {
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Move validation failed:", err);
+        alert('Move validation failed. Please try again.');
+        return;
+      }
+    }
+
+    saveMutation.mutate();
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -709,7 +758,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
             </button>
             {isEditing ? (
               <button
-                onClick={() => saveMutation.mutate()}
+                onClick={handleSave}
                 disabled={saveMutation.isLoading}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
               >

@@ -150,7 +150,7 @@ async function updateSwitchPointHandler(req, res, next) {
     const data = req.body;
 
     const existingSpRes = await query(
-      `SELECT id, ulb_id, ward_number, switch_point_number, latitude, longitude, status 
+      `SELECT id, ulb_id, ward_number, switch_point_number, latitude, longitude, status, created_by 
        FROM switch_points 
        WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE`,
       [id, projectId]
@@ -166,8 +166,13 @@ async function updateSwitchPointHandler(req, res, next) {
     const currentStatus = (existingSp.status || '').toLowerCase();
 
     if (!isMasterAdmin) {
-      if (currentStatus === 'pending' && !permissions.section_i) {
-        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit pending survey data (requires section i access)' });
+      if (currentStatus === 'pending') {
+        const isMobileSurveyor = req.projectRole === ROLES.MOBILE_USER;
+        const isCreator = existingSp.created_by === req.user?.id;
+        const canEditPending = permissions.section_i || (isMobileSurveyor && isCreator);
+        if (!canEditPending) {
+          return res.status(403).json({ message: 'Forbidden: You do not have permission to edit pending survey data (requires section i access or being the creator)' });
+        }
       }
       if (currentStatus === 'confirmed' && !permissions.section_j) {
         return res.status(403).json({ message: 'Forbidden: You do not have permission to edit confirmed data (requires section j access)' });
@@ -253,7 +258,7 @@ async function updatePoleHandler(req, res, next) {
     const data = req.body;
 
     const existingPoleRes = await query(
-      `SELECT p.id, p.ward_number, p.switch_point_number, p.switch_point_id, p.latitude, p.longitude, p.status, sp.ulb_id 
+      `SELECT p.id, p.ward_number, p.switch_point_number, p.switch_point_id, p.latitude, p.longitude, p.status, p.created_by, sp.ulb_id 
        FROM poles p 
        JOIN switch_points sp ON p.switch_point_id = sp.id 
        WHERE p.id = $1 AND p.project_id = $2`,
@@ -270,8 +275,13 @@ async function updatePoleHandler(req, res, next) {
     const currentStatus = (existingPole.status || '').toLowerCase();
 
     if (!isMasterAdmin) {
-      if (currentStatus === 'pending' && !permissions.section_i) {
-        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit pending survey data (requires section i access)' });
+      if (currentStatus === 'pending') {
+        const isMobileSurveyor = req.projectRole === ROLES.MOBILE_USER;
+        const isCreator = existingPole.created_by === req.user?.id;
+        const canEditPending = permissions.section_i || (isMobileSurveyor && isCreator);
+        if (!canEditPending) {
+          return res.status(403).json({ message: 'Forbidden: You do not have permission to edit pending survey data (requires section i access or being the creator)' });
+        }
       }
       if (currentStatus === 'confirmed' && !permissions.section_j) {
         return res.status(403).json({ message: 'Forbidden: You do not have permission to edit confirmed data (requires section j access)' });
@@ -329,10 +339,6 @@ async function updatePoleHandler(req, res, next) {
         targetSpId = newSpRes.rows[0].id;
       }
       data.switch_point_id = targetSpId;
-    }
-
-    if (targetSpId && (data.switch_point_type || data.meter_exists !== undefined || data.meter_type || data.meter_rr_number || data.meter_serial_number || data.meter_condition)) {
-      await updateSwitchPoint(targetSpId, projectId, data);
     }
     
     const updated = await updatePole(id, projectId, data);

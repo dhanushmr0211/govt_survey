@@ -95,11 +95,13 @@ export const SubmissionQueueView = ({ projectId }) => {
   const showDeletedTab = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'prelectricals01@gmail.com';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
-  const canShowEdit = user?.role !== 'MOBILE_USER' && 
-    activeProject?.project_role !== 'MOBILE_USER' && 
-    (user?.role === 'MASTER_ADMIN' || 
+  const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
+  const canShowEdit = user?.role === 'MASTER_ADMIN' || 
+    (isMobileSurveyor && activeTab === 'pending') ||
+    (!isMobileSurveyor && (
       (activeProject?.section_i && activeTab === 'pending') || 
-      (activeProject?.section_j && activeTab === 'confirmed'));
+      (activeProject?.section_j && activeTab === 'confirmed')
+    ));
   const [formData, setFormData] = useState({});
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);

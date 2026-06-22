@@ -78,11 +78,12 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
 
   const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
 
-  const canShowEdit = user?.role !== 'MOBILE_USER' && 
-    activeProject?.project_role !== 'MOBILE_USER' && 
-    (user?.role === 'MASTER_ADMIN' || 
+  const canShowEdit = user?.role === 'MASTER_ADMIN' || 
+    (isMobileSurveyor && activeTab === 'pending') ||
+    (!isMobileSurveyor && (
       (activeProject?.section_i && activeTab === 'pending') || 
-      (activeProject?.section_j && activeTab === 'confirmed'));
+      (activeProject?.section_j && activeTab === 'confirmed')
+    ));
 
   const canShowConfirm = (user?.role === 'MASTER_ADMIN' || 
     (activeProject?.section_i && activeTab === 'pending') || 

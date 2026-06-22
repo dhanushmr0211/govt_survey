@@ -66,7 +66,7 @@ async function updatePoleHandler(req, res, next) {
     if (data.ulb_name) data.ward_number = data.ulb_name;
 
     // Retrieve current pole fields to handle partial updates correctly
-    const poleRes = await query(`SELECT ward_id, ccms_number, pole_number, survey_type, status FROM poles WHERE id = $1`, [Number(id)]);
+    const poleRes = await query(`SELECT ward_id, ccms_number, pole_number, survey_type, status, created_by FROM poles WHERE id = $1`, [Number(id)]);
     const currentPole = poleRes.rows[0];
 
     if (!currentPole) {
@@ -79,8 +79,13 @@ async function updatePoleHandler(req, res, next) {
     const currentStatus = (currentPole.status || '').toLowerCase();
 
     if (!isMasterAdmin) {
-      if (currentStatus === 'pending' && !permissions.section_i) {
-        return res.status(403).json({ message: 'Forbidden: You do not have permission to edit pending survey data (requires section i access)' });
+      if (currentStatus === 'pending') {
+        const isMobileSurveyor = req.projectRole === ROLES.MOBILE_USER;
+        const isCreator = currentPole.created_by === req.user?.id;
+        const canEditPending = permissions.section_i || (isMobileSurveyor && isCreator);
+        if (!canEditPending) {
+          return res.status(403).json({ message: 'Forbidden: You do not have permission to edit pending survey data (requires section i access or being the creator)' });
+        }
       }
       if (currentStatus === 'confirmed' && !permissions.section_j) {
         return res.status(403).json({ message: 'Forbidden: You do not have permission to edit confirmed data (requires section j access)' });
