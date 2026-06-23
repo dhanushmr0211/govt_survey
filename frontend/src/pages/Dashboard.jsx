@@ -30,7 +30,7 @@ export default function Dashboard() {
           'id', 'name', 'project_type', 'project_role',
           'section_a', 'section_b', 'section_c', 'section_d',
           'section_e', 'section_f', 'section_g', 'section_h',
-          'section_i', 'section_j', 'district_scope', 'ulb_scope', 'is_blocked'
+          'section_i', 'section_j', 'section_k', 'district_scope', 'ulb_scope', 'is_blocked'
         ];
         const hasDiff = keysToCompare.some(k => {
           const val1 = activeProject[k];

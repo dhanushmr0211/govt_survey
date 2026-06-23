@@ -3,10 +3,123 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import API_BASE_URL from '../config/api';
 import { useEmployeeTracking } from '../shared/hooks/useEmployeeTracking';
+import { useAdminTracking } from '../shared/hooks/useAdminTracking';
 import { useMobileUserTracking } from '../shared/hooks/useMobileUserTracking';
 import { getLocalDateString } from '../shared/utils/date';
 import { PoleInspectModal } from '../modules/poleSurvey/components/PoleInspectModal';
 import { SwitchPointInspectModal } from '../modules/poleSurvey/components/SwitchPointInspectModal';
+
+export function AdminTrackingView({ projectId }) {
+  const { data: tracking = [], isLoading } = useAdminTracking(projectId);
+  const [selectedEmp, setSelectedEmp] = useState(null);
+  const today = getLocalDateString();
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
+  const isTgpl = String(projectId) === '3';
+
+  if (isLoading) return <div className="p-8 text-center text-slate-500">Loading tracking data...</div>;
+
+  if (selectedEmp) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Tracking for {selectedEmp.name}</h2>
+          <button onClick={() => setSelectedEmp(null)} className="text-sm text-primary hover:text-primary/80 font-bold">← Back to List</button>
+        </div>
+
+        <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
+          <div className="flex flex-col">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">From</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">To</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
+            />
+          </div>
+        </div>
+
+        <UserSubmissionsList projectId={projectId} confirmedBy={selectedEmp.id} status="CONFIRMED" fromDate={fromDate} toDate={toDate} dateField="confirmed_at" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Admin Performance Tracking</h2>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead>
+            <tr className="bg-slate-50">
+              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Email</th>
+              {!isTgpl ? (
+                <>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Switch Points</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Poles</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Switch Points</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Poles</th>
+                </>
+              ) : (
+                <>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Survey</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Inst</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Survey</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Inst</th>
+                </>
+              )}
+              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {tracking.map((emp) => (
+              <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{emp.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.email}</td>
+                {!isTgpl ? (
+                  <>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_sp_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_poles_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_sp_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_poles_resolved}</td>
+                  </>
+                ) : (
+                  <>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_survey_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_inst_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_survey_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_inst_resolved}</td>
+                  </>
+                )}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <button
+                    onClick={() => {
+                      setSelectedEmp(emp);
+                      setFromDate(today);
+                      setToDate(today);
+                    }}
+                    className="text-primary hover:text-primary/80 font-bold underline"
+                  >
+                    View Submissions
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 export function EmployeeTrackingView({ projectId }) {
   const { data: tracking = [], isLoading } = useEmployeeTracking(projectId);

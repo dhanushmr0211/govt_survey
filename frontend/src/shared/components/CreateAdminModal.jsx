@@ -48,6 +48,7 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
     section_h: false,
     section_i: false,
     section_j: false,
+    section_k: false,
     district_scope: [],
     ulb_scope: []
   });
@@ -193,6 +194,7 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
           section_h: userAssignmentObj ? userAssignmentObj.section_h : false,
           section_i: userAssignmentObj ? userAssignmentObj.section_i : false,
           section_j: userAssignmentObj ? userAssignmentObj.section_j : false,
+          section_k: userAssignmentObj ? userAssignmentObj.section_k : false,
           district_scope: dScope,
           ulb_scope: uScope
         };
@@ -225,6 +227,7 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
       section_h: false,
       section_i: false,
       section_j: false,
+      section_k: false,
       district_scope: [],
       ulb_scope: []
     });
@@ -255,6 +258,7 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
           section_h: formData.section_h,
           section_i: formData.section_i,
           section_j: formData.section_j,
+          section_k: formData.section_k,
           district_scope: dScopeToSend,
           ulb_scope: uScopeToSend
         };
@@ -466,6 +470,7 @@ export const CreateAdminModal = ({ isOpen, onClose, defaultProjectId, fixedRole 
                   { id: 'section_b', label: 'Today Summary' },
                   { id: 'section_c', label: 'Issues' },
                   { id: 'section_d', label: 'Users' },
+                  { id: 'section_k', label: 'Admin Tracking' },
                   { id: 'section_e', label: 'Emp Tracking' },
                   { id: 'section_f', label: 'User Tracking' },
                   { id: 'section_g', label: 'Download Reports' },

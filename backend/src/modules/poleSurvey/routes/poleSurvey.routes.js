@@ -31,6 +31,7 @@ const {
   getDeletedSubmissionsHandler,
   getMyStatsHandler,
   getEmployeeTrackingHandler,
+  getAdminTrackingHandler,
   getMobileUserTrackingHandler
 } = require('../controllers/summary.controller');
 
@@ -59,6 +60,7 @@ poleSurveyRouter.delete('/submissions/:id', deleteSubmissionHandler);
 // Reports / Summary
 poleSurveyRouter.get('/my-stats', getMyStatsHandler);
 poleSurveyRouter.get('/employee-tracking', getEmployeeTrackingHandler);
+poleSurveyRouter.get('/admin-tracking', getAdminTrackingHandler);
 poleSurveyRouter.get('/mobile-user-tracking', getMobileUserTrackingHandler);
 poleSurveyRouter.get('/report/download', downloadReportHandler);
 poleSurveyRouter.get('/summary/districts', getDistrictSummaryHandler);

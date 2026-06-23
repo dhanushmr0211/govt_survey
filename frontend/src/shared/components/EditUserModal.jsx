@@ -30,6 +30,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
         section_h: sourceUser?.section_h || false,
         section_i: sourceUser?.section_i || false,
         section_j: sourceUser?.section_j || false,
+        section_k: sourceUser?.section_k || false,
         district_scope: dScope,
         ulb_scope: uScope
       },
@@ -43,7 +44,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
     phone: '',
     is_blocked: false,
     section_a: false, section_b: false, section_c: false, section_d: false,
-    section_e: false, section_f: false, section_g: false, section_h: false, section_i: false, section_j: false,
+    section_e: false, section_f: false, section_g: false, section_h: false, section_i: false, section_j: false, section_k: false,
     district_scope: [],
     ulb_scope: []
   });
@@ -66,7 +67,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
         phone: '',
         is_blocked: false,
         section_a: false, section_b: false, section_c: false, section_d: false,
-        section_e: false, section_f: false, section_g: false, section_h: false, section_i: false, section_j: false,
+        section_e: false, section_f: false, section_g: false, section_h: false, section_i: false, section_j: false, section_k: false,
         district_scope: [],
         ulb_scope: []
       });
@@ -247,6 +248,7 @@ export const EditUserModal = ({ isOpen, onClose, user, projectId, onSave }) => {
                   { id: 'section_b', label: "Today's Summary" },
                   { id: 'section_c', label: 'Issues & Approval' },
                   { id: 'section_d', label: 'Team Management' },
+                  { id: 'section_k', label: 'Admin Tracking' },
                   { id: 'section_e', label: 'Employee Tracking' },
                   { id: 'section_f', label: 'Mobile User Tracking' },
                   { id: 'section_g', label: 'Download Reports' },

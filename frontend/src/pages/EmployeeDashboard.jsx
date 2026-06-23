@@ -4,9 +4,9 @@ import { SummaryView } from '../modules/poleSurvey/components/SummaryView';
 import { WardDetailsView } from '../modules/poleSurvey/components/WardDetailsView';
 import { SubmissionQueueView } from '../modules/poleSurvey/components/SubmissionQueueView';
 import { UsersView } from './UsersView';
-import { EmployeeTrackingView, MobileUserTrackingView } from './TrackingViews';
+import { EmployeeTrackingView, AdminTrackingView, MobileUserTrackingView } from './TrackingViews';
 import { DownloadReportModal } from '../shared/components/DownloadReportModal';
-import { BarChart3, CalendarDays, ClipboardList, ArrowLeft, Download, Landmark, LogOut, Users as UsersIcon, UserCheck, Smartphone } from 'lucide-react';
+import { BarChart3, CalendarDays, ClipboardList, ArrowLeft, Download, Landmark, LogOut, Users as UsersIcon, UserCheck, Smartphone, Shield } from 'lucide-react';
 import { getLocalDateString } from '../shared/utils/date';
 
 export default function EmployeeDashboard() {
@@ -19,6 +19,7 @@ export default function EmployeeDashboard() {
   const hasSectionE = activeProject?.section_e;
   const hasSectionF = activeProject?.section_f;
   const hasSectionG = activeProject?.section_g;
+  const hasSectionK = activeProject?.section_k;
 
   const [activeView, setActiveView] = useState(
     hasSectionA ? 'pole_survey_summary' : 
@@ -38,6 +39,7 @@ export default function EmployeeDashboard() {
 
   const utilityItems = [
     hasSectionD && { key: 'users', label: 'Team', icon: UsersIcon },
+    hasSectionK && { key: 'admin_tracking', label: 'Admin Tracking', icon: Shield },
     hasSectionE && { key: 'employee_tracking', label: 'Employee Tracking', icon: UserCheck },
     hasSectionF && { key: 'mobile_user_tracking', label: 'Mobile User Tracking', icon: Smartphone },
   ].filter(Boolean);
@@ -219,6 +221,10 @@ export default function EmployeeDashboard() {
               <UsersView projectId={activeProject.id} roleFilter="MOBILE_USER" />
             )}
             
+            {activeView === 'admin_tracking' && (
+              <AdminTrackingView projectId={activeProject.id} />
+            )}
+
             {activeView === 'employee_tracking' && (
               <EmployeeTrackingView projectId={activeProject.id} />
             )}

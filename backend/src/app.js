@@ -32,6 +32,8 @@ function createApp() {
     'ALTER TABLE switch_points ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;',
     'ALTER TABLE switch_points ADD COLUMN IF NOT EXISTS deleted_by INT;',
     'ALTER TABLE project_users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT FALSE;',
+    'ALTER TABLE project_users ADD COLUMN IF NOT EXISTS section_k BOOLEAN NOT NULL DEFAULT FALSE;',
+    'ALTER TABLE admin_section_access ADD COLUMN IF NOT EXISTS section_k BOOLEAN NOT NULL DEFAULT FALSE;',
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email) WHERE is_deleted IS NOT TRUE;',
     'CREATE INDEX IF NOT EXISTS idx_users_role_id ON users (role, id DESC) WHERE is_deleted IS NOT TRUE;',
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_project_users_comp ON project_users (project_id, user_id);',
@@ -64,7 +66,8 @@ function createApp() {
       section_g BOOLEAN NOT NULL DEFAULT FALSE,
       section_h BOOLEAN NOT NULL DEFAULT FALSE,
       section_i BOOLEAN NOT NULL DEFAULT FALSE,
-      section_j BOOLEAN NOT NULL DEFAULT FALSE
+      section_j BOOLEAN NOT NULL DEFAULT FALSE,
+      section_k BOOLEAN NOT NULL DEFAULT FALSE
     );`
   ];
 

@@ -9,6 +9,7 @@ const {
   getMyStats,
   getEmployeeTracking,
   getMobileUserTracking,
+  getAdminTracking,
   getReportData
 } = require('../models/summary.model');
 const { canAccessProject } = require('../../../middleware/projectAccess');
@@ -244,6 +245,27 @@ async function getEmployeeTrackingHandler(req, res, next) {
   } catch (error) { next(error); }
 }
 
+async function getAdminTrackingHandler(req, res, next) {
+  try {
+    const { projectId } = req.params;
+    
+    const allowedProject = await canAccessProject(Number(req.user.sub), req.user.role, Number(projectId));
+    if (!allowedProject) {
+      return res.status(403).json({ message: 'Forbidden: You do not have access to this project' });
+    }
+    
+    const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
+    
+    if (!isMasterAdmin && !permissions.section_k) {
+      return res.status(403).json({ message: 'Forbidden: You do not have access to admin tracking' });
+    }
+
+    const tracking = await getAdminTracking(Number(projectId));
+    res.json({ tracking });
+  } catch (error) { next(error); }
+}
+
 async function getMobileUserTrackingHandler(req, res, next) {
   try {
     const { projectId } = req.params;
@@ -403,6 +425,7 @@ module.exports = {
   getDeletedSubmissionsHandler,
   getMyStatsHandler,
   getEmployeeTrackingHandler,
+  getAdminTrackingHandler,
   getMobileUserTrackingHandler,
   downloadReportHandler
 };

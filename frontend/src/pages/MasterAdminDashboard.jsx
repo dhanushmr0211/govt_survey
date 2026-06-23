@@ -7,10 +7,10 @@ import { SummaryView } from '../modules/poleSurvey/components/SummaryView';
 import { WardDetailsView } from '../modules/poleSurvey/components/WardDetailsView';
 import { SubmissionQueueView } from '../modules/poleSurvey/components/SubmissionQueueView';
 import { UsersView } from './UsersView';
-import { EmployeeTrackingView, MobileUserTrackingView } from './TrackingViews';
+import { EmployeeTrackingView, AdminTrackingView, MobileUserTrackingView } from './TrackingViews';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { BarChart3, CalendarDays, ClipboardList, Download, FolderKanban, Smartphone, UserCheck, Users, LogOut, ArrowLeft } from 'lucide-react';
+import { BarChart3, CalendarDays, ClipboardList, Download, FolderKanban, Smartphone, UserCheck, Users, LogOut, ArrowLeft, Shield } from 'lucide-react';
 import API_BASE_URL from '../config/api';
 import { useProjects } from '../shared/hooks/useProjects';
 import { getLocalDateString } from '../shared/utils/date';
@@ -52,6 +52,7 @@ export default function MasterAdminDashboard() {
 
   const utilityItems = [
     effectiveProject?.section_d && { key: 'users', label: 'Team', icon: Users },
+    effectiveProject?.section_k && { key: 'admin_tracking', label: 'Admin Tracking', icon: Shield },
     effectiveProject?.section_e && { key: 'employee_tracking', label: 'Employee Tracking', icon: UserCheck },
     effectiveProject?.section_f && { key: 'mobile_user_tracking', label: 'Mobile User Tracking', icon: Smartphone },
   ].filter(Boolean);
@@ -309,6 +310,10 @@ export default function MasterAdminDashboard() {
         
         {effectiveProject?.id && activeView === 'users' && (
           <UsersView projectId={effectiveProject.id} />
+        )}
+        
+        {effectiveProject?.id && activeView === 'admin_tracking' && (
+          <AdminTrackingView projectId={effectiveProject.id} />
         )}
         
         {effectiveProject?.id && activeView === 'employee_tracking' && (

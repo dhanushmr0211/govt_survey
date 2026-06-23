@@ -126,6 +126,7 @@ export default function Users() {
 
   const utilityItems = [
     displayProject?.section_d && { key: 'users', label: 'Users', icon: UsersIcon },
+    displayProject?.section_k && { key: 'admin_tracking', label: 'Admin Tracking', icon: Shield },
     displayProject?.section_e && { key: 'employee_tracking', label: 'Employee Tracking', icon: UserCheck },
     displayProject?.section_f && { key: 'mobile_user_tracking', label: 'Mobile User Tracking', icon: Smartphone },
   ].filter(Boolean);

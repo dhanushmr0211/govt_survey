@@ -28,6 +28,7 @@ const {
   getDeletedSubmissionsHandler,
   getMyStatsHandler,
   getEmployeeTrackingHandler,
+  getAdminTrackingHandler,
   getMobileUserTrackingHandler
 } = require('../controllers/summary.controller');
 
@@ -51,6 +52,7 @@ tgplSurveyRouter.post('/validate-move', validateMoveHandler);
 // Reports / Summary
 tgplSurveyRouter.get('/my-stats', getMyStatsHandler);
 tgplSurveyRouter.get('/employee-tracking', getEmployeeTrackingHandler);
+tgplSurveyRouter.get('/admin-tracking', getAdminTrackingHandler);
 tgplSurveyRouter.get('/mobile-user-tracking', getMobileUserTrackingHandler);
 tgplSurveyRouter.get('/report/download', downloadReportHandler);
 tgplSurveyRouter.get('/summary/districts', getDistrictSummaryHandler);

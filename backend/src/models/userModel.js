@@ -103,6 +103,7 @@ async function findByProject(projectId) {
             COALESCE(pu.section_h, false) AS section_h,
             COALESCE(pu.section_i, false) AS section_i,
             COALESCE(pu.section_j, false) AS section_j,
+            COALESCE(pu.section_k, false) AS section_k,
             pu.district_scope,
             pu.ulb_scope
      FROM users u
@@ -160,7 +161,8 @@ async function findAllWithProjectDetails(projectId) {
             COALESCE(pu.section_g, false) AS section_g,
             COALESCE(pu.section_h, false) AS section_h,
             COALESCE(pu.section_i, false) AS section_i,
-            COALESCE(pu.section_j, false) AS section_j
+            COALESCE(pu.section_j, false) AS section_j,
+            COALESCE(pu.section_k, false) AS section_k
      FROM users u
      LEFT JOIN project_users pu ON u.id = pu.user_id AND pu.project_id = $1
      WHERE u.is_deleted IS NOT TRUE

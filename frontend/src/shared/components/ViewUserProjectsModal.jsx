@@ -90,6 +90,7 @@ export const ViewUserProjectsModal = ({ isOpen, onClose, user }) => {
                     { key: 'section_b', label: 'Real-time' },
                     { key: 'section_c', label: 'Issues' },
                     { key: 'section_d', label: 'Users' },
+                    { key: 'section_k', label: 'Admin Track' },
                     { key: 'section_e', label: 'Emp Track' },
                     { key: 'section_f', label: 'Field Track' },
                     { key: 'section_g', label: 'Reports' },

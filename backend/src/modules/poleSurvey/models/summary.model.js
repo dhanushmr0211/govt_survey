@@ -927,6 +927,42 @@ async function getEmployeeTracking(projectId) {
   return result.rows;
 }
 
+async function getAdminTracking(projectId) {
+  const sql = `
+    SELECT 
+      u.id, 
+      u.email,
+      u.name,
+      (
+        SELECT COUNT(*) FROM switch_points sp 
+        WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND sp.is_deleted IS NOT TRUE
+      ) as total_sp_resolved,
+      (
+        SELECT COUNT(*) FROM poles p 
+        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.is_deleted IS NOT TRUE
+      ) as total_poles_resolved,
+      (
+        SELECT COUNT(*) FROM switch_points sp 
+        WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', sp.confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date AND sp.is_deleted IS NOT TRUE
+      ) as today_sp_resolved,
+      (
+        SELECT COUNT(*) FROM poles p 
+        WHERE p.confirmed_by = u.id AND p.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', p.confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date AND p.is_deleted IS NOT TRUE
+      ) as today_poles_resolved
+    FROM project_users pu
+    JOIN users u ON u.id = pu.user_id
+    WHERE pu.project_id = $1
+      AND pu.project_role = 'ADMIN'
+      AND u.is_deleted = FALSE
+    ORDER BY (
+      (SELECT COUNT(*) FROM switch_points sp WHERE sp.confirmed_by = u.id AND sp.project_id = $1 AND sp.is_deleted IS NOT TRUE) +
+      (SELECT COUNT(*) FROM poles p WHERE p.confirmed_by = u.id AND p.project_id = $1 AND p.is_deleted IS NOT TRUE)
+    ) DESC;
+  `;
+  const result = await query(sql, [projectId]);
+  return result.rows;
+}
+
 async function getMobileUserTracking(projectId) {
   const sql = `
     SELECT 
@@ -1300,4 +1336,4 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
   return { rows: result.rows, total };
 }
 
-module.exports = { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions, getDeletedSubmissions, getMyStats, getEmployeeTracking, getMobileUserTracking, getReportData };
+module.exports = { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions, getDeletedSubmissions, getMyStats, getEmployeeTracking, getMobileUserTracking, getAdminTracking, getReportData };

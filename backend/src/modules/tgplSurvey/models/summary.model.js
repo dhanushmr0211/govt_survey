@@ -777,6 +777,64 @@ async function getEmployeeTracking(projectId) {
   return result;
 }
 
+async function getAdminTracking(projectId) {
+  const usersResult = await pool.query(
+    `SELECT u.id, u.email, u.name 
+     FROM project_users pu
+     JOIN users u ON u.id = pu.user_id
+     WHERE pu.project_id = $1 AND pu.project_role = 'ADMIN' AND u.is_deleted = FALSE`,
+    [projectId]
+  );
+  const users = usersResult.rows;
+  if (users.length === 0) return [];
+  
+  const userIds = users.map(u => u.id);
+  
+  const statsResult = await query(
+    `SELECT 
+      p.confirmed_by as id,
+      COUNT(p.id) as total_poles_resolved,
+      COUNT(CASE WHEN (timezone('Asia/Kolkata', timezone('UTC', p.confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN p.id END) as today_poles_resolved,
+      COUNT(CASE WHEN COALESCE(p.survey_type, 'survey') = 'survey' THEN p.id END) as total_survey_resolved,
+      COUNT(CASE WHEN p.survey_type = 'installation' THEN p.id END) as total_inst_resolved,
+      COUNT(CASE WHEN COALESCE(p.survey_type, 'survey') = 'survey' AND (timezone('Asia/Kolkata', timezone('UTC', p.confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN p.id END) as today_survey_resolved,
+      COUNT(CASE WHEN p.survey_type = 'installation' AND (timezone('Asia/Kolkata', timezone('UTC', p.confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN p.id END) as today_inst_resolved
+     FROM poles p
+     WHERE p.confirmed_by = ANY($1) AND p.project_id = $2 AND p.is_deleted = FALSE
+     GROUP BY p.confirmed_by`,
+    [userIds, projectId]
+  );
+  
+  const statsMap = {};
+  statsResult.rows.forEach(r => {
+    statsMap[r.id] = {
+      total_poles_resolved: parseInt(r.total_poles_resolved, 10),
+      today_poles_resolved: parseInt(r.today_poles_resolved, 10),
+      total_survey_resolved: parseInt(r.total_survey_resolved, 10),
+      total_inst_resolved: parseInt(r.total_inst_resolved, 10),
+      today_survey_resolved: parseInt(r.today_survey_resolved, 10),
+      today_inst_resolved: parseInt(r.today_inst_resolved, 10)
+    };
+  });
+
+  const result = users.map(u => ({
+    id: u.id,
+    email: u.email,
+    name: u.name,
+    total_sp_resolved: 0,
+    total_poles_resolved: statsMap[u.id]?.total_poles_resolved || 0,
+    total_survey_resolved: statsMap[u.id]?.total_survey_resolved || 0,
+    total_inst_resolved: statsMap[u.id]?.total_inst_resolved || 0,
+    today_sp_resolved: 0,
+    today_poles_resolved: statsMap[u.id]?.today_poles_resolved || 0,
+    today_survey_resolved: statsMap[u.id]?.today_survey_resolved || 0,
+    today_inst_resolved: statsMap[u.id]?.today_inst_resolved || 0
+  }));
+
+  result.sort((a, b) => b.total_poles_resolved - a.total_poles_resolved);
+  return result;
+}
+
 async function getMobileUserTracking(projectId) {
   const usersResult = await pool.query(
     `SELECT u.id, u.email, u.name 
@@ -1045,5 +1103,6 @@ module.exports = {
   getMyStats,
   getEmployeeTracking,
   getMobileUserTracking,
+  getAdminTracking,
   getReportData
 };
