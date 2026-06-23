@@ -1199,8 +1199,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                           alt="Survey"
                           className="w-full h-auto object-cover"
                           onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                            if (!e.target.dataset.errorHandled) {
+                              e.target.dataset.errorHandled = 'true';
+                              e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                            }
                           }}
                         />
                         <p className="text-xs text-gray-400 p-1 text-center">{new Date(img.uploaded_at).toLocaleString()}</p>
@@ -1226,8 +1228,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                           alt="Survey"
                           className="w-full h-auto object-cover"
                           onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                            if (!e.target.dataset.errorHandled) {
+                              e.target.dataset.errorHandled = 'true';
+                              e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                            }
                           }}
                         />
                         <p className="text-xs text-gray-400 p-1 text-center">Pole View {index + 1}</p>

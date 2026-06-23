@@ -886,7 +886,12 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                           src={img.signed_url}
                           alt="Survey"
                           className="w-full h-auto object-cover"
-                          onError={(e) => { e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load'; }}
+                          onError={(e) => {
+                            if (!e.target.dataset.errorHandled) {
+                              e.target.dataset.errorHandled = 'true';
+                              e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                            }
+                          }}
                         />
                         {isEditing && (
                           <button
@@ -907,7 +912,12 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                           src={imgUrl}
                           alt="Survey"
                           className="w-full h-auto object-cover"
-                          onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load'; }}
+                          onError={(e) => {
+                            if (!e.target.dataset.errorHandled) {
+                              e.target.dataset.errorHandled = 'true';
+                              e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                            }
+                          }}
                         />
                         <p className="text-xs text-gray-400 p-1 text-center">Pole View {index + 1}</p>
                       </div>
