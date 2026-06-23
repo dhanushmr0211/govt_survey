@@ -1335,5 +1335,16 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
   const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
   return { rows: result.rows, total };
 }
+async function getMyConfirmedStats(projectId, userId) {
+  const sql = `
+    SELECT 
+      (SELECT COUNT(*)::int FROM switch_points WHERE project_id = $1 AND confirmed_by = $2 AND is_deleted IS NOT TRUE) as total_sp,
+      (SELECT COUNT(*)::int FROM poles WHERE project_id = $1 AND confirmed_by = $2 AND is_deleted IS NOT TRUE) as total_poles,
+      (SELECT COUNT(*)::int FROM switch_points WHERE project_id = $1 AND confirmed_by = $2 AND is_deleted IS NOT TRUE AND (timezone('Asia/Kolkata', timezone('UTC', confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date) as today_sp,
+      (SELECT COUNT(*)::int FROM poles WHERE project_id = $1 AND confirmed_by = $2 AND is_deleted IS NOT TRUE AND (timezone('Asia/Kolkata', timezone('UTC', confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date) as today_poles;
+  `;
+  const result = await query(sql, [projectId, userId]);
+  return result.rows[0];
+}
 
-module.exports = { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions, getDeletedSubmissions, getMyStats, getEmployeeTracking, getMobileUserTracking, getAdminTracking, getReportData };
+module.exports = { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions, getDeletedSubmissions, getMyStats, getEmployeeTracking, getMobileUserTracking, getAdminTracking, getReportData, getMyConfirmedStats };

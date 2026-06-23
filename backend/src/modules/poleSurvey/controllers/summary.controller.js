@@ -1,4 +1,4 @@
-const { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions, getDeletedSubmissions, getMyStats, getEmployeeTracking, getMobileUserTracking, getAdminTracking, getReportData } = require('../models/summary.model');
+const { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmissions, getTodaySubmissions, getConfirmedSubmissions, getDeletedSubmissions, getMyStats, getEmployeeTracking, getMobileUserTracking, getAdminTracking, getReportData, getMyConfirmedStats } = require('../models/summary.model');
 const { canAccessProject } = require('../../../middleware/projectAccess');
 const { ROLES } = require('../../../constants/roles');
 const ExcelJS = require('exceljs');
@@ -451,4 +451,26 @@ async function getDeletedSubmissionsHandler(req, res, next) {
   } catch (error) { next(error); }
 }
 
-module.exports = { getDistrictSummaryHandler, getWardSummaryHandler, getWardDetailsHandler, getPendingSubmissionsHandler, getTodaySubmissionsHandler, getConfirmedSubmissionsHandler, getDeletedSubmissionsHandler, getMyStatsHandler, getEmployeeTrackingHandler, getAdminTrackingHandler, getMobileUserTrackingHandler, downloadReportHandler };
+async function getMyConfirmedStatsHandler(req, res, next) {
+  try {
+    const { projectId } = req.params;
+    const userId = req.user.sub;
+    
+    const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
+    const userProjectRole = req.projectRole;
+
+    if (!isMasterAdmin) {
+      const isAllowedRole = ['ADMIN', 'EMPLOYEE', 'CLIENT'].includes(userProjectRole);
+      const hasSectionC = permissions.section_c;
+      if (!isAllowedRole || !hasSectionC) {
+        return res.status(403).json({ message: 'Forbidden: Insufficient permissions to view confirmed stats' });
+      }
+    }
+
+    const stats = await getMyConfirmedStats(Number(projectId), Number(userId));
+    res.json({ stats });
+  } catch (error) { next(error); }
+}
+
+module.exports = { getDistrictSummaryHandler, getWardSummaryHandler, getWardDetailsHandler, getPendingSubmissionsHandler, getTodaySubmissionsHandler, getConfirmedSubmissionsHandler, getDeletedSubmissionsHandler, getMyStatsHandler, getEmployeeTrackingHandler, getAdminTrackingHandler, getMobileUserTrackingHandler, downloadReportHandler, getMyConfirmedStatsHandler };

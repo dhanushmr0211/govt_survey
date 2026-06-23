@@ -32,7 +32,8 @@ const {
   getMyStatsHandler,
   getEmployeeTrackingHandler,
   getAdminTrackingHandler,
-  getMobileUserTrackingHandler
+  getMobileUserTrackingHandler,
+  getMyConfirmedStatsHandler
 } = require('../controllers/summary.controller');
 
 const poleSurveyRouter = express.Router({ mergeParams: true });
@@ -59,6 +60,7 @@ poleSurveyRouter.delete('/submissions/:id', deleteSubmissionHandler);
 
 // Reports / Summary
 poleSurveyRouter.get('/my-stats', getMyStatsHandler);
+poleSurveyRouter.get('/my-confirmed-stats', getMyConfirmedStatsHandler);
 poleSurveyRouter.get('/employee-tracking', getEmployeeTrackingHandler);
 poleSurveyRouter.get('/admin-tracking', getAdminTrackingHandler);
 poleSurveyRouter.get('/mobile-user-tracking', getMobileUserTrackingHandler);

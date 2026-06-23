@@ -1,13 +1,34 @@
 import { useState } from 'react';
-import TopNav from '../components/TopNav';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import API_BASE_URL from '../config/api';
 
 export default function Profile() {
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const setUser = useAuthStore((state) => state.setUser);
+  const activeProject = useAuthStore((state) => state.activeProject);
+
+  const isMasterAdmin = user?.role === 'MASTER_ADMIN';
+  const showConfirmedStats = isMasterAdmin || (
+    activeProject && 
+    ['ADMIN', 'EMPLOYEE', 'CLIENT'].includes(activeProject.project_role) && 
+    activeProject.section_c === true
+  );
+
+  const { data: statsData, isLoading: statsLoading } = useQuery({
+    queryKey: ['my-confirmed-stats', activeProject?.id, user?.id],
+    queryFn: async () => {
+      const res = await axios.get(`${API_BASE_URL}/projects/${activeProject.id}/pole-survey/my-confirmed-stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return res.data.stats;
+    },
+    enabled: !!activeProject?.id && showConfirmedStats
+  });
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -123,9 +144,26 @@ export default function Profile() {
 
   return (
     <div className="app-container">
-      <TopNav user={user} />
-
       <main className="main-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '2rem' }}>
+        <div style={{ width: '100%', maxWidth: '500px', display: 'flex', justifyContent: 'flex-start', marginBottom: '1.5rem' }}>
+          <button 
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#f97316',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
         
         {/* Style injection for animations */}
         <style dangerouslySetInnerHTML={{__html: `
@@ -273,6 +311,64 @@ export default function Profile() {
             </div>
           </form>
         </div>
+
+        {showConfirmedStats && (
+          <div className="card" style={{ width: '100%', maxWidth: '500px', padding: '2rem', marginTop: '2rem' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-color)', marginBottom: '1.5rem', textAlign: 'center' }}>
+              Your Performance Stats
+            </h2>
+            
+            {!activeProject ? (
+              <div style={{ padding: '12px', borderRadius: '6px', fontSize: '0.875rem', backgroundColor: '#fef3c7', color: '#d97706', border: '1px solid #f59e0b', textAlign: 'center' }}>
+                Please select an active project from the dashboard to see your performance stats.
+              </div>
+            ) : statsLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem 0' }}>
+                <div style={{ width: '24px', height: '24px', border: '3px solid #f97316', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }}></div>
+              </div>
+            ) : statsData ? (
+              <div>
+                <p style={{ fontSize: '0.875rem', fontWeight: '600', color: '#4b5563', marginBottom: '1rem', textAlign: 'center' }}>
+                  Project: <span style={{ color: '#f97316' }}>{activeProject.name}</span>
+                </p>
+                
+                {String(activeProject.id) !== '3' ? (
+                  /* Project 2 Layout: Switch Points & Poles */
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', textAlign: 'center' }}>
+                      <p style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>SWITCH POINTS</p>
+                      <p style={{ fontSize: '2rem', fontWeight: '800', color: '#0f172a', margin: '0.5rem 0 0.25rem' }}>{statsData.total_sp}</p>
+                      <p style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>+ {statsData.today_sp} today</p>
+                    </div>
+                    <div style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', textAlign: 'center' }}>
+                      <p style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>POLES</p>
+                      <p style={{ fontSize: '2rem', fontWeight: '800', color: '#0f172a', margin: '0.5rem 0 0.25rem' }}>{statsData.total_poles}</p>
+                      <p style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>+ {statsData.today_poles} today</p>
+                    </div>
+                  </div>
+                ) : (
+                  /* Project 3 Layout: Survey & Installation */
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', textAlign: 'center' }}>
+                      <p style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>SURVEY POLES</p>
+                      <p style={{ fontSize: '2rem', fontWeight: '800', color: '#0f172a', margin: '0.5rem 0 0.25rem' }}>{statsData.total_survey}</p>
+                      <p style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>+ {statsData.today_survey} today</p>
+                    </div>
+                    <div style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', textAlign: 'center' }}>
+                      <p style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>INSTALLATIONS</p>
+                      <p style={{ fontSize: '2rem', fontWeight: '800', color: '#0f172a', margin: '0.5rem 0 0.25rem' }}>{statsData.total_installation}</p>
+                      <p style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>+ {statsData.today_installation} today</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', color: '#64748b', fontSize: '0.875rem' }}>
+                Failed to load stats data.
+              </div>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

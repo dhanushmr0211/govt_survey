@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import TopNav from '../components/TopNav';
+import { useNavigate } from 'react-router-dom';
 import { useProjects } from '../shared/hooks/useProjects';
 import { Search, FolderKanban, MapPin, Calendar, Clock, Edit, Trash2, X } from 'lucide-react';
 import { SummaryView } from '../modules/poleSurvey/components/SummaryView';
@@ -7,6 +7,7 @@ import { SubmissionQueueView } from '../modules/poleSurvey/components/Submission
 import { getLocalDateString } from '../shared/utils/date';
 
 export default function Projects() {
+  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const { data: projects = [], isLoading: loading } = useProjects();
 
@@ -16,10 +17,26 @@ export default function Projects() {
 
   return (
     <div className="app-container">
-      <TopNav user={user} />
-      
-
       <main className="main-content">
+        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '1.5rem' }}>
+          <button 
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#f97316',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
         {!selectedProject ? (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>

@@ -1091,6 +1091,19 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
   const resolved = await resolveUserNames(result.rows);
   return { rows: resolved, total };
 }
+async function getMyConfirmedStats(projectId, userId) {
+  const sql = `
+    SELECT 
+      COUNT(CASE WHEN COALESCE(survey_type, 'survey') = 'survey' THEN 1 END)::int as total_survey,
+      COUNT(CASE WHEN survey_type = 'installation' THEN 1 END)::int as total_installation,
+      COUNT(CASE WHEN COALESCE(survey_type, 'survey') = 'survey' AND (timezone('Asia/Kolkata', timezone('UTC', confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN 1 END)::int as today_survey,
+      COUNT(CASE WHEN survey_type = 'installation' AND (timezone('Asia/Kolkata', timezone('UTC', confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN 1 END)::int as today_installation
+    FROM poles 
+    WHERE project_id = $1 AND confirmed_by = $2 AND is_deleted = FALSE;
+  `;
+  const result = await query(sql, [projectId, userId]);
+  return result.rows[0];
+}
 
 module.exports = {
   getDistrictSummary,
@@ -1104,5 +1117,6 @@ module.exports = {
   getEmployeeTracking,
   getMobileUserTracking,
   getAdminTracking,
-  getReportData
+  getReportData,
+  getMyConfirmedStats
 };

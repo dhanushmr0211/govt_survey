@@ -29,7 +29,8 @@ const {
   getMyStatsHandler,
   getEmployeeTrackingHandler,
   getAdminTrackingHandler,
-  getMobileUserTrackingHandler
+  getMobileUserTrackingHandler,
+  getMyConfirmedStatsHandler
 } = require('../controllers/summary.controller');
 
 const tgplSurveyRouter = express.Router({ mergeParams: true });
@@ -51,6 +52,7 @@ tgplSurveyRouter.post('/validate-move', validateMoveHandler);
 
 // Reports / Summary
 tgplSurveyRouter.get('/my-stats', getMyStatsHandler);
+tgplSurveyRouter.get('/my-confirmed-stats', getMyConfirmedStatsHandler);
 tgplSurveyRouter.get('/employee-tracking', getEmployeeTrackingHandler);
 tgplSurveyRouter.get('/admin-tracking', getAdminTrackingHandler);
 tgplSurveyRouter.get('/mobile-user-tracking', getMobileUserTrackingHandler);
