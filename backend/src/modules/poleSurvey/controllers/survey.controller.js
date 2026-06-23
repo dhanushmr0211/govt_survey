@@ -198,7 +198,11 @@ async function updateSwitchPointHandler(req, res, next) {
       }
     }
 
-    const targetUlbId = data.ulb_id !== undefined ? Number(data.ulb_id) : Number(existingSp.ulb_id);
+    const parsedUlbId = (data.ulb_id !== undefined && data.ulb_id !== null && data.ulb_id !== '') ? Number(data.ulb_id) : null;
+    if (data.ulb_id !== undefined && (!parsedUlbId || parsedUlbId <= 0)) {
+      delete data.ulb_id;
+    }
+    const targetUlbId = (parsedUlbId && parsedUlbId > 0) ? parsedUlbId : Number(existingSp.ulb_id);
     const targetWard = data.ward_number !== undefined ? data.ward_number : existingSp.ward_number;
     const targetSpNum = data.switch_point_number !== undefined ? data.switch_point_number : existingSp.switch_point_number;
 
@@ -307,7 +311,8 @@ async function updatePoleHandler(req, res, next) {
       }
     }
 
-    const targetUlbId = data.ulb_id !== undefined ? Number(data.ulb_id) : Number(existingPole.ulb_id);
+    const parsedUlbId = (data.ulb_id !== undefined && data.ulb_id !== null && data.ulb_id !== '') ? Number(data.ulb_id) : null;
+    const targetUlbId = (parsedUlbId && parsedUlbId > 0) ? parsedUlbId : Number(existingPole.ulb_id);
     const targetWard = data.ward_number !== undefined ? data.ward_number : existingPole.ward_number;
     const targetSpNum = data.switch_point_number !== undefined ? data.switch_point_number : existingPole.switch_point_number;
 

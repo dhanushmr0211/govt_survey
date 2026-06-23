@@ -328,6 +328,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       SELECT 
         'pole' as type,
         p.id,
+        p.ward_id as ulb_id,
         p.created_by as user_id,
         NULL::text as user_name,
         p.created_at,
@@ -490,6 +491,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       SELECT 
         'pole' as type,
         p.id,
+        p.ward_id as ulb_id,
         p.created_by as user_id,
         NULL::text as user_name,
         p.created_at,
@@ -589,6 +591,7 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
       SELECT 
         'pole' as type,
         p.id,
+        p.ward_id as ulb_id,
         p.created_by as user_id,
         NULL::text as user_name,
         p.created_at,
@@ -1021,6 +1024,7 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
       SELECT 
         'pole' as type,
         p.id,
+        p.ward_id as ulb_id,
         p.created_by as user_id,
         u_cre.name as user_name,
         p.created_at,

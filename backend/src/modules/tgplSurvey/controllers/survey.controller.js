@@ -62,7 +62,13 @@ async function updatePoleHandler(req, res, next) {
     const data = req.body;
     
     // Map ulb_id/ulb_name to ward_id/ward_number if present
-    if (data.ulb_id) data.ward_id = Number(data.ulb_id);
+    const parsedUlbId = (data.ulb_id !== undefined && data.ulb_id !== null && data.ulb_id !== '') ? Number(data.ulb_id) : null;
+    if (parsedUlbId && parsedUlbId > 0) {
+      data.ward_id = parsedUlbId;
+    } else {
+      delete data.ulb_id;
+      delete data.ward_id;
+    }
     if (data.ulb_name) data.ward_number = data.ulb_name;
 
     // Retrieve current pole fields to handle partial updates correctly

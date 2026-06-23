@@ -255,6 +255,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       SELECT 
         'switch_point' as type,
         sp.id,
+        sp.ulb_id,
+        NULL::int as switch_point_id,
         sp.created_by as user_id,
         u.name as user_name,
         sp.created_at,
@@ -305,6 +307,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       SELECT 
         'pole' as type,
         p.id,
+        sp.ulb_id,
+        p.switch_point_id,
         p.created_by as user_id,
         u.name as user_name,
         p.created_at,
@@ -356,6 +360,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       SELECT 
         'switch_point' as type,
         sp.id,
+        sp.ulb_id,
+        NULL::int as switch_point_id,
         sp.created_by as user_id,
         u.name as user_name,
         sp.created_at,
@@ -401,6 +407,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
       SELECT 
         'pole' as type,
         p.id,
+        sp.ulb_id,
+        p.switch_point_id,
         p.created_by as user_id,
         u.name as user_name,
         p.created_at,
@@ -491,6 +499,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       SELECT 
         'switch_point' as type,
         sp.id,
+        sp.ulb_id,
+        NULL::int as switch_point_id,
         sp.created_by as user_id,
         u.name as user_name,
         sp.created_at,
@@ -541,6 +551,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       SELECT 
         'pole' as type,
         p.id,
+        sp.ulb_id,
+        p.switch_point_id,
         p.created_by as user_id,
         u.name as user_name,
         p.created_at,
@@ -592,6 +604,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       SELECT 
         'switch_point' as type,
         sp.id,
+        sp.ulb_id,
+        NULL::int as switch_point_id,
         sp.created_by as user_id,
         u.name as user_name,
         sp.created_at,
@@ -642,6 +656,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
       SELECT 
         'pole' as type,
         p.id,
+        sp.ulb_id,
+        p.switch_point_id,
         p.created_by as user_id,
         u.name as user_name,
         p.created_at,
@@ -727,6 +743,8 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
       SELECT 
         'switch_point' as type,
         sp.id,
+        sp.ulb_id,
+        NULL::int as switch_point_id,
         sp.created_by as user_id,
         u.name as user_name,
         sp.created_at,
@@ -777,6 +795,8 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
       SELECT 
         'pole' as type,
         p.id,
+        sp.ulb_id,
+        p.switch_point_id,
         p.created_by as user_id,
         u.name as user_name,
         p.created_at,
@@ -1108,6 +1128,8 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
       SELECT 
         'switch_point' as type,
         sp.id,
+        sp.ulb_id,
+        NULL::int as switch_point_id,
         sp.created_by as user_id,
         u_cre.name as user_name,
         sp.created_at,
@@ -1162,6 +1184,8 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
       SELECT 
         'pole' as type,
         p.id,
+        sp.ulb_id,
+        p.switch_point_id,
         p.created_by as user_id,
         u_cre.name as user_name,
         p.created_at,
@@ -1217,6 +1241,8 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
       SELECT 
         'switch_point' as type,
         sp.id,
+        sp.ulb_id,
+        NULL::int as switch_point_id,
         sp.created_by as user_id,
         u_cre.name as user_name,
         sp.created_at,
@@ -1271,6 +1297,8 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
       SELECT 
         'pole' as type,
         p.id,
+        sp.ulb_id,
+        p.switch_point_id,
         p.created_by as user_id,
         u_cre.name as user_name,
         p.created_at,
