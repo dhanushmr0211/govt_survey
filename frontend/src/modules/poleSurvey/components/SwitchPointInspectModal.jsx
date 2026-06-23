@@ -17,7 +17,9 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
     'sinchudev3@gmail.com',
     'sameershaik99495@gmail.com',
     'kanyagowdakavya24@gmail.com',
-    'usharanik209@gmail.com'
+    'usharanik209@gmail.com',
+    'divya.c127@gmail.com',
+    'cmchaya37@gmail.com'
   ]).has((user?.email || '').toLowerCase());
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = activeProject?.id;

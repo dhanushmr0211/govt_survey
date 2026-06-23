@@ -49,7 +49,9 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     'sinchudev3@gmail.com',
     'sameershaik99495@gmail.com',
     'kanyagowdakavya24@gmail.com',
-    'usharanik209@gmail.com'
+    'usharanik209@gmail.com',
+    'divya.c127@gmail.com',
+    'cmchaya37@gmail.com'
   ]).has((user?.email || '').toLowerCase());
   const activeProject = useAuthStore((state) => state.activeProject);
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';

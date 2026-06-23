@@ -69,7 +69,9 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
     'sinchudev3@gmail.com',
     'sameershaik99495@gmail.com',
     'kanyagowdakavya24@gmail.com',
-    'usharanik209@gmail.com'
+    'usharanik209@gmail.com',
+    'divya.c127@gmail.com',
+    'cmchaya37@gmail.com'
   ]).has((user?.email || '').toLowerCase());
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
