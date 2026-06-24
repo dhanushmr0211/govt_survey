@@ -80,6 +80,8 @@ async function createPole(projectId, data, createdBy) {
 async function getPoles(projectId, status, limit, offset) {
   const result = await query(
     `SELECT p.*, w.name as ulb_name,
+            p.pole_height as pole_height_mtrs,
+            p.pole_to_pole_distance as pole_to_pole_distance_mtrs,
             p.ccms_number as sp_number, 
             NULL as switch_point_type, 
             NULL::boolean as meter_exists, 
