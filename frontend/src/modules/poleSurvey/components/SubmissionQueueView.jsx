@@ -92,7 +92,8 @@ export const SubmissionQueueView = ({ projectId }) => {
     'kanyagowdakavya24@gmail.com',
     'usharanik209@gmail.com',
     'divya.c127@gmail.com',
-    'cmchaya37@gmail.com'
+    'cmchaya37@gmail.com',
+    'prajnatm29@gmail.com'
   ]).has((user?.email || '').toLowerCase());
   const showDeletedTab = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'prelectricals01@gmail.com';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';

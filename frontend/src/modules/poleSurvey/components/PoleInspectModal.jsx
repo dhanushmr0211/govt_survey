@@ -45,7 +45,8 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
     'kanyagowdakavya24@gmail.com',
     'usharanik209@gmail.com',
     'divya.c127@gmail.com',
-    'cmchaya37@gmail.com'
+    'cmchaya37@gmail.com',
+    'prajnatm29@gmail.com'
   ]).has((user?.email || '').toLowerCase());
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = activeProject?.id;
