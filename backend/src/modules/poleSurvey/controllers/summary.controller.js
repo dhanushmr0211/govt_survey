@@ -305,7 +305,14 @@ async function downloadReportHandler(req, res, next) {
     );
     console.log(`[REPORT] Switch Points: ${data.switchPoints.length}, Poles: ${data.poles.length}`);
     
-    const workbook = new ExcelJS.Workbook();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=report_${projectId}_${district || 'all'}_${tillDate || 'all'}.xlsx`);
+
+    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+      stream: res,
+      useStyles: true,
+      useSharedStrings: true
+    });
     
     // Switch Points Sheet
     const spSheet = workbook.addWorksheet('Switch Points');
@@ -354,6 +361,7 @@ async function downloadReportHandler(req, res, next) {
     };
 
     styleHeaderRow(spSheet);
+    spSheet.getRow(1).commit();
     
     data.switchPoints.forEach((sp, idx) => {
       spSheet.addRow({
@@ -361,8 +369,9 @@ async function downloadReportHandler(req, res, next) {
         sl_no: idx + 1,
         meter_exists: sp.meter_exists ? 'Yes' : 'No',
         created_at: new Date(sp.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-      });
+      }).commit();
     });
+    spSheet.commit();
     
     // Poles Sheet
     const pSheet = workbook.addWorksheet('Poles');
@@ -404,20 +413,18 @@ async function downloadReportHandler(req, res, next) {
     ];
 
     styleHeaderRow(pSheet);
+    pSheet.getRow(1).commit();
     
     data.poles.forEach((p, idx) => {
       pSheet.addRow({
         ...p,
         sl_no: idx + 1,
         created_at: new Date(p.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-      });
+      }).commit();
     });
+    pSheet.commit();
     
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=report_${projectId}_${district || 'all'}_${tillDate || 'all'}.xlsx`);
-    
-    await workbook.xlsx.write(res);
-    res.end();
+    await workbook.commit();
   } catch (error) { next(error); }
 }
 
