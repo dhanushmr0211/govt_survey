@@ -1026,12 +1026,17 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
 
   let spRangeFilter = '';
   let pRangeFilter = '';
-  if (fromDate && toDate) {
-    params.push(fromDate, toDate);
-    const fromIdx = params.length - 1;
+  if (fromDate) {
+    params.push(fromDate);
+    const fromIdx = params.length;
+    spRangeFilter += `\n    AND (($${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date >= $${fromIdx}))`;
+    pRangeFilter += `\n    AND (($${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date >= $${fromIdx}))`;
+  }
+  if (toDate) {
+    params.push(toDate);
     const toIdx = params.length;
-    spRangeFilter = `\n    AND (($${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date >= $${fromIdx}) AND ($${toIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $${toIdx}))`;
-    pRangeFilter = `\n    AND (($${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date >= $${fromIdx}) AND ($${toIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $${toIdx}))`;
+    spRangeFilter += `\n    AND (($${toIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $${toIdx}))`;
+    pRangeFilter += `\n    AND (($${toIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $${toIdx}))`;
   }
 
   if (districtScope && Array.isArray(districtScope) && districtScope.length > 0) {

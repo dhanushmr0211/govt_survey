@@ -8,7 +8,6 @@ import { getLocalDateString } from '../utils/date';
 export function DownloadReportModal({ isOpen, onClose, projectId }) {
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
-  const isMasterAdmin = user?.role === 'MASTER_ADMIN';
   const today = getLocalDateString();
   const isTgpl = String(projectId) === '3';
   const [fromDate, setFromDate] = useState(today);
@@ -16,6 +15,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
   const [districtId, setDistrictId] = useState('');
   const [ulbId, setUlbId] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadedBytes, setDownloadedBytes] = useState(0);
 
   const { data: summary = [] } = useQuery({
     queryKey: ['report-districts', projectId, token],
@@ -55,11 +55,13 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
     setFromDate(today);
     setToDate(today);
     setIsDownloading(false);
+    setDownloadedBytes(0);
     onClose();
   };
 
   const handleDownload = async () => {
     setIsDownloading(true);
+    setDownloadedBytes(0);
     try {
       let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/report/download`;
       const params = [];
@@ -74,6 +76,9 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
       const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
+        onDownloadProgress: (progressEvent) => {
+          setDownloadedBytes(progressEvent.loaded);
+        }
       });
 
       const blob = new Blob([res.data], {
@@ -179,6 +184,15 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
             </div>
           </div>
         </div>
+
+        {isDownloading && (
+          <div className="mt-4 flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+            <div className="text-sm font-medium text-blue-700">
+              Downloading: {(downloadedBytes / (1024 * 1024)).toFixed(2)} MB received...
+            </div>
+          </div>
+        )}
 
         <div className="mt-6 flex justify-end gap-2">
           <button

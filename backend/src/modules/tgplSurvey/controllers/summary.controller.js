@@ -304,6 +304,17 @@ async function downloadReportHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to download reports' });
     }
 
+    // Set headers and flush them immediately to prevent gateway/load balancer 504 timeouts!
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=report_tgpl_${projectId}_${tillDate || 'all'}.xlsx`);
+    res.flushHeaders();
+
+    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+      stream: res,
+      useStyles: true,
+      useSharedStrings: true
+    });
+
     const data = await getReportData(
       Number(projectId), 
       null,
@@ -315,15 +326,6 @@ async function downloadReportHandler(req, res, next) {
       toDate || null
     );
     console.log(`[TGPL REPORT] Poles: ${data.poles.length}`);
-    
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=report_tgpl_${projectId}_${tillDate || 'all'}.xlsx`);
-
-    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
-      stream: res,
-      useStyles: true,
-      useSharedStrings: true
-    });
     
     // Poles Sheet (TGPL only has Poles, no Switch Points)
     const pSheet = workbook.addWorksheet('Poles');
