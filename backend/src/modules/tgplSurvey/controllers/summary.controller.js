@@ -362,7 +362,10 @@ async function downloadReportHandler(req, res, next) {
       { header: 'Dedicated Street Light Wire', key: 'req_dedicated_wire', width: 25 },
       { header: 'Pole Image1#', key: 'image_url_1', width: 40 },
       { header: 'Pole Image2#', key: 'image_url_2', width: 40 },
-      { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 }
+      { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 },
+      { header: 'Created By', key: 'user_name', width: 15 },
+      { header: 'Created At', key: 'created_at', width: 20 },
+      { header: 'Confirmed By', key: 'confirmed_by_name', width: 15 }
     ];
     
     // Header styling
@@ -382,7 +385,7 @@ async function downloadReportHandler(req, res, next) {
         sl_no: idx + 1,
         ward_number: p.ward_number || p.ulb_name || '',
         latitude_longitude: latLong,
-        created_at: new Date(p.created_at).toLocaleString()
+        created_at: new Date(p.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
       }).commit();
     });
     pSheet.commit();
