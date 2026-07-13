@@ -304,16 +304,7 @@ async function downloadReportHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to download reports' });
     }
 
-    // Set headers and flush them immediately to prevent gateway/load balancer 504 timeouts!
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=report_tgpl_${projectId}_${tillDate || 'all'}.xlsx`);
-    res.flushHeaders();
-
-    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
-      stream: res,
-      useStyles: true,
-      useSharedStrings: true
-    });
+    const workbook = new ExcelJS.Workbook();
 
     const data = await getReportData(
       Number(projectId), 
@@ -374,7 +365,6 @@ async function downloadReportHandler(req, res, next) {
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } };
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
     });
-    headerRow.commit();
     
     data.poles.forEach((p, idx) => {
       const latLong = p.latitude && p.longitude ? `${p.latitude}, ${p.longitude}` : (p.latitude || p.longitude || '');
@@ -384,11 +374,15 @@ async function downloadReportHandler(req, res, next) {
         ward_number: p.ward_number || p.ulb_name || '',
         latitude_longitude: latLong,
         created_at: new Date(p.created_at).toLocaleString()
-      }).commit();
+      });
     });
-    pSheet.commit();
     
-    await workbook.commit();
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=report_tgpl_${projectId}_${tillDate || 'all'}.xlsx`);
+    res.setHeader('Content-Length', buffer.length);
+    res.end(buffer);
   } catch (error) { next(error); }
 }
 

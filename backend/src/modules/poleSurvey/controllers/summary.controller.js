@@ -293,16 +293,7 @@ async function downloadReportHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to download reports' });
     }
 
-    // Set headers and flush them immediately to prevent gateway/load balancer 504 timeouts!
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=report_${projectId}_${district || 'all'}_${tillDate || 'all'}.xlsx`);
-    res.flushHeaders();
-
-    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
-      stream: res,
-      useStyles: true,
-      useSharedStrings: true
-    });
+    const workbook = new ExcelJS.Workbook();
 
     const data = await getReportData(
       Number(projectId), 
@@ -363,7 +354,6 @@ async function downloadReportHandler(req, res, next) {
     };
 
     styleHeaderRow(spSheet);
-    spSheet.getRow(1).commit();
     
     data.switchPoints.forEach((sp, idx) => {
       spSheet.addRow({
@@ -371,9 +361,8 @@ async function downloadReportHandler(req, res, next) {
         sl_no: idx + 1,
         meter_exists: sp.meter_exists ? 'Yes' : 'No',
         created_at: new Date(sp.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-      }).commit();
+      });
     });
-    spSheet.commit();
     
     // Poles Sheet
     const pSheet = workbook.addWorksheet('Poles');
@@ -415,18 +404,21 @@ async function downloadReportHandler(req, res, next) {
     ];
 
     styleHeaderRow(pSheet);
-    pSheet.getRow(1).commit();
     
     data.poles.forEach((p, idx) => {
       pSheet.addRow({
         ...p,
         sl_no: idx + 1,
         created_at: new Date(p.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-      }).commit();
+      });
     });
-    pSheet.commit();
     
-    await workbook.commit();
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=report_${projectId}_${district || 'all'}_${tillDate || 'all'}.xlsx`);
+    res.setHeader('Content-Length', buffer.length);
+    res.end(buffer);
   } catch (error) { next(error); }
 }
 
