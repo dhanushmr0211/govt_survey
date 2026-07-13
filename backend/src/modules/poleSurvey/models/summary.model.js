@@ -1026,13 +1026,13 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
 
   let spRangeFilter = '';
   let pRangeFilter = '';
-  if (fromDate) {
+  if (fromDate && fromDate.trim() !== '') {
     params.push(fromDate);
     const fromIdx = params.length;
     spRangeFilter += `\n    AND (($${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date >= $${fromIdx}))`;
     pRangeFilter += `\n    AND (($${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date >= $${fromIdx}))`;
   }
-  if (toDate) {
+  if (toDate && toDate.trim() !== '') {
     params.push(toDate);
     const toIdx = params.length;
     spRangeFilter += `\n    AND (($${toIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $${toIdx}))`;
