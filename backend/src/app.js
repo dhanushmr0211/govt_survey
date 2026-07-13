@@ -40,6 +40,8 @@ function createApp() {
     'CREATE INDEX IF NOT EXISTS idx_project_users_user_id ON project_users (user_id);',
     'CREATE INDEX IF NOT EXISTS idx_poles_project_status_created ON poles (project_id, status, created_at DESC) WHERE is_deleted IS NOT TRUE;',
     'CREATE INDEX IF NOT EXISTS idx_poles_switch_point_id ON poles (switch_point_id) WHERE is_deleted IS NOT TRUE;',
+    'CREATE INDEX IF NOT EXISTS idx_poles_created_date_ist ON poles (((timezone(\'Asia/Kolkata\', timezone(\'UTC\', created_at)))::date));',
+    'CREATE INDEX IF NOT EXISTS idx_switch_points_created_date_ist ON switch_points (((timezone(\'Asia/Kolkata\', timezone(\'UTC\', created_at)))::date));',
     'CREATE INDEX IF NOT EXISTS idx_switch_points_project_status_created ON switch_points (project_id, status, created_at DESC) WHERE is_deleted IS NOT TRUE;',
     `CREATE INDEX IF NOT EXISTS idx_switch_points_duplicate_check ON switch_points (
       project_id, 

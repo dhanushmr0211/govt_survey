@@ -13,12 +13,12 @@ const { AsyncLocalStorage } = require('async_hooks');
 const dbStorage = new AsyncLocalStorage();
 
 const basePoolOptions = {
-  max: 50,
-  min: 5,
-  idleTimeoutMillis: 30_000,
+  max: env.nodeEnv === 'production' ? 15 : 50,
+  min: env.nodeEnv === 'production' ? 1 : 5,
+  idleTimeoutMillis: env.nodeEnv === 'production' ? 10_000 : 30_000,
   connectionTimeoutMillis: 30_000,
-  statement_timeout: 30_000,
-  allowExitOnIdle: false,
+  statement_timeout: 60_000, // Increase statement timeout to 60s for large reports
+  allowExitOnIdle: env.nodeEnv === 'production',
 };
 
 // 1. Default (I-DECK / govt_survey) Pool
