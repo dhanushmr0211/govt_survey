@@ -16,6 +16,9 @@ const {
 const { canAccessProject } = require('../../../middleware/projectAccess');
 const { ROLES } = require('../../../constants/roles');
 const ExcelJS = require('exceljs');
+const os = require('os');
+const fs = require('fs');
+const path = require('path');
 const { getLocalDateString } = require('../../../utils/date');
 
 async function getDistrictSummaryHandler(req, res, next) {
@@ -304,7 +307,12 @@ async function downloadReportHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to download reports' });
     }
 
-    const workbook = new ExcelJS.Workbook();
+    const tmpFile = path.join(os.tmpdir(), `report_tgpl_${projectId}_${Date.now()}.xlsx`);
+    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+      filename: tmpFile,
+      useStyles: true,
+      useSharedStrings: true
+    });
 
     const data = await getReportData(
       Number(projectId), 
@@ -365,6 +373,7 @@ async function downloadReportHandler(req, res, next) {
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } };
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
     });
+    headerRow.commit();
     
     data.poles.forEach((p, idx) => {
       const latLong = p.latitude && p.longitude ? `${p.latitude}, ${p.longitude}` : (p.latitude || p.longitude || '');
@@ -374,16 +383,25 @@ async function downloadReportHandler(req, res, next) {
         ward_number: p.ward_number || p.ulb_name || '',
         latitude_longitude: latLong,
         created_at: new Date(p.created_at).toLocaleString()
-      });
+      }).commit();
     });
+    pSheet.commit();
     
-    const buffer = await workbook.xlsx.writeBuffer();
-    
+    await workbook.commit();
+
+    // Send the completed file with Content-Length so Excel treats it as valid
+    const stat = fs.statSync(tmpFile);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=report_tgpl_${projectId}_${tillDate || 'all'}.xlsx`);
-    res.setHeader('Content-Length', buffer.length);
-    res.end(buffer);
-  } catch (error) { next(error); }
+    res.setHeader('Content-Length', stat.size);
+    
+    const readStream = fs.createReadStream(tmpFile);
+    readStream.pipe(res);
+    readStream.on('end', () => fs.unlink(tmpFile, () => {}));
+    readStream.on('error', (err) => { fs.unlink(tmpFile, () => {}); next(err); });
+  } catch (error) {
+    next(error);
+  }
 }
 
 async function getDeletedSubmissionsHandler(req, res, next) {

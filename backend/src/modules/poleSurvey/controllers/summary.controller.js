@@ -2,6 +2,9 @@ const { getDistrictSummary, getWardSummary, getWardDetails, getPendingSubmission
 const { canAccessProject } = require('../../../middleware/projectAccess');
 const { ROLES } = require('../../../constants/roles');
 const ExcelJS = require('exceljs');
+const os = require('os');
+const fs = require('fs');
+const path = require('path');
 const { getLocalDateString } = require('../../../utils/date');
 
 async function getDistrictSummaryHandler(req, res, next) {
@@ -293,7 +296,12 @@ async function downloadReportHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to download reports' });
     }
 
-    const workbook = new ExcelJS.Workbook();
+    const tmpFile = path.join(os.tmpdir(), `report_${projectId}_${Date.now()}.xlsx`);
+    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+      filename: tmpFile,
+      useStyles: true,
+      useSharedStrings: true
+    });
 
     const data = await getReportData(
       Number(projectId), 
@@ -333,18 +341,18 @@ async function downloadReportHandler(req, res, next) {
     // Header styling helper
     const styleHeaderRow = (sheet) => {
       const headerRow = sheet.getRow(1);
-      headerRow.height = 24; // Row padding/height
+      headerRow.height = 24;
       headerRow.eachCell((cell) => {
         cell.font = {
           name: 'Calibri',
           size: 11,
           bold: true,
-          color: { argb: 'FFFFFFFF' } // White text
+          color: { argb: 'FFFFFFFF' }
         };
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FF002060' } // Premium Navy Blue / Dark Blue
+          fgColor: { argb: 'FF002060' }
         };
         cell.alignment = {
           vertical: 'middle',
@@ -354,6 +362,7 @@ async function downloadReportHandler(req, res, next) {
     };
 
     styleHeaderRow(spSheet);
+    spSheet.getRow(1).commit();
     
     data.switchPoints.forEach((sp, idx) => {
       spSheet.addRow({
@@ -361,8 +370,9 @@ async function downloadReportHandler(req, res, next) {
         sl_no: idx + 1,
         meter_exists: sp.meter_exists ? 'Yes' : 'No',
         created_at: new Date(sp.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-      });
+      }).commit();
     });
+    spSheet.commit();
     
     // Poles Sheet
     const pSheet = workbook.addWorksheet('Poles');
@@ -404,22 +414,32 @@ async function downloadReportHandler(req, res, next) {
     ];
 
     styleHeaderRow(pSheet);
+    pSheet.getRow(1).commit();
     
     data.poles.forEach((p, idx) => {
       pSheet.addRow({
         ...p,
         sl_no: idx + 1,
         created_at: new Date(p.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-      });
+      }).commit();
     });
+    pSheet.commit();
     
-    const buffer = await workbook.xlsx.writeBuffer();
-    
+    await workbook.commit();
+
+    // Send the completed file with Content-Length so Excel treats it as valid
+    const stat = fs.statSync(tmpFile);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=report_${projectId}_${district || 'all'}_${tillDate || 'all'}.xlsx`);
-    res.setHeader('Content-Length', buffer.length);
-    res.end(buffer);
-  } catch (error) { next(error); }
+    res.setHeader('Content-Length', stat.size);
+    
+    const readStream = fs.createReadStream(tmpFile);
+    readStream.pipe(res);
+    readStream.on('end', () => fs.unlink(tmpFile, () => {}));
+    readStream.on('error', (err) => { fs.unlink(tmpFile, () => {}); next(err); });
+  } catch (error) {
+    next(error);
+  }
 }
 
 async function getDeletedSubmissionsHandler(req, res, next) {
