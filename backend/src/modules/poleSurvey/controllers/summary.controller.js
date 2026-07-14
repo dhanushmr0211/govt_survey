@@ -309,8 +309,8 @@ async function downloadReportHandler(req, res, next) {
       district ? Number(district) : null,
       tillDate,
       ulbId ? Number(ulbId) : null,
-      permissions?.district_scope,
-      permissions?.ulb_scope,
+      (permissions && permissions.district_scope) || null,
+      (permissions && permissions.ulb_scope) || null,
       fromDate || null,
       toDate || null
     );
