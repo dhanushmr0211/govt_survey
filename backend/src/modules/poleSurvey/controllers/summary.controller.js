@@ -332,8 +332,7 @@ async function downloadReportHandler(req, res, next) {
       { header: 'Meter Condition', key: 'meter_condition', width: 15 },
       { header: 'Image 1 URL', key: 'image_url_1', width: 40 },
       { header: 'Image 2 URL', key: 'image_url_2', width: 40 },
-      { header: 'Latitude', key: 'latitude', width: 12 },
-      { header: 'Longitude', key: 'longitude', width: 12 },
+      { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 },
       { header: 'Status', key: 'status', width: 12 },
       { header: 'Created By', key: 'user_name', width: 15 },
       { header: 'Created At', key: 'created_at', width: 20 }
@@ -379,10 +378,13 @@ async function downloadReportHandler(req, res, next) {
         }
       });
 
+      const latLong = sp.latitude && sp.longitude ? `${sp.latitude}, ${sp.longitude}` : (sp.latitude || sp.longitude || '');
+
       const row = spSheet.addRow({
         ...formattedSp,
         sl_no: idx + 1,
         meter_exists: sp.meter_exists ? 'Yes' : 'No',
+        latitude_longitude: latLong,
         created_at: new Date(sp.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
       });
 
@@ -429,8 +431,7 @@ async function downloadReportHandler(req, res, next) {
       { header: 'Image 1 URL', key: 'image_url_1', width: 40 },
       { header: 'Image 2 URL', key: 'image_url_2', width: 40 },
       { header: 'Image 3 URL', key: 'image_url_3', width: 40 },
-      { header: 'Latitude', key: 'latitude', width: 12 },
-      { header: 'Longitude', key: 'longitude', width: 12 },
+      { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 },
       { header: 'Status', key: 'status', width: 12 },
       { header: 'Created By', key: 'user_name', width: 15 },
       { header: 'Created At', key: 'created_at', width: 20 }
@@ -453,9 +454,12 @@ async function downloadReportHandler(req, res, next) {
         }
       });
 
+      const latLong = p.latitude && p.longitude ? `${p.latitude}, ${p.longitude}` : (p.latitude || p.longitude || '');
+
       const row = pSheet.addRow({
         ...formattedPole,
         sl_no: idx + 1,
+        latitude_longitude: latLong,
         created_at: new Date(p.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
       });
 
