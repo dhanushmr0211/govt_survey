@@ -6,6 +6,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const { getLocalDateString } = require('../../../utils/date');
+const { NUMERIC_COLS, formatExcelValue } = require('../../../utils/excelHelper');
 
 async function getDistrictSummaryHandler(req, res, next) {
   try {
@@ -365,12 +366,30 @@ async function downloadReportHandler(req, res, next) {
     spSheet.getRow(1).commit();
     
     data.switchPoints.forEach((sp, idx) => {
-      spSheet.addRow({
-        ...sp,
+      const formattedSp = {};
+      Object.keys(sp).forEach(key => {
+        if (NUMERIC_COLS.includes(key)) {
+          formattedSp[key] = formatExcelValue(sp[key]);
+        } else {
+          formattedSp[key] = sp[key];
+        }
+      });
+
+      const row = spSheet.addRow({
+        ...formattedSp,
         sl_no: idx + 1,
         meter_exists: sp.meter_exists ? 'Yes' : 'No',
         created_at: new Date(sp.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-      }).commit();
+      });
+
+      NUMERIC_COLS.forEach(key => {
+        const cell = row.getCell(key);
+        if (typeof cell.value === 'number') {
+          cell.numFmt = Number.isInteger(cell.value) ? '0' : '0.##';
+        }
+      });
+
+      row.commit();
     });
     spSheet.commit();
     
@@ -417,11 +436,29 @@ async function downloadReportHandler(req, res, next) {
     pSheet.getRow(1).commit();
     
     data.poles.forEach((p, idx) => {
-      pSheet.addRow({
-        ...p,
+      const formattedPole = {};
+      Object.keys(p).forEach(key => {
+        if (NUMERIC_COLS.includes(key)) {
+          formattedPole[key] = formatExcelValue(p[key]);
+        } else {
+          formattedPole[key] = p[key];
+        }
+      });
+
+      const row = pSheet.addRow({
+        ...formattedPole,
         sl_no: idx + 1,
         created_at: new Date(p.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
-      }).commit();
+      });
+
+      NUMERIC_COLS.forEach(key => {
+        const cell = row.getCell(key);
+        if (typeof cell.value === 'number') {
+          cell.numFmt = Number.isInteger(cell.value) ? '0' : '0.##';
+        }
+      });
+
+      row.commit();
     });
     pSheet.commit();
     
