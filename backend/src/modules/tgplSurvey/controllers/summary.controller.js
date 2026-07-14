@@ -38,15 +38,15 @@ async function getDistrictSummaryHandler(req, res, next) {
     const todayStr = getLocalDateString();
     const isRequestForToday = date === todayStr;
 
-    if (!isMasterAdmin && !permissions.section_a) {
-      if (permissions.section_b && isRequestForToday) {
+    if (!isMasterAdmin && !permissions?.section_a) {
+      if (permissions?.section_b && isRequestForToday) {
         // OK
       } else {
         return res.status(403).json({ message: 'Forbidden: You do not have permission to access the Summary section' });
       }
     }
 
-    const summary = await getDistrictSummary(Number(projectId), date, mode, permissions.district_scope, permissions.ulb_scope, fromDate || null, toDate || null);
+    const summary = await getDistrictSummary(Number(projectId), date, mode, permissions?.district_scope, permissions?.ulb_scope, fromDate || null, toDate || null);
     res.json({ summary });
   } catch (error) { next(error); }
 }
@@ -59,8 +59,8 @@ async function getWardSummaryHandler(req, res, next) {
     const user = req.user;
     const permissions = req.projectSections || {};
     const isMasterAdmin = user.role === 'MASTER_ADMIN';
-    const hasSectionA = permissions.section_a;
-    const hasSectionB = permissions.section_b;
+    const hasSectionA = permissions?.section_a;
+    const hasSectionB = permissions?.section_b;
     
     const todayStr = getLocalDateString();
     const isRequestForToday = date === todayStr;
@@ -73,8 +73,8 @@ async function getWardSummaryHandler(req, res, next) {
       }
     }
 
-    if (!isMasterAdmin && permissions.ulb_scope && Array.isArray(permissions.ulb_scope) && permissions.ulb_scope.length > 0) {
-      if (!permissions.ulb_scope.includes(Number(ulbId))) {
+    if (!isMasterAdmin && permissions?.ulb_scope && Array.isArray(permissions?.ulb_scope) && permissions?.ulb_scope.length > 0) {
+      if (!permissions?.ulb_scope.includes(Number(ulbId))) {
         return res.status(403).json({ message: 'Forbidden: You do not have permission to access data for this ULB' });
       }
     }
@@ -92,12 +92,12 @@ async function getWardDetailsHandler(req, res, next) {
     const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
     const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !permissions.section_a) {
+    if (!isMasterAdmin && !permissions?.section_a) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access ward details' });
     }
 
-    if (!isMasterAdmin && permissions.ulb_scope && Array.isArray(permissions.ulb_scope) && permissions.ulb_scope.length > 0) {
-      if (!permissions.ulb_scope.includes(Number(ulbId))) {
+    if (!isMasterAdmin && permissions?.ulb_scope && Array.isArray(permissions?.ulb_scope) && permissions?.ulb_scope.length > 0) {
+      if (!permissions?.ulb_scope.includes(Number(ulbId))) {
         return res.status(403).json({ message: 'Forbidden: You do not have permission to access data for this ULB' });
       }
     }
@@ -122,7 +122,7 @@ async function getPendingSubmissionsHandler(req, res, next) {
     const isMobileUser = projectRole === ROLES.MOBILE_USER;
     const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !permissions.section_c && !permissions.section_e && !permissions.section_f && !isMobileUser) {
+    if (!isMasterAdmin && !permissions?.section_c && !permissions?.section_e && !permissions?.section_f && !isMobileUser) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access the pending queue' });
     }
 
@@ -137,8 +137,8 @@ async function getPendingSubmissionsHandler(req, res, next) {
       Number(page), 
       Number(limit), 
       filterUserId,
-      permissions.district_scope,
-      permissions.ulb_scope,
+      permissions?.district_scope,
+      permissions?.ulb_scope,
       fromDate || null,
       toDate || null,
       dateField || 'created_at',
@@ -163,7 +163,7 @@ async function getTodaySubmissionsHandler(req, res, next) {
     const isMobileUser = projectRole === ROLES.MOBILE_USER;
     const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !permissions.section_b && !permissions.section_c && !isMobileUser) {
+    if (!isMasterAdmin && !permissions?.section_b && !permissions?.section_c && !isMobileUser) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access today\'s submissions' });
     }
 
@@ -175,8 +175,8 @@ async function getTodaySubmissionsHandler(req, res, next) {
       Number(page), 
       Number(limit),
       filterUserId,
-      permissions.district_scope,
-      permissions.ulb_scope
+      permissions?.district_scope,
+      permissions?.ulb_scope
     );
     res.json({ queue: rows, total });
   } catch (error) { next(error); }
@@ -190,7 +190,7 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
     const isMobileUser = projectRole === ROLES.MOBILE_USER;
     const permissions = req.projectSections || {};
 
-    if (!isMasterAdmin && !permissions.section_c && !permissions.section_e && !permissions.section_f && !isMobileUser) {
+    if (!isMasterAdmin && !permissions?.section_c && !permissions?.section_e && !permissions?.section_f && !isMobileUser) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to access confirmed submissions' });
     }
 
@@ -198,7 +198,7 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
     const filterUserId = isMobileUser ? Number(req.user.sub) : (userId ? Number(userId) : null);
 
     const isEmployee = projectRole === ROLES.EMPLOYEE;
-    const filterConfirmedBy = (isEmployee && !permissions.section_e) ? Number(req.user.sub) : (confirmedBy ? Number(confirmedBy) : null);
+    const filterConfirmedBy = (isEmployee && !permissions?.section_e) ? Number(req.user.sub) : (confirmedBy ? Number(confirmedBy) : null);
 
     const { rows, total } = await getConfirmedSubmissions(
       Number(projectId), 
@@ -206,8 +206,8 @@ async function getConfirmedSubmissionsHandler(req, res, next) {
       Number(limit), 
       filterUserId, 
       filterConfirmedBy,
-      permissions.district_scope,
-      permissions.ulb_scope,
+      permissions?.district_scope,
+      permissions?.ulb_scope,
       fromDate || null,
       toDate || null,
       dateField || 'created_at',
@@ -241,7 +241,7 @@ async function getEmployeeTrackingHandler(req, res, next) {
     const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
     const permissions = req.projectSections || {};
     
-    if (!isMasterAdmin && !permissions.section_e) {
+    if (!isMasterAdmin && !permissions?.section_e) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to employee tracking' });
     }
 
@@ -262,7 +262,7 @@ async function getAdminTrackingHandler(req, res, next) {
     const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
     const permissions = req.projectSections || {};
     
-    if (!isMasterAdmin && !permissions.section_k) {
+    if (!isMasterAdmin && !permissions?.section_k) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to admin tracking' });
     }
 
@@ -283,7 +283,7 @@ async function getMobileUserTrackingHandler(req, res, next) {
     const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
     const permissions = req.projectSections || {};
     
-    if (!isMasterAdmin && !permissions.section_f) {
+    if (!isMasterAdmin && !permissions?.section_f) {
       return res.status(403).json({ message: 'Forbidden: You do not have access to mobile user tracking' });
     }
 
@@ -304,7 +304,7 @@ async function downloadReportHandler(req, res, next) {
     
     const permissions = req.projectSections || {};
     const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
-    if (!isMasterAdmin && !permissions.section_g) {
+    if (!isMasterAdmin && !permissions?.section_g) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to download reports' });
     }
 
@@ -321,7 +321,7 @@ async function downloadReportHandler(req, res, next) {
       tillDate,
       ulbId ? Number(ulbId) : null,
       null,
-      permissions.ulb_scope,
+      permissions?.ulb_scope,
       fromDate || null,
       toDate || null
     );
@@ -451,8 +451,8 @@ async function getDeletedSubmissionsHandler(req, res, next) {
       Number(projectId),
       Number(page),
       Number(limit),
-      permissions.district_scope,
-      permissions.ulb_scope,
+      permissions?.district_scope,
+      permissions?.ulb_scope,
       fromDate || null,
       toDate || null,
       type || null,
@@ -473,7 +473,7 @@ async function getMyConfirmedStatsHandler(req, res, next) {
 
     if (!isMasterAdmin) {
       const isAllowedRole = ['ADMIN', 'EMPLOYEE', 'CLIENT'].includes(userProjectRole);
-      const hasSectionC = permissions.section_c;
+      const hasSectionC = permissions?.section_c;
       if (!isAllowedRole || !hasSectionC) {
         return res.status(403).json({ message: 'Forbidden: Insufficient permissions to view confirmed stats' });
       }
