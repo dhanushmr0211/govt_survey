@@ -365,10 +365,14 @@ async function downloadReportHandler(req, res, next) {
     styleHeaderRow(spSheet);
     spSheet.getRow(1).commit();
     
+    const activeSpCols = NUMERIC_COLS.filter(key => 
+      spSheet.columns.some(col => col.key === key)
+    );
+
     data.switchPoints.forEach((sp, idx) => {
       const formattedSp = {};
       Object.keys(sp).forEach(key => {
-        if (NUMERIC_COLS.includes(key)) {
+        if (activeSpCols.includes(key)) {
           formattedSp[key] = formatExcelValue(sp[key]);
         } else {
           formattedSp[key] = sp[key];
@@ -382,7 +386,7 @@ async function downloadReportHandler(req, res, next) {
         created_at: new Date(sp.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
       });
 
-      NUMERIC_COLS.forEach(key => {
+      activeSpCols.forEach(key => {
         const cell = row.getCell(key);
         if (typeof cell.value === 'number') {
           cell.numFmt = Number.isInteger(cell.value) ? '0' : '0.##';
@@ -435,10 +439,14 @@ async function downloadReportHandler(req, res, next) {
     styleHeaderRow(pSheet);
     pSheet.getRow(1).commit();
     
+    const activePoleCols = NUMERIC_COLS.filter(key => 
+      pSheet.columns.some(col => col.key === key)
+    );
+
     data.poles.forEach((p, idx) => {
       const formattedPole = {};
       Object.keys(p).forEach(key => {
-        if (NUMERIC_COLS.includes(key)) {
+        if (activePoleCols.includes(key)) {
           formattedPole[key] = formatExcelValue(p[key]);
         } else {
           formattedPole[key] = p[key];
@@ -451,7 +459,7 @@ async function downloadReportHandler(req, res, next) {
         created_at: new Date(p.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
       });
 
-      NUMERIC_COLS.forEach(key => {
+      activePoleCols.forEach(key => {
         const cell = row.getCell(key);
         if (typeof cell.value === 'number') {
           cell.numFmt = Number.isInteger(cell.value) ? '0' : '0.##';

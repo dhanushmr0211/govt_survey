@@ -379,12 +379,16 @@ async function downloadReportHandler(req, res, next) {
     });
     headerRow.commit();
     
+    const activePoleCols = NUMERIC_COLS.filter(key => 
+      pSheet.columns.some(col => col.key === key)
+    );
+
     data.poles.forEach((p, idx) => {
       const latLong = p.latitude && p.longitude ? `${p.latitude}, ${p.longitude}` : (p.latitude || p.longitude || '');
       
       const formattedPole = {};
       Object.keys(p).forEach(key => {
-        if (NUMERIC_COLS.includes(key)) {
+        if (activePoleCols.includes(key)) {
           formattedPole[key] = formatExcelValue(p[key]);
         } else {
           formattedPole[key] = p[key];
@@ -399,7 +403,7 @@ async function downloadReportHandler(req, res, next) {
         created_at: new Date(p.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
       });
 
-      NUMERIC_COLS.forEach(key => {
+      activePoleCols.forEach(key => {
         const cell = row.getCell(key);
         if (typeof cell.value === 'number') {
           cell.numFmt = Number.isInteger(cell.value) ? '0' : '0.##';
