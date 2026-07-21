@@ -914,7 +914,7 @@ async function getMobileUserTracking(projectId) {
   return result;
 }
 
-async function getReportData(projectId, districtId, tillDate, ulbId, _districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
+async function getReportData(projectId, districtId, tillDate, ulbId, _districtScope = null, ulbScope = null, fromDate = null, toDate = null, confirmedBy = null) {
   const params = [projectId, tillDate || null, ulbId || null];
   let pIdx = 4;
   let scopeFilter = '';
@@ -937,6 +937,13 @@ async function getReportData(projectId, districtId, tillDate, ulbId, _districtSc
     pIdx++;
   }
 
+  let pConfirmedFilter = '';
+  if (confirmedBy) {
+    params.push(Number(confirmedBy));
+    const confIdx = params.length;
+    pConfirmedFilter = ` AND p.confirmed_by = $${confIdx}`;
+  }
+
   const pSql = `
     SELECT 
       p.*,
@@ -952,6 +959,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, _districtSc
     AND ($3::int IS NULL OR p.ward_id = $3)
     ${pRangeFilter}
     ${scopeFilter}
+    ${pConfirmedFilter}
     ORDER BY p.created_at DESC
   `;
   

@@ -284,7 +284,7 @@ async function getMobileUserTrackingHandler(req, res, next) {
 async function downloadReportHandler(req, res, next) {
   try {
     const { projectId } = req.params;
-    const { district, tillDate, ulbId, fromDate, toDate } = req.query;
+    const { district, tillDate, ulbId, fromDate, toDate, confirmedBy } = req.query;
     
     const allowedProject = await canAccessProject(Number(req.user.sub), req.user.role, Number(projectId));
     if (!allowedProject) {
@@ -293,7 +293,7 @@ async function downloadReportHandler(req, res, next) {
     
     const permissions = req.projectSections || {};
     const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
-    if (!isMasterAdmin && !permissions?.section_g) {
+    if (!isMasterAdmin && !permissions?.section_g && !permissions?.section_e && !permissions?.section_k) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to download reports' });
     }
 
@@ -312,7 +312,8 @@ async function downloadReportHandler(req, res, next) {
       (permissions && permissions.district_scope) || null,
       (permissions && permissions.ulb_scope) || null,
       fromDate || null,
-      toDate || null
+      toDate || null,
+      confirmedBy ? Number(confirmedBy) : null
     );
     console.log(`[REPORT] Switch Points: ${data.switchPoints.length}, Poles: ${data.poles.length}`);
     
@@ -335,7 +336,8 @@ async function downloadReportHandler(req, res, next) {
       { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 },
       { header: 'Status', key: 'status', width: 12 },
       { header: 'Created By', key: 'user_name', width: 15 },
-      { header: 'Created At', key: 'created_at', width: 20 }
+      { header: 'Created At', key: 'created_at', width: 20 },
+      { header: 'Confirmed By', key: 'confirmed_by_name', width: 20 }
     ];
     
     // Header styling helper
@@ -434,7 +436,8 @@ async function downloadReportHandler(req, res, next) {
       { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 },
       { header: 'Status', key: 'status', width: 12 },
       { header: 'Created By', key: 'user_name', width: 15 },
-      { header: 'Created At', key: 'created_at', width: 20 }
+      { header: 'Created At', key: 'created_at', width: 20 },
+      { header: 'Confirmed By', key: 'confirmed_by_name', width: 20 }
     ];
 
     styleHeaderRow(pSheet);

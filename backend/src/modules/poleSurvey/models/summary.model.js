@@ -1019,7 +1019,7 @@ async function getMobileUserTracking(projectId) {
   return result.rows;
 }
 
-async function getReportData(projectId, districtId, tillDate, ulbId, districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
+async function getReportData(projectId, districtId, tillDate, ulbId, districtScope = null, ulbScope = null, fromDate = null, toDate = null, confirmedBy = null) {
   const params = [projectId, tillDate || null, districtId || null, ulbId || null];
   let pIdx = 5;
   let scopeFilter = '';
@@ -1050,14 +1050,25 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     pIdx++;
   }
 
+  let spConfirmedFilter = '';
+  let pConfirmedFilter = '';
+  if (confirmedBy) {
+    params.push(Number(confirmedBy));
+    const confIdx = params.length;
+    spConfirmedFilter = ` AND sp.confirmed_by = $${confIdx}`;
+    pConfirmedFilter = ` AND p.confirmed_by = $${confIdx}`;
+  }
+
   const spSql = `
     SELECT 
       sp.*,
       u.name as user_name,
+      u_conf.name as confirmed_by_name,
       ulb.name as ulb_name,
       d.name as district_name
     FROM switch_points sp
     JOIN users u ON sp.created_by = u.id
+    LEFT JOIN users u_conf ON sp.confirmed_by = u_conf.id
     JOIN ulbs ulb ON sp.ulb_id = ulb.id
     JOIN districts d ON ulb.district_id = d.id
     WHERE sp.project_id = $1 AND sp.status = 'CONFIRMED' AND sp.is_deleted IS NOT TRUE
@@ -1066,6 +1077,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     AND ($4::int IS NULL OR sp.ulb_id = $4)
     ${spRangeFilter}
     ${scopeFilter}
+    ${spConfirmedFilter}
     ORDER BY sp.created_at DESC
   `;
   
@@ -1075,12 +1087,14 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     SELECT 
       p.*,
       u.name as user_name,
+      u_conf.name as confirmed_by_name,
       ulb.name as ulb_name,
       d.name as district_name,
       sp.switch_point_number
     FROM poles p
     JOIN switch_points sp ON p.switch_point_id = sp.id
     JOIN users u ON p.created_by = u.id
+    LEFT JOIN users u_conf ON p.confirmed_by = u_conf.id
     JOIN ulbs ulb ON sp.ulb_id = ulb.id
     JOIN districts d ON ulb.district_id = d.id
     WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
@@ -1089,6 +1103,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     AND ($4::int IS NULL OR sp.ulb_id = $4)
     ${pRangeFilter}
     ${scopeFilter}
+    ${pConfirmedFilter}
     ORDER BY p.created_at DESC
   `;
   

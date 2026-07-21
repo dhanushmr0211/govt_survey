@@ -17,6 +17,42 @@ export function AdminTrackingView({ projectId }) {
   const [toDate, setToDate] = useState(today);
   const isTgpl = String(projectId) === '3';
 
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadEmpReport = async (empId, empName) => {
+    setDownloading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const surveyPath = isTgpl ? 'tgpl-survey' : 'pole-survey';
+      let url = `${API_BASE_URL}/projects/${projectId}/${surveyPath}/report/download?confirmedBy=${empId}`;
+      if (fromDate) url += `&fromDate=${encodeURIComponent(fromDate)}`;
+      if (toDate) url += `&toDate=${encodeURIComponent(toDate)}`;
+
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      const safeName = (empName || 'employee').replace(/\s+/g, '_');
+      link.download = `report_${safeName}_${fromDate || 'from'}_${toDate || 'to'}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      console.error('Failed to download report:', err);
+      alert(err.response?.data?.message || 'Failed to download report');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (isLoading) return <div className="p-8 text-center text-slate-500">Loading tracking data...</div>;
 
   if (selectedEmp) {
@@ -27,7 +63,7 @@ export function AdminTrackingView({ projectId }) {
           <button onClick={() => setSelectedEmp(null)} className="text-sm text-primary hover:text-primary/80 font-bold">← Back to List</button>
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
+        <div className="mb-4 flex flex-wrap gap-3 items-end rounded-lg border border-slate-100 bg-slate-50 p-3">
           <div className="flex flex-col">
             <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">From</label>
             <input
@@ -46,6 +82,16 @@ export function AdminTrackingView({ projectId }) {
               className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
             />
           </div>
+          <button
+            onClick={() => handleDownloadEmpReport(selectedEmp.id, selectedEmp.name)}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white px-4 py-2 text-sm font-semibold shadow-sm transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {downloading ? 'Downloading...' : 'Download Report'}
+          </button>
         </div>
 
         <UserSubmissionsList projectId={projectId} confirmedBy={selectedEmp.id} status="CONFIRMED" fromDate={fromDate} toDate={toDate} dateField="confirmed_at" />
@@ -129,6 +175,42 @@ export function EmployeeTrackingView({ projectId }) {
   const [toDate, setToDate] = useState(today);
   const isTgpl = String(projectId) === '3';
 
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadEmpReport = async (empId, empName) => {
+    setDownloading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const surveyPath = isTgpl ? 'tgpl-survey' : 'pole-survey';
+      let url = `${API_BASE_URL}/projects/${projectId}/${surveyPath}/report/download?confirmedBy=${empId}`;
+      if (fromDate) url += `&fromDate=${encodeURIComponent(fromDate)}`;
+      if (toDate) url += `&toDate=${encodeURIComponent(toDate)}`;
+
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([res.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      const safeName = (empName || 'employee').replace(/\s+/g, '_');
+      link.download = `report_${safeName}_${fromDate || 'from'}_${toDate || 'to'}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      console.error('Failed to download report:', err);
+      alert(err.response?.data?.message || 'Failed to download report');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   if (isLoading) return <div className="p-8 text-center text-slate-500">Loading tracking data...</div>;
 
   if (selectedEmp) {
@@ -139,7 +221,7 @@ export function EmployeeTrackingView({ projectId }) {
           <button onClick={() => setSelectedEmp(null)} className="text-sm text-primary hover:text-primary/80 font-bold">← Back to List</button>
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
+        <div className="mb-4 flex flex-wrap gap-3 items-end rounded-lg border border-slate-100 bg-slate-50 p-3">
           <div className="flex flex-col">
             <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">From</label>
             <input
@@ -158,6 +240,16 @@ export function EmployeeTrackingView({ projectId }) {
               className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm"
             />
           </div>
+          <button
+            onClick={() => handleDownloadEmpReport(selectedEmp.id, selectedEmp.name)}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 rounded-md bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white px-4 py-2 text-sm font-semibold shadow-sm transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {downloading ? 'Downloading...' : 'Download Report'}
+          </button>
         </div>
 
         <UserSubmissionsList projectId={projectId} confirmedBy={selectedEmp.id} status="CONFIRMED" fromDate={fromDate} toDate={toDate} dateField="confirmed_at" />

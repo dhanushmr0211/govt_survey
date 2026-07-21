@@ -295,7 +295,7 @@ async function getMobileUserTrackingHandler(req, res, next) {
 async function downloadReportHandler(req, res, next) {
   try {
     const { projectId } = req.params;
-    const { tillDate, ulbId, fromDate, toDate } = req.query;
+    const { tillDate, ulbId, fromDate, toDate, confirmedBy } = req.query;
     
     const allowedProject = await canAccessProject(Number(req.user.sub), req.user.role, Number(projectId));
     if (!allowedProject) {
@@ -304,7 +304,7 @@ async function downloadReportHandler(req, res, next) {
     
     const permissions = req.projectSections || {};
     const isMasterAdmin = req.user.role === ROLES.MASTER_ADMIN;
-    if (!isMasterAdmin && !permissions?.section_g) {
+    if (!isMasterAdmin && !permissions?.section_g && !permissions?.section_e && !permissions?.section_k) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to download reports' });
     }
 
@@ -323,7 +323,8 @@ async function downloadReportHandler(req, res, next) {
       null,
       permissions?.ulb_scope,
       fromDate || null,
-      toDate || null
+      toDate || null,
+      confirmedBy ? Number(confirmedBy) : null
     );
     console.log(`[TGPL REPORT] Poles: ${data.poles.length}`);
     
