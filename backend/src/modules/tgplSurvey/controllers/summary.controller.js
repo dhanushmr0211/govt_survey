@@ -308,12 +308,18 @@ async function downloadReportHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to download reports' });
     }
 
-    const tmpFile = path.join(os.tmpdir(), `report_tgpl_${projectId}_${Date.now()}.xlsx`);
-    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
-      filename: tmpFile,
-      useStyles: true,
-      useSharedStrings: true
-    });
+    // Scope enforcement: prevent scoped users from downloading data outside their allowed ULBs
+    const ulbScope = (permissions && permissions.ulb_scope) || null;
+
+    if (!isMasterAdmin && ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
+      if (ulbId) {
+        const requestedUlb = Number(ulbId);
+        const allowed = ulbScope.map(Number);
+        if (!allowed.includes(requestedUlb)) {
+          return res.status(403).json({ message: 'Forbidden: You do not have access to the selected ULB' });
+        }
+      }
+    }
 
     const data = await getReportData(
       Number(projectId), 
@@ -321,12 +327,19 @@ async function downloadReportHandler(req, res, next) {
       tillDate,
       ulbId ? Number(ulbId) : null,
       null,
-      permissions?.ulb_scope,
+      ulbScope,
       fromDate || null,
       toDate || null,
       confirmedBy ? Number(confirmedBy) : null
     );
     console.log(`[TGPL REPORT] Poles: ${data.poles.length}`);
+
+    const tmpFile = path.join(os.tmpdir(), `report_tgpl_${projectId}_${Date.now()}.xlsx`);
+    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+      filename: tmpFile,
+      useStyles: true,
+      useSharedStrings: true
+    });
     
     // Poles Sheet (TGPL only has Poles, no Switch Points)
     const pSheet = workbook.addWorksheet('Poles');

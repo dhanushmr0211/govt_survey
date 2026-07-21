@@ -297,25 +297,49 @@ async function downloadReportHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to download reports' });
     }
 
-    const tmpFile = path.join(os.tmpdir(), `report_${projectId}_${Date.now()}.xlsx`);
-    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
-      filename: tmpFile,
-      useStyles: true,
-      useSharedStrings: true
-    });
+    // Scope enforcement: prevent scoped users from downloading data outside their allowed districts/ULBs
+    const districtScope = (permissions && permissions.district_scope) || null;
+    const ulbScope = (permissions && permissions.ulb_scope) || null;
+
+    if (!isMasterAdmin && districtScope && Array.isArray(districtScope) && districtScope.length > 0) {
+      if (district) {
+        const requestedDistrict = Number(district);
+        const allowed = districtScope.map(Number);
+        if (!allowed.includes(requestedDistrict)) {
+          return res.status(403).json({ message: 'Forbidden: You do not have access to the selected district' });
+        }
+      }
+    }
+
+    if (!isMasterAdmin && ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
+      if (ulbId) {
+        const requestedUlb = Number(ulbId);
+        const allowed = ulbScope.map(Number);
+        if (!allowed.includes(requestedUlb)) {
+          return res.status(403).json({ message: 'Forbidden: You do not have access to the selected ULB' });
+        }
+      }
+    }
 
     const data = await getReportData(
       Number(projectId), 
       district ? Number(district) : null,
       tillDate,
       ulbId ? Number(ulbId) : null,
-      (permissions && permissions.district_scope) || null,
-      (permissions && permissions.ulb_scope) || null,
+      districtScope,
+      ulbScope,
       fromDate || null,
       toDate || null,
       confirmedBy ? Number(confirmedBy) : null
     );
     console.log(`[REPORT] Switch Points: ${data.switchPoints.length}, Poles: ${data.poles.length}`);
+
+    const tmpFile = path.join(os.tmpdir(), `report_${projectId}_${Date.now()}.xlsx`);
+    const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
+      filename: tmpFile,
+      useStyles: true,
+      useSharedStrings: true
+    });
     
     // Switch Points Sheet
     const spSheet = workbook.addWorksheet('Switch Points');
