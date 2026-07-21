@@ -1021,7 +1021,6 @@ async function getMobileUserTracking(projectId) {
 
 async function getReportData(projectId, districtId, tillDate, ulbId, districtScope = null, ulbScope = null, fromDate = null, toDate = null, confirmedBy = null) {
   const params = [projectId, tillDate || null, districtId || null, ulbId || null];
-  let pIdx = 5;
   let scopeFilter = '';
 
   let spRangeFilter = '';
@@ -1040,14 +1039,12 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
   }
 
   if (districtScope && Array.isArray(districtScope) && districtScope.length > 0) {
-    scopeFilter += ` AND d.id = ANY($${pIdx})`;
     params.push(districtScope);
-    pIdx++;
+    scopeFilter += ` AND d.id = ANY($${params.length})`;
   }
   if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
-    scopeFilter += ` AND sp.ulb_id = ANY($${pIdx})`;
     params.push(ulbScope);
-    pIdx++;
+    scopeFilter += ` AND sp.ulb_id = ANY($${params.length})`;
   }
 
   let spConfirmedFilter = '';
