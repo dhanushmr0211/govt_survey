@@ -429,39 +429,35 @@ async function downloadReportHandler(req, res, next) {
     const pSheet = workbook.addWorksheet('Poles');
     pSheet.columns = [
       { header: 'Sl#', key: 'sl_no', width: 10 },
-      { header: 'Number', key: 'pole_number', width: 15 },
-      { header: 'Switch Point', key: 'switch_point_number', width: 15 },
-      { header: 'District', key: 'district_name', width: 15 },
-      { header: 'ULB', key: 'ulb_name', width: 15 },
-      { header: 'Ward', key: 'ward_number', width: 10 },
+      { header: 'SubDiv', key: 'sub_div', width: 15 },
+      { header: 'Ward No#', key: 'ward_number', width: 12 },
+      { header: 'Switch Point#', key: 'switch_point_number', width: 18 },
       { header: 'Conductor Type', key: 'conductor_type', width: 15 },
-      { header: 'Type', key: 'pole_type', width: 15 },
-      { header: 'Height (m)', key: 'pole_height_mtrs', width: 12 },
-      { header: 'Condition', key: 'pole_condition', width: 15 },
-      { header: 'Distance (m)', key: 'pole_to_pole_distance_mtrs', width: 12 },
-      { header: 'Arm Type', key: 'arm_type', width: 15 },
-      { header: 'Arm Status', key: 'arm_status', width: 15 },
-      { header: 'Arm No', key: 'present_arm_no', width: 15 },
-      { header: 'Arm Length (m)', key: 'present_arm_length_mtrs', width: 15 },
-      { header: 'Lights Count', key: 'how_many_lights_in_pole', width: 15 },
-      { header: 'Mounting Height', key: 'light_mounting_height', width: 15 },
-      { header: 'Light 1 Type', key: 'light_type', width: 15 },
-      { header: 'Light 1 Capacity', key: 'light_capacity', width: 15 },
-      { header: 'Light 2 Type', key: 'light_type_2', width: 15 },
-      { header: 'Light 2 Capacity', key: 'light_capacity_2', width: 15 },
-      { header: 'Working Status', key: 'light_working_status', width: 15 },
+      { header: 'Pole No#', key: 'pole_number', width: 15 },
+      { header: 'Pole Type', key: 'pole_type', width: 15 },
+      { header: 'Pole Height', key: 'pole_height_mtrs', width: 12 },
+      { header: 'Pole Condition', key: 'pole_condition', width: 15 },
+      { header: 'Pole-Pole Distance (mtrs)', key: 'pole_to_pole_distance_mtrs', width: 24 },
+      { header: 'ARM Type', key: 'arm_type', width: 15 },
+      { header: 'ARM Status', key: 'arm_status', width: 15 },
+      { header: 'ARM No#', key: 'present_arm_no', width: 15 },
+      { header: 'ARM Length', key: 'present_arm_length_mtrs', width: 15 },
+      { header: 'Lights No#', key: 'how_many_lights_in_pole', width: 15 },
+      { header: 'Lights Mounting Height (mtrs)', key: 'light_mounting_height', width: 26 },
+      { header: 'Lights Type', key: 'light_type', width: 15 },
+      { header: 'Lights Capacity', key: 'light_capacity', width: 15 },
+      { header: 'Lights Working', key: 'light_working_status', width: 15 },
       { header: 'Road Category', key: 'road_category', width: 15 },
       { header: 'Road Type', key: 'road_type', width: 15 },
-      { header: 'Road Width (m)', key: 'road_width_mtrs', width: 15 },
-      { header: 'Earthing Exists', key: 'pole_earthing_exists', width: 15 },
-      { header: 'Image 1 URL', key: 'image_url_1', width: 40 },
-      { header: 'Image 2 URL', key: 'image_url_2', width: 40 },
-      { header: 'Image 3 URL', key: 'image_url_3', width: 40 },
-      { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 },
-      { header: 'Status', key: 'status', width: 12 },
-      { header: 'Created By', key: 'user_name', width: 15 },
-      { header: 'Created At', key: 'created_at', width: 20 },
-      { header: 'Confirmed By', key: 'confirmed_by_name', width: 20 }
+      { header: 'Road Width (mtrs)', key: 'road_width_mtrs', width: 18 },
+      { header: 'Earthing Exist', key: 'pole_earthing_exists', width: 15 },
+      { header: 'Pole Image1', key: 'image_url_1', width: 40 },
+      { header: 'Pole Image2', key: 'image_url_2', width: 40 },
+      { header: 'Pole Image3', key: 'image_url_3', width: 40 },
+      { header: 'Address', key: 'latitude_longitude', width: 25 },
+      { header: 'Date', key: 'created_date', width: 15 },
+      { header: 'Date-Time', key: 'created_at', width: 20 },
+      { header: 'Submitter', key: 'user_name', width: 20 }
     ];
 
     styleHeaderRow(pSheet);
@@ -481,13 +477,18 @@ async function downloadReportHandler(req, res, next) {
         }
       });
 
+      const createdDateObj = new Date(p.created_at);
+      const dateStr = p.created_at ? createdDateObj.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) : '';
+      const dateTimeStr = p.created_at ? createdDateObj.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) : '';
       const latLong = p.latitude && p.longitude ? `${p.latitude}, ${p.longitude}` : (p.latitude || p.longitude || '');
 
       const row = pSheet.addRow({
         ...formattedPole,
         sl_no: idx + 1,
+        sub_div: p.ulb_name || p.district_name || '',
         latitude_longitude: latLong,
-        created_at: new Date(p.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+        created_date: dateStr,
+        created_at: dateTimeStr
       });
 
       activePoleCols.forEach(key => {
