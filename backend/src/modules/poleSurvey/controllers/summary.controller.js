@@ -345,23 +345,22 @@ async function downloadReportHandler(req, res, next) {
     const spSheet = workbook.addWorksheet('Switch Points');
     spSheet.columns = [
       { header: 'Sl#', key: 'sl_no', width: 10 },
-      { header: 'Number', key: 'switch_point_number', width: 15 },
-      { header: 'District', key: 'district_name', width: 15 },
-      { header: 'ULB', key: 'ulb_name', width: 15 },
-      { header: 'Ward', key: 'ward_number', width: 10 },
-      { header: 'Type', key: 'switch_point_type', width: 15 },
-      { header: 'Meter Exists', key: 'meter_exists', width: 12 },
-      { header: 'Meter Type', key: 'meter_type', width: 15 },
-      { header: 'RR Number', key: 'meter_rr_number', width: 15 },
-      { header: 'Serial Number', key: 'meter_serial_number', width: 20 },
-      { header: 'Meter Condition', key: 'meter_condition', width: 15 },
-      { header: 'Image 1 URL', key: 'image_url_1', width: 40 },
-      { header: 'Image 2 URL', key: 'image_url_2', width: 40 },
-      { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 },
-      { header: 'Status', key: 'status', width: 12 },
-      { header: 'Created By', key: 'user_name', width: 15 },
-      { header: 'Created At', key: 'created_at', width: 20 },
-      { header: 'Confirmed By', key: 'confirmed_by_name', width: 20 }
+      { header: 'SubDiv', key: 'sub_div', width: 15 },
+      { header: 'Ward No#', key: 'ward_number', width: 12 },
+      { header: 'Switch Point#', key: 'switch_point_number', width: 18 },
+      { header: 'Switch Point Type', key: 'switch_point_type', width: 18 },
+      { header: 'Meter Exist', key: 'meter_exists', width: 12 },
+      { header: 'Meter Phase', key: 'meter_type', width: 15 },
+      { header: 'Meter RR#', key: 'meter_rr_number', width: 15 },
+      { header: 'Meter Sl#', key: 'meter_serial_number', width: 20 },
+      { header: 'Meter Status', key: 'meter_condition', width: 15 },
+      { header: 'Address', key: 'address', width: 25 },
+      { header: 'Image 1', key: 'image_url_1', width: 40 },
+      { header: 'Image 2', key: 'image_url_2', width: 40 },
+      { header: 'Location', key: 'latitude_longitude', width: 25 },
+      { header: 'Date', key: 'created_date', width: 15 },
+      { header: 'Date-Time', key: 'created_at', width: 20 },
+      { header: 'Submitter', key: 'user_name', width: 20 }
     ];
     
     // Header styling helper
@@ -404,14 +403,20 @@ async function downloadReportHandler(req, res, next) {
         }
       });
 
+      const createdDateObj = new Date(sp.created_at);
+      const dateStr = sp.created_at ? createdDateObj.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) : '';
+      const dateTimeStr = sp.created_at ? createdDateObj.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) : '';
       const latLong = sp.latitude && sp.longitude ? `${sp.latitude}, ${sp.longitude}` : (sp.latitude || sp.longitude || '');
 
       const row = spSheet.addRow({
         ...formattedSp,
         sl_no: idx + 1,
+        sub_div: sp.ulb_name || sp.district_name || '',
         meter_exists: sp.meter_exists ? 'Yes' : 'No',
+        address: latLong,
         latitude_longitude: latLong,
-        created_at: new Date(sp.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+        created_date: dateStr,
+        created_at: dateTimeStr
       });
 
       activeSpCols.forEach(key => {
