@@ -281,6 +281,28 @@ async function getMobileUserTrackingHandler(req, res, next) {
   } catch (error) { next(error); }
 }
 
+const formatDateOnly = (dateVal) => {
+  if (!dateVal) return '';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return '';
+  const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' };
+  const parts = new Intl.DateTimeFormat('en-GB', options).formatToParts(d);
+  const p = {};
+  parts.forEach(({ type, value }) => { p[type] = value; });
+  return `${p.day}/${p.month}/${p.year}`;
+};
+
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return '';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return '';
+  const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+  const parts = new Intl.DateTimeFormat('en-GB', options).formatToParts(d);
+  const p = {};
+  parts.forEach(({ type, value }) => { p[type] = value; });
+  return `${p.day}/${p.month}/${p.year} ${p.hour}:${p.minute}:${p.second}`;
+};
+
 async function downloadReportHandler(req, res, next) {
   try {
     const { projectId } = req.params;
@@ -403,9 +425,8 @@ async function downloadReportHandler(req, res, next) {
         }
       });
 
-      const createdDateObj = new Date(sp.created_at);
-      const dateStr = sp.created_at ? createdDateObj.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) : '';
-      const dateTimeStr = sp.created_at ? createdDateObj.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) : '';
+      const dateStr = formatDateOnly(sp.created_at);
+      const dateTimeStr = formatDateTime(sp.created_at);
       const latLong = sp.latitude && sp.longitude ? `${sp.latitude}, ${sp.longitude}` : (sp.latitude || sp.longitude || '');
 
       const row = spSheet.addRow({
@@ -413,7 +434,7 @@ async function downloadReportHandler(req, res, next) {
         sl_no: idx + 1,
         sub_div: sp.ulb_name || sp.district_name || '',
         meter_exists: sp.meter_exists ? 'Yes' : 'No',
-        address: latLong,
+        address: sp.ulb_name || sp.district_name || '',
         latitude_longitude: latLong,
         created_date: dateStr,
         created_at: dateTimeStr
@@ -482,9 +503,8 @@ async function downloadReportHandler(req, res, next) {
         }
       });
 
-      const createdDateObj = new Date(p.created_at);
-      const dateStr = p.created_at ? createdDateObj.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) : '';
-      const dateTimeStr = p.created_at ? createdDateObj.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) : '';
+      const dateStr = formatDateOnly(p.created_at);
+      const dateTimeStr = formatDateTime(p.created_at);
       const latLong = p.latitude && p.longitude ? `${p.latitude}, ${p.longitude}` : (p.latitude || p.longitude || '');
 
       const row = pSheet.addRow({

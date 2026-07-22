@@ -292,6 +292,17 @@ async function getMobileUserTrackingHandler(req, res, next) {
   } catch (error) { next(error); }
 }
 
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return '';
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return '';
+  const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+  const parts = new Intl.DateTimeFormat('en-GB', options).formatToParts(d);
+  const p = {};
+  parts.forEach(({ type, value }) => { p[type] = value; });
+  return `${p.day}/${p.month}/${p.year} ${p.hour}:${p.minute}:${p.second}`;
+};
+
 async function downloadReportHandler(req, res, next) {
   try {
     const { projectId } = req.params;
@@ -414,7 +425,7 @@ async function downloadReportHandler(req, res, next) {
         sl_no: idx + 1,
         ward_number: p.ward_number || p.ulb_name || '',
         latitude_longitude: latLong,
-        created_at: new Date(p.created_at).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })
+        created_at: formatDateTime(p.created_at)
       });
 
       activePoleCols.forEach(key => {
