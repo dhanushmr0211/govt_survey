@@ -1083,7 +1083,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                           {renderField('Pole No', 'pole_number', selectedDetail.data.pole_number)}
                           {renderField('Pole Type', 'pole_type', selectedDetail.data.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
                           {renderField('Height', 'pole_height', selectedDetail.data.pole_height, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
-                          {renderField('Distance', 'pole_to_pole_distance', selectedDetail.data.pole_to_pole_distance, ['10', '20', '25', '30'])}
+                          {renderField('Distance', 'pole_to_pole_distance', selectedDetail.data.pole_to_pole_distance, ['10', '20', '25', '30', '40', '50'])}
                           {renderField('ARM Type', 'arm_type', selectedDetail.data.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
                           {renderField('ARM Status', 'arm_status', selectedDetail.data.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
                           {renderField('Present ARM No', 'present_arm_no', selectedDetail.data.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
@@ -1117,7 +1117,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                         {renderField('Pole Type', 'pole_type', selectedDetail.data.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
                         {renderField('Height', 'pole_height_mtrs', selectedDetail.data.pole_height_mtrs, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
                         {renderField('Condition', 'pole_condition', selectedDetail.data.pole_condition, ['Good', 'defective', 'missing'])}
-                        {renderField('Distance', 'pole_to_pole_distance_mtrs', selectedDetail.data.pole_to_pole_distance_mtrs, ['10', '20', '25', '30'])}
+                        {renderField('Distance', 'pole_to_pole_distance_mtrs', selectedDetail.data.pole_to_pole_distance_mtrs, ['10', '20', '25', '30', '40', '50'])}
                         {renderField('ARM Type', 'arm_type', selectedDetail.data.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
                         {renderField('ARM Status', 'arm_status', selectedDetail.data.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
                         {renderField('Present ARM No', 'present_arm_no', selectedDetail.data.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}

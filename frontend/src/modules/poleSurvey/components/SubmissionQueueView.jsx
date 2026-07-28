@@ -919,7 +919,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         {renderField('Pole No', 'pole_number', selectedSubmission.identifier)}
                         {renderField('Pole Type', 'pole_type', selectedSubmission.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
                         {renderField('Height', 'pole_height', selectedSubmission.pole_height, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
-                        {renderField('Distance', 'pole_to_pole_distance', selectedSubmission.pole_to_pole_distance, ['10', '20', '25', '30'])}
+                        {renderField('Distance', 'pole_to_pole_distance', selectedSubmission.pole_to_pole_distance, ['10', '20', '25', '30', '40', '50'])}
                         {renderField('ARM Type', 'arm_type', selectedSubmission.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
                         {renderField('ARM Status', 'arm_status', selectedSubmission.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
                         {renderField('Present ARM No', 'present_arm_no', selectedSubmission.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
@@ -952,7 +952,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         {renderField('Pole Type', 'pole_type', selectedSubmission.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
                         {renderField('Height', 'pole_height_mtrs', selectedSubmission.pole_height_mtrs, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
                         {renderField('Condition', 'pole_condition', selectedSubmission.pole_condition, ['Good', 'defective', 'missing'])}
-                        {renderField('Distance', 'pole_to_pole_distance_mtrs', selectedSubmission.pole_to_pole_distance_mtrs, ['10', '20', '25', '30'])}
+                        {renderField('Distance', 'pole_to_pole_distance_mtrs', selectedSubmission.pole_to_pole_distance_mtrs, ['10', '20', '25', '30', '40', '50'])}
                         {renderField('ARM Type', 'arm_type', selectedSubmission.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
                         {renderField('ARM Status', 'arm_status', selectedSubmission.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
                         {renderField('Present ARM No', 'present_arm_no', selectedSubmission.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}

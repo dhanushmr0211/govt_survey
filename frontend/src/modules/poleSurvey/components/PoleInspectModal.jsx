@@ -567,7 +567,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                     {renderField('Pole No', 'pole_number', pole.pole_number)}
                     {renderField('Pole Type', 'pole_type', pole.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
                     {renderField('Height', 'pole_height', pole.pole_height, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
-                    {renderField('Distance', 'pole_to_pole_distance', pole.pole_to_pole_distance, ['10', '20', '25', '30'])}
+                    {renderField('Distance', 'pole_to_pole_distance', pole.pole_to_pole_distance, ['10', '20', '25', '30', '40', '50'])}
                     {renderField('ARM Type', 'arm_type', pole.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
                     {renderField('ARM Status', 'arm_status', pole.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
                     {renderField('Present ARM No', 'present_arm_no', pole.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
@@ -600,7 +600,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                     {renderField('Pole Type', 'pole_type', pole.pole_type, ['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'])}
                     {renderField('Height', 'pole_height_mtrs', pole.pole_height_mtrs, ['0', '4', '5', '6', '7', '8', '9', '12', '16', '18', '24', '30'])}
                     {renderField('Condition', 'pole_condition', pole.pole_condition, ['Good', 'defective', 'missing'])}
-                    {renderField('Distance', 'pole_to_pole_distance_mtrs', pole.pole_to_pole_distance_mtrs, ['10', '20', '25', '30'])}
+                    {renderField('Distance', 'pole_to_pole_distance_mtrs', pole.pole_to_pole_distance_mtrs, ['10', '20', '25', '30', '40', '50'])}
                     {renderField('ARM Type', 'arm_type', pole.arm_type, ['single', 'double', 'multiple', 'multiply', 'empty/not present'])}
                     {renderField('ARM Status', 'arm_status', pole.arm_status, ['new', 'old', 'deteriorated', 'missing', 'empty/not present'])}
                     {renderField('Present ARM No', 'present_arm_no', pole.present_arm_no, Array.from({length: 12}, (_, i) => String(i)))}
