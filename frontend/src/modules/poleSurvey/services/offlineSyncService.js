@@ -147,7 +147,7 @@ class OfflineSyncService {
             });
             this.log('SYNC_COMPLETE', { id: sub.id, offlineSubmissionId: sub.offlineSubmissionId });
           } catch (err) {
-            const message = err.message || 'Network error';
+            const message = err.response?.data?.error || err.response?.data?.message || err.message || 'Network error';
             this.log('SYNC_FAILED', {
               id: sub.id,
               offlineSubmissionId: sub.offlineSubmissionId,
