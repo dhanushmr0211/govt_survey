@@ -214,6 +214,25 @@ class OfflineSyncService {
 
     // Step 2: Upload images one by one
     if (entityId && images.length > 0) {
+      // Check server for already uploaded files to prevent duplicate image uploads on retry
+      try {
+        const existingFilesRes = await axios.get(
+          `${API_BASE_URL}/projects/${sub.projectId}/pole-survey/files?entity_type=${sub.type}&entity_id=${entityId}`,
+          { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        const uploadedCount = Array.isArray(existingFilesRes.data?.files) ? existingFilesRes.data.files.length : 0;
+        if (uploadedCount > 0) {
+          const keys = getImageKeys(sub);
+          keys.slice(0, uploadedCount).forEach((key) => {
+            imageUploadStatus[key] = true;
+          });
+          await offlineDb.submissions.update(sub.id, { imageUploadStatus });
+          this.log('SERVER_FILES_SYNCED', { offlineSubmissionId, entityId, uploadedCount });
+        }
+      } catch (checkErr) {
+        console.warn('Could not fetch existing server files for entity:', checkErr.message);
+      }
+
       const startAllImages = performance.now();
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
