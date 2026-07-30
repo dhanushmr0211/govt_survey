@@ -391,7 +391,7 @@ export default function MobileSurvey() {
           className={`flex flex-col items-center p-2 text-xs font-medium transition-colors relative ${activeTab === 'offline_queue' ? 'text-primary' : 'text-gray-500'}`}
         >
           <WifiOff size={20} className="mb-1" />
-          <span>Pending</span>
+          <span>Offline</span>
           {pendingCount > 0 && (
             <span className="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
               {pendingCount}

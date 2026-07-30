@@ -40,11 +40,31 @@ async function createSwitchPointHandler(req, res) {
   try {
     const { projectId } = req.params;
     const data = req.body;
+    const offlineSubmissionId = data.offline_submission_id || data.offlineSubmissionId || null;
+    data.offline_submission_id = offlineSubmissionId;
+    delete data.offlineSubmissionId;
     
     // Avoid trusting frontend project_id: Verify access
     const allowedProjects = await accessibleProjectIds(req.user.id, req.user.role);
     if (allowedProjects !== null && !allowedProjects.includes(Number(projectId))) {
       return res.status(403).json({ error: 'Access denied to this project' });
+    }
+
+    if (offlineSubmissionId) {
+      const existingOffline = await query(
+        `SELECT * FROM switch_points WHERE offline_submission_id = $1 LIMIT 1`,
+        [offlineSubmissionId]
+      );
+      if (existingOffline.rows.length > 0) {
+        console.log('[OfflineSync]', JSON.stringify({
+          entity: 'switch_point',
+          state: 'IDEMPOTENT_REPLAY',
+          projectId: Number(projectId),
+          offlineSubmissionId,
+          entityId: existingOffline.rows[0].id,
+        }));
+        return res.status(200).json(existingOffline.rows[0]);
+      }
     }
 
     // Remove status from frontend input
@@ -75,6 +95,13 @@ async function createSwitchPointHandler(req, res) {
     data.created_by = req.user?.id; // Assuming auth middleware sets req.user
     
     const newSwitchPoint = await createSwitchPoint(data);
+    console.log('[OfflineSync]', JSON.stringify({
+      entity: 'switch_point',
+      state: 'CREATED',
+      projectId: Number(projectId),
+      offlineSubmissionId,
+      entityId: newSwitchPoint.id,
+    }));
     res.status(201).json(newSwitchPoint);
   } catch (error) {
     console.error('Error creating Switch Point:', error);
@@ -86,11 +113,31 @@ async function createPoleHandler(req, res) {
   try {
     const { projectId } = req.params;
     const data = req.body;
+    const offlineSubmissionId = data.offline_submission_id || data.offlineSubmissionId || null;
+    data.offline_submission_id = offlineSubmissionId;
+    delete data.offlineSubmissionId;
     
     // Avoid trusting frontend project_id: Verify access
     const allowedProjects = await accessibleProjectIds(req.user.id, req.user.role);
     if (allowedProjects !== null && !allowedProjects.includes(Number(projectId))) {
       return res.status(403).json({ error: 'Access denied to this project' });
+    }
+
+    if (offlineSubmissionId) {
+      const existingOffline = await query(
+        `SELECT * FROM poles WHERE offline_submission_id = $1 LIMIT 1`,
+        [offlineSubmissionId]
+      );
+      if (existingOffline.rows.length > 0) {
+        console.log('[OfflineSync]', JSON.stringify({
+          entity: 'pole',
+          state: 'IDEMPOTENT_REPLAY',
+          projectId: Number(projectId),
+          offlineSubmissionId,
+          entityId: existingOffline.rows[0].id,
+        }));
+        return res.status(200).json(existingOffline.rows[0]);
+      }
     }
 
     // Remove status from frontend input
@@ -157,6 +204,13 @@ async function createPoleHandler(req, res) {
     }
 
     const newPole = await createPole(data);
+    console.log('[OfflineSync]', JSON.stringify({
+      entity: 'pole',
+      state: 'CREATED',
+      projectId: Number(projectId),
+      offlineSubmissionId,
+      entityId: newPole.id,
+    }));
     res.status(201).json(newPole);
   } catch (error) {
     console.error('Error creating Pole:', error);

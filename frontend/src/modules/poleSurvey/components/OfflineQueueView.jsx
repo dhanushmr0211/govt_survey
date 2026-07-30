@@ -12,7 +12,7 @@ export const OfflineQueueView = () => {
     setIsLoading(true);
     try {
       const all = await offlineDb.submissions.orderBy('createdAt').reverse().toArray();
-      setSubmissions(all);
+      setSubmissions(all.filter((sub) => sub.status !== 'synced'));
     } catch (err) {
       console.error('Failed to fetch offline submissions:', err);
     } finally {
@@ -86,7 +86,7 @@ export const OfflineQueueView = () => {
         <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
           <CheckCircle2 className="w-12 h-12 text-gray-200 mx-auto mb-3" />
           <p className="text-gray-500 font-medium">No pending submissions</p>
-          <p className="text-gray-400 text-sm mt-1">Everything is synced to the server.</p>
+          <p className="text-gray-400 text-sm mt-1">Everything waiting locally is already synced or removed.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -98,6 +98,7 @@ export const OfflineQueueView = () => {
             const badgeClass = isInstallation
               ? 'bg-orange-100 text-orange-700'
               : (sub.type === 'pole' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700');
+            const imageCount = Array.isArray(sub.images) ? sub.images.length : 0;
             
             const displayTitle = isInstallation
               ? `Ward ${sub.wardNumber} - CCMS ${sub.data?.ccms_number || 'N/A'} (Pole ${sub.data?.pole_number || 'N/A'})`
@@ -120,11 +121,14 @@ export const OfflineQueueView = () => {
                     {displayTitle}
                   </p>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-500">{sub.images.length} Photos</span>
+                    <span className="text-xs text-gray-500">{imageCount} Photos</span>
+                    {typeof sub.retryCount === 'number' && sub.retryCount > 0 && (
+                      <span className="text-xs text-gray-500">Retries: {sub.retryCount}</span>
+                    )}
                     {sub.status === 'failed' && (
                       <span className="text-xs text-red-500 flex items-center gap-1">
                         <AlertCircle size={12} />
-                        {sub.errorMessage || 'Failed'}
+                        {sub.lastError || sub.errorMessage || 'Failed'}
                       </span>
                     )}
                     {sub.status === 'syncing' && (

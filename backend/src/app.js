@@ -40,9 +40,11 @@ function createApp() {
     'CREATE INDEX IF NOT EXISTS idx_project_users_user_id ON project_users (user_id);',
     'CREATE INDEX IF NOT EXISTS idx_poles_project_status_created ON poles (project_id, status, created_at DESC) WHERE is_deleted IS NOT TRUE;',
     'CREATE INDEX IF NOT EXISTS idx_poles_switch_point_id ON poles (switch_point_id) WHERE is_deleted IS NOT TRUE;',
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_poles_offline_submission_id_uniq ON poles (offline_submission_id) WHERE offline_submission_id IS NOT NULL;',
     'CREATE INDEX IF NOT EXISTS idx_poles_created_date_ist ON poles (((timezone(\'Asia/Kolkata\', timezone(\'UTC\', created_at)))::date));',
     'CREATE INDEX IF NOT EXISTS idx_switch_points_created_date_ist ON switch_points (((timezone(\'Asia/Kolkata\', timezone(\'UTC\', created_at)))::date));',
     'CREATE INDEX IF NOT EXISTS idx_switch_points_project_status_created ON switch_points (project_id, status, created_at DESC) WHERE is_deleted IS NOT TRUE;',
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_switch_points_offline_submission_id_uniq ON switch_points (offline_submission_id) WHERE offline_submission_id IS NOT NULL;',
     `CREATE INDEX IF NOT EXISTS idx_switch_points_duplicate_check ON switch_points (
       project_id, 
       ulb_id, 
@@ -55,6 +57,8 @@ function createApp() {
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS image_url_1 TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS image_url_2 TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS image_url_3 TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS offline_submission_id TEXT;',
+    'ALTER TABLE switch_points ADD COLUMN IF NOT EXISTS offline_submission_id TEXT;',
     'CREATE TABLE IF NOT EXISTS wards (id SERIAL PRIMARY KEY, name TEXT NOT NULL, is_deleted BOOLEAN DEFAULT FALSE);',
     `CREATE TABLE IF NOT EXISTS admin_section_access (
       id SERIAL PRIMARY KEY,
@@ -97,6 +101,8 @@ function createApp() {
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_capacity_4 TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_type_5 TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_capacity_5 TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS offline_submission_id TEXT;',
+    'ALTER TABLE switch_points ADD COLUMN IF NOT EXISTS offline_submission_id TEXT;',
     `INSERT INTO wards (name)
      SELECT w_name FROM (VALUES
        ('15-Kammagondanahalli'),

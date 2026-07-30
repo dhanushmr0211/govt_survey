@@ -4,6 +4,7 @@ import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 import { offlineDb } from '../../../db/offlineDb';
+import { offlineSyncService } from '../services/offlineSyncService';
 import { getCurrentLocation } from '../../../shared/utils/geolocation';
 import { InAppCamera } from '../../../shared/components/InAppCamera';
 import { Camera } from 'lucide-react';
@@ -28,6 +29,22 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
   const [cameraTarget, setCameraTarget] = useState(null);
 
   const isCompressing = compressing.image1 || compressing.image2;
+
+  const createOfflineSubmissionId = () => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  };
+
+  const buildImageFiles = () => Object.entries(photos)
+    .filter(([, file]) => Boolean(file))
+    .map(([fieldName, file]) => ({ fieldName, file, type: 'switch_point' }));
+
+  const buildInitialImageStatus = (imageFiles) => imageFiles.reduce((acc, image) => {
+    acc[image.fieldName] = false;
+    return acc;
+  }, {});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -66,6 +83,7 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
     }
 
     const isMeterYes = formData.meter_exists === 'yes';
+    const offlineSubmissionId = createOfflineSubmissionId();
     const payload = {
       ...formData,
       ulb_id: ulb.id,
@@ -78,23 +96,53 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
       longitude: coords.longitude,
     };
 
-    const imageFiles = Object.values(photos)
-      .filter(Boolean)
-      .map(file => ({ file, type: 'switch_point' }));
+    const imageFiles = buildImageFiles();
+    const localRowPayload = {
+      type: 'switch_point',
+      offlineSubmissionId,
+      data: { ...payload, offline_submission_id: offlineSubmissionId },
+      images: imageFiles,
+      imageUploadStatus: buildInitialImageStatus(imageFiles),
+      status: 'pending',
+      retryCount: 0,
+      lastRetryAt: null,
+      lastError: null,
+      errorMessage: null,
+      serverEntityId: null,
+      uploadedImageCount: 0,
+      createdAt: Date.now(),
+      syncedAt: null,
+      projectId,
+      ulbId: ulb.id,
+      wardNumber: formData.ward_number
+    };
+    const offlineRowId = await offlineDb.submissions.add(localRowPayload);
 
     try {
       // Step 1: Create the switch point record
       const startTotal = performance.now();
       const startRecord = performance.now();
-      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/switch-point`, payload, {
+      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/switch-point`, {
+        ...payload,
+        offline_submission_id: offlineSubmissionId,
+      }, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       console.log(`⏱️ Switch Point record creation: ${(performance.now() - startRecord).toFixed(2)}ms`);
 
-      // Step 2: Upload selected photos to Cloud Storage
       const switchPointId = res.data.id;
+      await offlineDb.submissions.update(offlineRowId, {
+        status: 'syncing',
+        serverEntityId: switchPointId,
+        lastRetryAt: Date.now(),
+        lastError: null,
+        errorMessage: null,
+      });
+
+      // Step 2: Upload selected photos to Cloud Storage
       if (switchPointId && imageFiles.length > 0) {
+        const imageStatus = { ...localRowPayload.imageUploadStatus };
         const startAllImages = performance.now();
         for (let i = 0; i < imageFiles.length; i++) {
           const img = imageFiles[i];
@@ -108,10 +156,23 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
             formDataUpload,
             { headers: { Authorization: `Bearer ${token}` } }
           );
+          imageStatus[img.fieldName] = true;
+          await offlineDb.submissions.update(offlineRowId, {
+            imageUploadStatus: imageStatus,
+            lastUploadedAt: Date.now(),
+          });
           console.log(`⏱️ Image ${i + 1} upload: ${(performance.now() - startSingleImage).toFixed(2)}ms`);
         }
         console.log(`⏱️ Total images upload (${imageFiles.length}): ${(performance.now() - startAllImages).toFixed(2)}ms`);
       }
+
+      await offlineDb.submissions.update(offlineRowId, {
+        status: 'synced',
+        syncedAt: Date.now(),
+        lastError: null,
+        errorMessage: null,
+      });
+      await offlineSyncService.cleanupSyncedRows();
 
       console.log(`🚀 Total submission time: ${(performance.now() - startTotal).toFixed(2)}ms`);
       queryClient.invalidateQueries(['submissions']);
@@ -120,29 +181,19 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
       onBack();
     } catch (error) {
       console.error('Error creating switch point:', error);
-      
-      // Handle Offline / Network Error
+
+      await offlineDb.submissions.update(offlineRowId, {
+        status: 'failed',
+        retryCount: 1,
+        lastRetryAt: Date.now(),
+        lastError: error.response?.data?.message || error.message || 'Error creating switch point',
+        errorMessage: error.response?.data?.message || error.message || 'Error creating switch point',
+      });
+      alert(!navigator.onLine || error.code === 'ERR_NETWORK' || !error.response
+        ? 'No internet connection. Submission saved locally and will upload automatically when you have signal.'
+        : (error.response?.data?.message || 'Error creating switch point'));
       if (!navigator.onLine || error.code === 'ERR_NETWORK' || !error.response) {
-        try {
-          await offlineDb.submissions.add({
-            type: 'switch_point',
-            data: payload,
-            images: imageFiles,
-            status: 'pending',
-            createdAt: Date.now(),
-            projectId,
-            ulbId: ulb.id,
-            wardNumber: formData.ward_number
-          });
-          alert('No internet connection. Submission saved locally and will upload automatically when you have signal.');
-          onBack();
-          return;
-        } catch (dbErr) {
-          console.error('Failed to save offline:', dbErr);
-          alert('Failed to save submission locally. Please check your storage.');
-        }
-      } else {
-        alert(error.response?.data?.message || 'Error creating switch point');
+        onBack();
       }
     } finally {
       setUploading(false);

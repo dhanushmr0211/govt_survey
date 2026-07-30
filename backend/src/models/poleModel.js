@@ -87,8 +87,8 @@ async function createPole(rawData) {
 
   const result = await query(
     `INSERT INTO poles
-      (project_id, switch_point_id, latitude, longitude, ward_number, switch_point_number, conductor_type, pole_number, pole_type, pole_height_mtrs, pole_condition, pole_to_pole_distance_mtrs, arm_type, arm_status, present_arm_no, present_arm_length_mtrs, how_many_lights_in_pole, light_mounting_height, light_type, light_capacity, light_type_2, light_capacity_2, light_working_status, road_category, road_type, road_width_mtrs, pole_earthing_exists, created_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
+      (project_id, switch_point_id, latitude, longitude, ward_number, switch_point_number, conductor_type, pole_number, pole_type, pole_height_mtrs, pole_condition, pole_to_pole_distance_mtrs, arm_type, arm_status, present_arm_no, present_arm_length_mtrs, how_many_lights_in_pole, light_mounting_height, light_type, light_capacity, light_type_2, light_capacity_2, light_working_status, road_category, road_type, road_width_mtrs, pole_earthing_exists, created_by, offline_submission_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
      RETURNING *`,
     [
       data.project_id,
@@ -118,7 +118,8 @@ async function createPole(rawData) {
       data.road_type,
       data.road_width_mtrs,
       data.pole_earthing_exists,
-      data.created_by
+      data.created_by,
+      data.offline_submission_id || null
     ]
   );
   return result.rows[0];

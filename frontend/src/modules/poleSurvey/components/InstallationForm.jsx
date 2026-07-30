@@ -4,6 +4,7 @@ import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 import { offlineDb } from '../../../db/offlineDb';
+import { offlineSyncService } from '../services/offlineSyncService';
 import { getCurrentLocation } from '../../../shared/utils/geolocation';
 import { useAuthStore } from '../../../store/authStore';
 import { InAppCamera } from '../../../shared/components/InAppCamera';
@@ -39,6 +40,22 @@ export const InstallationForm = ({ ward, onBack }) => {
   const [cameraTarget, setCameraTarget] = useState(null);
 
   const isCompressing = compressing.image1 || compressing.image2;
+
+  const createOfflineSubmissionId = () => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  };
+
+  const buildImageFiles = () => Object.entries(photos)
+    .filter(([, file]) => Boolean(file))
+    .map(([fieldName, file]) => ({ fieldName, file, type: 'pole' }));
+
+  const buildInitialImageStatus = (imageFiles) => imageFiles.reduce((acc, image) => {
+    acc[image.fieldName] = false;
+    return acc;
+  }, {});
 
   // Fetch CCMS list in this ward
   const { data: ccmsList = [], isLoading: isLoadingCcms } = useQuery({
@@ -116,6 +133,7 @@ export const InstallationForm = ({ ward, onBack }) => {
     setStatusText('Submitting...');
 
     const lightCount = Number(formData.how_many_lights);
+    const offlineSubmissionId = createOfflineSubmissionId();
 
     const payload = {
       ward_id: ward.id,
@@ -145,17 +163,46 @@ export const InstallationForm = ({ ward, onBack }) => {
       light_capacity_5: lightCount >= 5 ? formData.light_capacity_5 : '',
     };
 
-    const imageFiles = Object.values(photos)
-      .filter(Boolean)
-      .map(file => ({ file, type: 'pole' }));
+    const imageFiles = buildImageFiles();
+    const localRowPayload = {
+      type: 'pole',
+      offlineSubmissionId,
+      data: { ...payload, offline_submission_id: offlineSubmissionId },
+      images: imageFiles,
+      imageUploadStatus: buildInitialImageStatus(imageFiles),
+      status: 'pending',
+      retryCount: 0,
+      lastRetryAt: null,
+      lastError: null,
+      errorMessage: null,
+      serverEntityId: null,
+      uploadedImageCount: 0,
+      createdAt: Date.now(),
+      syncedAt: null,
+      projectId,
+      ulbId: ward.id,
+      wardNumber: ward.name,
+    };
+    const offlineRowId = await offlineDb.submissions.add(localRowPayload);
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/pole`, payload, {
+      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/pole`, {
+        ...payload,
+        offline_submission_id: offlineSubmissionId,
+      }, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const poleId = res.data.id;
+      await offlineDb.submissions.update(offlineRowId, {
+        status: 'syncing',
+        serverEntityId: poleId,
+        lastRetryAt: Date.now(),
+        lastError: null,
+        errorMessage: null,
+      });
       if (poleId && imageFiles.length > 0) {
+        const imageStatus = { ...localRowPayload.imageUploadStatus };
         setStatusText('Uploading photos...');
         for (let i = 0; i < imageFiles.length; i++) {
           const img = imageFiles[i];
@@ -168,8 +215,21 @@ export const InstallationForm = ({ ward, onBack }) => {
             formDataUpload,
             { headers: { Authorization: `Bearer ${token}` } }
           );
+          imageStatus[img.fieldName] = true;
+          await offlineDb.submissions.update(offlineRowId, {
+            imageUploadStatus: imageStatus,
+            lastUploadedAt: Date.now(),
+          });
         }
       }
+
+      await offlineDb.submissions.update(offlineRowId, {
+        status: 'synced',
+        syncedAt: Date.now(),
+        lastError: null,
+        errorMessage: null,
+      });
+      await offlineSyncService.cleanupSyncedRows();
 
       queryClient.invalidateQueries(['submissions']);
       queryClient.invalidateQueries(['my-stats']);
@@ -197,48 +257,36 @@ export const InstallationForm = ({ ward, onBack }) => {
     } catch (error) {
       console.error('Error submitting installation:', error);
 
-      // Handle Offline / Network Error
-      if (!navigator.onLine || error.code === 'ERR_NETWORK' || !error.response) {
-        try {
-          await offlineDb.submissions.add({
-            type: 'pole',
-            data: payload,
-            images: imageFiles,
-            status: 'pending',
-            createdAt: Date.now(),
-            projectId,
-            ulbId: ward.id,
-            wardNumber: ward.name,
-          });
-          alert('No internet connection. Submission saved locally and will upload automatically when you have signal.');
-          
-          // Reset images
-          setPhotos({ image1: null, image2: null });
+      await offlineDb.submissions.update(offlineRowId, {
+        status: 'failed',
+        retryCount: 1,
+        lastRetryAt: Date.now(),
+        lastError: error.response?.data?.message || error.message || 'Error submitting installation',
+        errorMessage: error.response?.data?.message || error.message || 'Error submitting installation',
+      });
+      alert(!navigator.onLine || error.code === 'ERR_NETWORK' || !error.response
+        ? 'No internet connection. Submission saved locally and will upload automatically when you have signal.'
+        : (error.response?.data?.message || 'Error submitting installation'));
 
-          // Keep ward/CCMS, reset pole fields
-          setFormData((prev) => ({
-            ccms_number: prev.ccms_number,
-            pole_number: '',
-            how_many_lights: '0',
-            light_type: '',
-            light_capacity: '',
-            light_type_2: '',
-            light_capacity_2: '',
-            light_type_3: '',
-            light_capacity_3: '',
-            light_type_4: '',
-            light_capacity_4: '',
-            light_type_5: '',
-            light_capacity_5: '',
-          }));
-          return;
-        } catch (dbErr) {
-          console.error('Failed to save offline:', dbErr);
-          alert('Failed to save submission locally. Please check your storage.');
-        }
-      } else {
-        alert(error.response?.data?.message || 'Error submitting installation');
-      }
+      // Reset images
+      setPhotos({ image1: null, image2: null });
+
+      // Keep ward/CCMS, reset pole fields
+      setFormData((prev) => ({
+        ccms_number: prev.ccms_number,
+        pole_number: '',
+        how_many_lights: '0',
+        light_type: '',
+        light_capacity: '',
+        light_type_2: '',
+        light_capacity_2: '',
+        light_type_3: '',
+        light_capacity_3: '',
+        light_type_4: '',
+        light_capacity_4: '',
+        light_type_5: '',
+        light_capacity_5: '',
+      }));
     } finally {
       setUploading(false);
       setStatusText('');

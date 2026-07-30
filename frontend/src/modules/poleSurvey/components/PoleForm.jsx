@@ -4,6 +4,7 @@ import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 import { offlineDb } from '../../../db/offlineDb';
+import { offlineSyncService } from '../services/offlineSyncService';
 import { getCurrentLocation } from '../../../shared/utils/geolocation';
 import { isMobileEditRestricted } from '../utils/mobileRestrictions';
 import { useAuthStore } from '../../../store/authStore';
@@ -100,6 +101,22 @@ export const PoleForm = ({ ulb, onBack }) => {
   const [cameraTarget, setCameraTarget] = useState(null);
 
   const isCompressing = compressing.image1 || compressing.image2 || compressing.image3;
+
+  const createOfflineSubmissionId = () => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  };
+
+  const buildImageFiles = () => Object.entries(photos)
+    .filter(([, file]) => Boolean(file))
+    .map(([fieldName, file]) => ({ fieldName, file, type: 'pole' }));
+
+  const buildInitialImageStatus = (imageFiles) => imageFiles.reduce((acc, image) => {
+    acc[image.fieldName] = false;
+    return acc;
+  }, {});
 
   const projectId = activeProject?.id || 2;
   const isBallari = (ulb?.district_name || '').toLowerCase().includes('ballari');
@@ -336,6 +353,7 @@ export const PoleForm = ({ ulb, onBack }) => {
     }
 
     const toNumberOrNull = (v) => (v === '' || v == null ? null : Number(v));
+    const offlineSubmissionId = createOfflineSubmissionId();
 
     const payload = isTgpl ? {
       ward_id: ulb.id,
@@ -386,22 +404,52 @@ export const PoleForm = ({ ulb, onBack }) => {
       ulb_id: ulb.id
     };
 
-    const imageFiles = Object.values(photos)
-      .filter(Boolean)
-      .map(file => ({ file, type: 'pole' }));
+    const imageFiles = buildImageFiles();
+    const localRowPayload = {
+      type: 'pole',
+      offlineSubmissionId,
+      data: { ...payload, offline_submission_id: offlineSubmissionId },
+      images: imageFiles,
+      imageUploadStatus: buildInitialImageStatus(imageFiles),
+      status: 'pending',
+      retryCount: 0,
+      lastRetryAt: null,
+      lastError: null,
+      errorMessage: null,
+      serverEntityId: null,
+      uploadedImageCount: 0,
+      createdAt: Date.now(),
+      syncedAt: null,
+      projectId,
+      ulbId: ulb.id,
+      wardNumber: formData.ward_number
+    };
+    const offlineRowId = await offlineDb.submissions.add(localRowPayload);
 
     try {
       // Step 1: Create the pole record
       const startTotal = performance.now();
       const startRecord = performance.now();
-      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/pole`, payload, {
+      const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/pole`, {
+        ...payload,
+        offline_submission_id: offlineSubmissionId,
+      }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log(`⏱️ Pole record creation: ${(performance.now() - startRecord).toFixed(2)}ms`);
 
-      // Step 2: Upload selected photos to Cloud Storage
       const poleId = res.data.id;
+      await offlineDb.submissions.update(offlineRowId, {
+        status: 'syncing',
+        serverEntityId: poleId,
+        lastRetryAt: Date.now(),
+        lastError: null,
+        errorMessage: null,
+      });
+
+      // Step 2: Upload selected photos to Cloud Storage
       if (poleId && imageFiles.length > 0) {
+        const imageStatus = { ...localRowPayload.imageUploadStatus };
         const startAllImages = performance.now();
         for (let i = 0; i < imageFiles.length; i++) {
           const img = imageFiles[i];
@@ -415,11 +463,23 @@ export const PoleForm = ({ ulb, onBack }) => {
             formDataUpload,
             { headers: { Authorization: `Bearer ${token}` } }
           );
+          imageStatus[img.fieldName] = true;
+          await offlineDb.submissions.update(offlineRowId, {
+            imageUploadStatus: imageStatus,
+            lastUploadedAt: Date.now(),
+          });
           console.log(`⏱️ Image ${i + 1} upload: ${(performance.now() - startSingleImage).toFixed(2)}ms`);
         }
         console.log(`⏱️ Total images upload (${imageFiles.length}): ${(performance.now() - startAllImages).toFixed(2)}ms`);
       }
 
+      await offlineDb.submissions.update(offlineRowId, {
+        status: 'synced',
+        syncedAt: Date.now(),
+        lastError: null,
+        errorMessage: null,
+      });
+      await offlineSyncService.cleanupSyncedRows();
       console.log(`🚀 Total submission time: ${(performance.now() - startTotal).toFixed(2)}ms`);
       queryClient.invalidateQueries(['submissions']);
       queryClient.invalidateQueries(['my-stats']);
@@ -427,29 +487,19 @@ export const PoleForm = ({ ulb, onBack }) => {
       onBack();
     } catch (error) {
       console.error('Error creating pole:', error);
-      
-      // Handle Offline / Network Error
+
+      await offlineDb.submissions.update(offlineRowId, {
+        status: 'failed',
+        retryCount: 1,
+        lastRetryAt: Date.now(),
+        lastError: error.response?.data?.message || error.message || 'Error creating pole',
+        errorMessage: error.response?.data?.message || error.message || 'Error creating pole',
+      });
+      alert(!navigator.onLine || error.code === 'ERR_NETWORK' || !error.response
+        ? 'No internet connection. Submission saved locally and will upload automatically when you have signal.'
+        : (error.response?.data?.message || 'Error creating pole'));
       if (!navigator.onLine || error.code === 'ERR_NETWORK' || !error.response) {
-        try {
-          await offlineDb.submissions.add({
-            type: 'pole',
-            data: payload,
-            images: imageFiles,
-            status: 'pending',
-            createdAt: Date.now(),
-            projectId,
-            ulbId: ulb.id,
-            wardNumber: formData.ward_number
-          });
-          alert('No internet connection. Submission saved locally and will upload automatically when you have signal.');
-          onBack();
-          return;
-        } catch (dbErr) {
-          console.error('Failed to save offline:', dbErr);
-          alert('Failed to save submission locally. Please check your storage.');
-        }
-      } else {
-        alert(error.response?.data?.message || 'Error creating pole');
+        onBack();
       }
     } finally {
       setUploading(false);

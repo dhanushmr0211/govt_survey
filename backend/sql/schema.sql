@@ -128,6 +128,7 @@ CREATE TABLE IF NOT EXISTS switch_points (
   meter_condition TEXT,
   image_url_1 TEXT,
   image_url_2 TEXT,
+  offline_submission_id TEXT,
   status survey_status DEFAULT 'PENDING',
   confirmed_by INT REFERENCES users(id) ON DELETE SET NULL,
   confirmed_at TIMESTAMP,
@@ -169,6 +170,7 @@ CREATE TABLE IF NOT EXISTS poles (
   image_url_1 TEXT,
   image_url_2 TEXT,
   image_url_3 TEXT,
+  offline_submission_id TEXT,
   status survey_status DEFAULT 'PENDING',
   confirmed_by INT REFERENCES users(id) ON DELETE SET NULL,
   confirmed_at TIMESTAMP,
@@ -214,4 +216,7 @@ CREATE INDEX IF NOT EXISTS idx_issues_project_id ON issues(project_id, entity_ty
 CREATE INDEX IF NOT EXISTS idx_projects_is_deleted ON projects(is_deleted);
 CREATE INDEX IF NOT EXISTS idx_projects_created_by ON projects(created_by);
 CREATE INDEX IF NOT EXISTS idx_projects_type ON projects(project_type);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_switch_points_offline_submission_id_uniq ON switch_points(offline_submission_id) WHERE offline_submission_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_poles_offline_submission_id_uniq ON poles(offline_submission_id) WHERE offline_submission_id IS NOT NULL;
+
 
