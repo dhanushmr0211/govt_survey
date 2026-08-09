@@ -21,7 +21,11 @@ const NUMERIC_COLS = [
   'light_mounting_height',
   'ward_number',
   'dtc_number',
-  'meter_serial_number',
+  'light_capacity',
+  'light_capacity_2',
+  'light_capacity_3',
+  'light_capacity_4',
+  'light_capacity_5',
   'req_led_wattage'
 ];
 
