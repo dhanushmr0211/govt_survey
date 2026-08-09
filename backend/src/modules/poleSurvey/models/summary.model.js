@@ -1083,12 +1083,27 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
   const pSql = `
     SELECT 
       p.*,
+      COALESCE(p.image_url_1, img1.url_full) as image_url_1,
+      COALESCE(p.image_url_2, img2.url_full) as image_url_2,
+      COALESCE(p.image_url_3, img3.url_full) as image_url_3,
       u.name as user_name,
       u_conf.name as confirmed_by_name,
       ulb.name as ulb_name,
       d.name as district_name,
       sp.switch_point_number
     FROM poles p
+    LEFT JOIN LATERAL (
+      SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+      FROM entity_files WHERE entity_type = 'pole' AND entity_id = p.id ORDER BY id ASC LIMIT 1 OFFSET 0
+    ) img1 ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+      FROM entity_files WHERE entity_type = 'pole' AND entity_id = p.id ORDER BY id ASC LIMIT 1 OFFSET 1
+    ) img2 ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+      FROM entity_files WHERE entity_type = 'pole' AND entity_id = p.id ORDER BY id ASC LIMIT 1 OFFSET 2
+    ) img3 ON TRUE
     JOIN switch_points sp ON p.switch_point_id = sp.id
     JOIN users u ON p.created_by = u.id
     LEFT JOIN users u_conf ON p.confirmed_by = u_conf.id
