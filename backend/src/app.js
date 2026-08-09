@@ -75,20 +75,6 @@ function createApp() {
       section_j BOOLEAN NOT NULL DEFAULT FALSE,
       section_k BOOLEAN NOT NULL DEFAULT FALSE
     );`,
-    `WITH ranked_files AS (
-      SELECT 
-        entity_id AS pole_id,
-        url,
-        ROW_NUMBER() OVER (PARTITION BY entity_id ORDER BY id ASC) as file_idx
-      FROM entity_files
-      WHERE entity_type = 'pole'
-    )
-    UPDATE poles p
-    SET 
-      image_url_1 = COALESCE(p.image_url_1, (SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END FROM ranked_files WHERE pole_id = p.id AND file_idx = 1)),
-      image_url_2 = COALESCE(p.image_url_2, (SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END FROM ranked_files WHERE pole_id = p.id AND file_idx = 2)),
-      image_url_3 = COALESCE(p.image_url_3, (SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END FROM ranked_files WHERE pole_id = p.id AND file_idx = 3))
-    WHERE p.image_url_3 IS NULL OR p.image_url_1 IS NULL OR p.image_url_2 IS NULL;`
   ];
 
   const tgplMigrations = [
