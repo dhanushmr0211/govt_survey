@@ -26,6 +26,10 @@ async function buildObjectName(recordId, originalName) {
       const entityType = parts[1];
       const entityId = parts[2];
       
+      if (projectId === '4') {
+        folder = 'TGPL2-IMAGES';
+      }
+
       if (projectId === '3') {
         folder = 'TGPL-IMAGES';
         if (entityType === 'pole') {

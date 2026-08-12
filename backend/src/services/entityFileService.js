@@ -4,7 +4,8 @@ const { pool, tgplPool, dbStorage, query } = require('../config/db');
 const { env } = require('../config/env');
 
 async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
-  const activePool = String(projectId) === '3' ? tgplPool : pool;
+  const isTgplDatabase = ['3', '4'].includes(String(projectId));
+  const activePool = isTgplDatabase ? tgplPool : pool;
   return dbStorage.run(activePool, async () => {
     const objectName = await buildObjectName(`${projectId}_${entityType}_${entityId}`, file.originalname);
     const uploaded = await uploadBuffer(file.buffer, objectName, file.mimetype);
@@ -27,7 +28,16 @@ async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
 
     // Sync to respective tables regardless of entity_files insert outcome
     try {
-      if (entityType === 'pole') {
+      if (String(projectId) === '4' && entityType === 'pole') {
+        const poleRes = await query(
+          'SELECT image_url_1, image_url_2 FROM tgpl2_poles WHERE id = $1 AND project_id = $2',
+          [entityId, Number(projectId)]
+        );
+        if (poleRes.rows.length > 0) {
+          const updateCol = !poleRes.rows[0].image_url_1 ? 'image_url_1' : !poleRes.rows[0].image_url_2 ? 'image_url_2' : null;
+          if (updateCol) await query(`UPDATE tgpl2_poles SET ${updateCol} = $1, updated_at = NOW() WHERE id = $2 AND project_id = $3`, [publicUrl, entityId, Number(projectId)]);
+        }
+      } else if (entityType === 'pole') {
         const poleRes = await query('SELECT image_url_1, image_url_2, image_url_3 FROM poles WHERE id = $1', [entityId]);
         if (poleRes.rows.length > 0) {
           const pole = poleRes.rows[0];
@@ -70,7 +80,7 @@ async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
 }
 
 async function getFilesForEntity(projectId, entityType, entityId) {
-  const activePool = String(projectId) === '3' ? tgplPool : pool;
+  const activePool = ['3', '4'].includes(String(projectId)) ? tgplPool : pool;
   return dbStorage.run(activePool, async () => {
     // Fetch from entity_files — wrap in try-catch in case the table doesn't exist (e.g. legacy TGPL DB)
     let filesWithUrls = [];
@@ -84,16 +94,18 @@ async function getFilesForEntity(projectId, entityType, entityId) {
       console.error('Error querying entity_files (table may not exist):', dbErr.message);
     }
 
-    // Fallback for TGPL poles where images are stored in poles table columns
-    if (String(projectId) === '3' && entityType === 'pole') {
+    // Fallback for TGPL-family poles where images are stored directly on the pole record.
+    if (['3', '4'].includes(String(projectId)) && entityType === 'pole') {
       try {
-        const poleRes = await query('SELECT image_url_1, image_url_2, created_at FROM poles WHERE id = $1', [entityId]);
+        const isTgpl2 = String(projectId) === '4';
+        const table = isTgpl2 ? 'tgpl2_poles' : 'poles';
+        const poleRes = await query(`SELECT image_url_1, image_url_2, created_at FROM ${table} WHERE id = $1`, [entityId]);
         if (poleRes.rows.length > 0) {
           const pole = poleRes.rows[0];
           const extraFiles = [];
           if (pole.image_url_1) {
             extraFiles.push({
-              id: `fallback-tgpl-${entityId}-1`,
+              id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityId}-1`,
               project_id: Number(projectId),
               entity_type: 'pole',
               entity_id: entityId,
@@ -104,7 +116,7 @@ async function getFilesForEntity(projectId, entityType, entityId) {
           }
           if (pole.image_url_2) {
             extraFiles.push({
-              id: `fallback-tgpl-${entityId}-2`,
+              id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityId}-2`,
               project_id: Number(projectId),
               entity_type: 'pole',
               entity_id: entityId,
@@ -132,11 +144,11 @@ async function getFilesForEntity(projectId, entityType, entityId) {
 
 async function deleteFile(fileId, projectId) {
   let activePool = pool;
-  if (String(projectId) === '3') {
+  if (['3', '4'].includes(String(projectId))) {
     activePool = tgplPool;
   } else {
     const fileIdStr = String(fileId);
-    if (fileIdStr.startsWith('fallback-tgpl-')) {
+    if (fileIdStr.startsWith('fallback-tgpl-') || fileIdStr.startsWith('fallback-tgpl2-')) {
       activePool = tgplPool;
     } else {
       activePool = dbStorage.getStore() || pool;
@@ -145,8 +157,9 @@ async function deleteFile(fileId, projectId) {
 
   return dbStorage.run(activePool, async () => {
     const fileIdStr = String(fileId);
-    if (fileIdStr.startsWith('fallback-tgpl-')) {
+    if (fileIdStr.startsWith('fallback-tgpl-') || fileIdStr.startsWith('fallback-tgpl2-')) {
       const parts = fileIdStr.split('-');
+      const isTgpl2 = fileIdStr.startsWith('fallback-tgpl2-');
       const entityId = Number(parts[2]);
       const index = Number(parts[3]);
       
@@ -154,8 +167,9 @@ async function deleteFile(fileId, projectId) {
         throw new Error('Invalid fallback image slot index');
       }
       
+      const table = isTgpl2 ? 'tgpl2_poles' : 'poles';
       const updateCol = `image_url_${index}`;
-      const poleRes = await query(`SELECT ${updateCol} FROM poles WHERE id = $1`, [entityId]);
+      const poleRes = await query(`SELECT ${updateCol} FROM ${table} WHERE id = $1`, [entityId]);
       if (poleRes.rows.length > 0 && poleRes.rows[0][updateCol]) {
         const url = poleRes.rows[0][updateCol];
         const prefix = `https://storage.googleapis.com/${env.gcsBucketName}/`;
@@ -168,7 +182,7 @@ async function deleteFile(fileId, projectId) {
           }
         }
       }
-      await query(`UPDATE poles SET ${updateCol} = NULL WHERE id = $1`, [entityId]);
+      await query(`UPDATE ${table} SET ${updateCol} = NULL WHERE id = $1`, [entityId]);
       return true;
     }
 
@@ -190,14 +204,24 @@ async function deleteFile(fileId, projectId) {
     // Clear column from pole/switch_point
     try {
       if (file.entity_type === 'pole') {
-        await query(`
-          UPDATE poles 
-          SET 
-            image_url_1 = CASE WHEN image_url_1 = $1 THEN NULL ELSE image_url_1 END,
-            image_url_2 = CASE WHEN image_url_2 = $1 THEN NULL ELSE image_url_2 END,
-            image_url_3 = CASE WHEN image_url_3 = $1 THEN NULL ELSE image_url_3 END
-          WHERE id = $2
-        `, [publicUrl, file.entity_id]);
+        if (String(projectId) === '4') {
+          await query(`
+            UPDATE tgpl2_poles
+            SET
+              image_url_1 = CASE WHEN image_url_1 = $1 THEN NULL ELSE image_url_1 END,
+              image_url_2 = CASE WHEN image_url_2 = $1 THEN NULL ELSE image_url_2 END
+            WHERE id = $2 AND project_id = $3
+          `, [publicUrl, file.entity_id, Number(projectId)]);
+        } else {
+          await query(`
+            UPDATE poles
+            SET
+              image_url_1 = CASE WHEN image_url_1 = $1 THEN NULL ELSE image_url_1 END,
+              image_url_2 = CASE WHEN image_url_2 = $1 THEN NULL ELSE image_url_2 END,
+              image_url_3 = CASE WHEN image_url_3 = $1 THEN NULL ELSE image_url_3 END
+            WHERE id = $2
+          `, [publicUrl, file.entity_id]);
+        }
       } else if (file.entity_type === 'switch_point') {
         await query(`
           UPDATE switch_points 

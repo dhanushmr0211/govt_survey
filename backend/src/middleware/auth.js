@@ -4,6 +4,10 @@ const { normalizeRole } = require('../constants/roles');
 const { pool } = require('../config/db');
 
 async function authenticate(req, res, next) {
+  if (req.user) {
+    return next();
+  }
+
   const header = req.headers.authorization;
 
   if (!header || !header.startsWith('Bearer ')) {

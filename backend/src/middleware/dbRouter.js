@@ -1,5 +1,5 @@
 const { pool, tgplPool, dbStorage } = require('../config/db');
-const { TGPL_PROJECT_ID } = require('../constants/projects');
+const { TGPL_PROJECT_ID, TGPL2_PROJECT_ID } = require('../constants/projects');
 
 function dbRouter(req, res, next) {
   let projectId = null;
@@ -18,7 +18,7 @@ function dbRouter(req, res, next) {
   // Default to master/default pool (govt_survey)
   let activePool = pool;
 
-  if (projectId === TGPL_PROJECT_ID) {
+  if (projectId === TGPL_PROJECT_ID || projectId === TGPL2_PROJECT_ID || String(projectId) === '4') {
     activePool = tgplPool;
   }
 

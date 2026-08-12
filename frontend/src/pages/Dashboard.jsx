@@ -10,6 +10,9 @@ import MobileSurvey from '../modules/poleSurvey/pages/MobileSurvey';
 import ProjectSelector from './ProjectSelector';
 import { ArrowLeft } from 'lucide-react';
 
+import Tgpl2MobileSurvey from '../modules/tgpl2Survey/pages/MobileSurvey';
+import Tgpl2EmployeeDashboard from '../modules/tgpl2Survey/pages/EmployeeDashboard';
+
 export default function Dashboard() {
   const user = useAuthStore((state) => state.user);
   const activeProject = useAuthStore((state) => state.activeProject);
@@ -64,10 +67,16 @@ export default function Dashboard() {
     case 'ADMIN':
       return <AdminDashboard />;
     case 'EMPLOYEE':
+      if (String(activeProject.id) === '4' || activeProject.project_type === 'TGPL2_SURVEY') {
+        return <Tgpl2EmployeeDashboard />;
+      }
       return <EmployeeDashboard />;
     case 'CLIENT':
       return <AdminDashboard />;
     case 'MOBILE_USER':
+      if (String(activeProject.id) === '4' || activeProject.project_type === 'TGPL2_SURVEY') {
+        return <Tgpl2MobileSurvey />;
+      }
       return <MobileSurvey />;
     default:
       return (

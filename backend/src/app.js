@@ -267,12 +267,13 @@ function createApp() {
 
   // All domain routes under /api/v1
   const { requireProjectMember } = require('./middleware/roleGuard');
+  const { authenticate } = require('./middleware/auth');
   const { dbRouter } = require('./middleware/dbRouter');
   const apiRouter = express.Router({ mergeParams: true });
   apiRouter.use(dbRouter);
   apiRouter.use('/auth', authRouter);
   apiRouter.use('/projects', projectRouter);
-  apiRouter.use('/projects/:projectId/pole-survey', requireProjectMember(), (req, res, next) => {
+  apiRouter.use('/projects/:projectId/pole-survey', authenticate, requireProjectMember(), (req, res, next) => {
     const projectId = String(req.params.projectId || req.headers['x-project-id']);
     console.log(`[ROUTE DELEGATION] projectId: ${projectId}, TGPL_PROJECT_ID: ${TGPL_PROJECT_ID}, Match: ${projectId === TGPL_PROJECT_ID || projectId === '3' || Number(projectId) === 3}`);
     if (projectId === TGPL_PROJECT_ID || projectId === '3' || Number(projectId) === 3) {
@@ -280,9 +281,11 @@ function createApp() {
     }
     return poleSurveyRouter(req, res, next);
   });
-  apiRouter.use('/projects/:projectId/tgpl-survey', requireProjectMember(), (req, res, next) => {
+  apiRouter.use('/projects/:projectId/tgpl-survey', authenticate, requireProjectMember(), (req, res, next) => {
     return tgplSurveyRouter(req, res, next);
   });
+  const { tgpl2SurveyRouter } = require('./modules/tgpl2Survey/routes/tgpl2Survey.routes');
+  apiRouter.use('/projects/:projectId/tgpl2-survey', authenticate, requireProjectMember(), tgpl2SurveyRouter);
   apiRouter.use('/projects/:projectId/issues', requireProjectMember(), issueRouter);
   app.use('/api/v1', apiRouter);
 
