@@ -48,12 +48,11 @@ async function getWardDetails(projectId, wardId) {
 
 async function getPendingSubmissions(projectId) {
   const result = await query(
-    `SELECT p.*, w.name as ward_name, c.ccms_number, sp.switch_point_number, u.name as surveyor_name
+    `SELECT p.*, w.name as ward_name, c.ccms_number, sp.switch_point_number, p.created_by::text as surveyor_name
      FROM tgpl2_poles p
-     JOIN tgpl2_wards w ON p.ward_id = w.id
-     JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
-     JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
-     LEFT JOIN users u ON p.created_by = u.id
+     LEFT JOIN tgpl2_wards w ON p.ward_id = w.id
+     LEFT JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
+     LEFT JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
      WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted IS NOT TRUE
      ORDER BY p.created_at DESC`,
     [projectId]
@@ -63,12 +62,11 @@ async function getPendingSubmissions(projectId) {
 
 async function getConfirmedSubmissions(projectId) {
   const result = await query(
-    `SELECT p.*, w.name as ward_name, c.ccms_number, sp.switch_point_number, u.name as surveyor_name
+    `SELECT p.*, w.name as ward_name, c.ccms_number, sp.switch_point_number, p.created_by::text as surveyor_name
      FROM tgpl2_poles p
-     JOIN tgpl2_wards w ON p.ward_id = w.id
-     JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
-     JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
-     LEFT JOIN users u ON p.created_by = u.id
+     LEFT JOIN tgpl2_wards w ON p.ward_id = w.id
+     LEFT JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
+     LEFT JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
      WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
      ORDER BY p.confirmed_at DESC LIMIT 500`,
     [projectId]
@@ -80,9 +78,9 @@ async function getTodaySubmissions(projectId, userId) {
   const result = await query(
     `SELECT p.*, w.name as ward_name, c.ccms_number, sp.switch_point_number
      FROM tgpl2_poles p
-     JOIN tgpl2_wards w ON p.ward_id = w.id
-     JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
-     JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
+     LEFT JOIN tgpl2_wards w ON p.ward_id = w.id
+     LEFT JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
+     LEFT JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
      WHERE p.project_id = $1 AND p.created_by = $2 AND p.created_at::date = NOW()::date AND p.is_deleted IS NOT TRUE
      ORDER BY p.created_at DESC`,
     [projectId, userId]
@@ -93,13 +91,12 @@ async function getTodaySubmissions(projectId, userId) {
 async function getEmployeeTracking(projectId) {
   const result = await query(
     `SELECT 
-      u.id as employee_id,
-      u.name as employee_name,
+      p.confirmed_by as employee_id,
+      p.confirmed_by::text as employee_name,
       COUNT(p.id) as confirmed_count
-     FROM users u
-     JOIN tgpl2_poles p ON p.confirmed_by = u.id
-     WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
-     GROUP BY u.id, u.name
+     FROM tgpl2_poles p
+     WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.confirmed_by IS NOT NULL AND p.is_deleted IS NOT TRUE
+     GROUP BY p.confirmed_by
      ORDER BY confirmed_count DESC`,
     [projectId]
   );
@@ -109,13 +106,12 @@ async function getEmployeeTracking(projectId) {
 async function getMobileUserTracking(projectId) {
   const result = await query(
     `SELECT 
-      u.id as surveyor_id,
-      u.name as surveyor_name,
+      p.created_by as surveyor_id,
+      p.created_by::text as surveyor_name,
       COUNT(p.id) as submitted_count
-     FROM users u
-     JOIN tgpl2_poles p ON p.created_by = u.id
+     FROM tgpl2_poles p
      WHERE p.project_id = $1 AND p.is_deleted IS NOT TRUE
-     GROUP BY u.id, u.name
+     GROUP BY p.created_by
      ORDER BY submitted_count DESC`,
     [projectId]
   );
@@ -176,12 +172,11 @@ async function getReportData(projectId) {
       p.longitude,
       p.status,
       p.created_at,
-      u.name as surveyor_name
+      p.created_by::text as surveyor_name
      FROM tgpl2_poles p
-     JOIN tgpl2_wards w ON p.ward_id = w.id
-     JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
-     JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
-     LEFT JOIN users u ON p.created_by = u.id
+     LEFT JOIN tgpl2_wards w ON p.ward_id = w.id
+     LEFT JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
+     LEFT JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
      WHERE p.project_id = $1 AND p.is_deleted IS NOT TRUE
      ORDER BY w.name ASC, c.ccms_number ASC, sp.switch_point_number ASC, p.pole_number ASC`,
     [projectId]

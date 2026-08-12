@@ -30,9 +30,9 @@ async function getPoles(projectId, status, limit, offset) {
   const result = await query(
     `SELECT p.*, w.name as ward_name, c.ccms_number, sp.switch_point_number
      FROM tgpl2_poles p
-     JOIN tgpl2_wards w ON p.ward_id = w.id
-     JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
-     JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
+     LEFT JOIN tgpl2_wards w ON p.ward_id = w.id
+     LEFT JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
+     LEFT JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
      WHERE p.project_id = $1 AND p.status = $2 AND p.is_deleted IS NOT TRUE
      ORDER BY p.created_at DESC LIMIT $3 OFFSET $4`,
     [projectId, status, limit, offset]

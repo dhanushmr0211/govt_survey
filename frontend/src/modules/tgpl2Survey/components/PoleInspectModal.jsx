@@ -77,6 +77,25 @@ export const PoleInspectModal = ({ pole, onClose, onRefresh, projectId }) => {
         </header>
 
         <div className="p-4 space-y-4 flex-1">
+          <div className="grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-700">
+            <div>
+              <p className="font-semibold text-gray-500 uppercase">Ward</p>
+              <p className="mt-1 text-gray-900">{pole.ward_name || '-'}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-500 uppercase">CCMS</p>
+              <p className="mt-1 text-gray-900">{pole.ccms_number || '-'}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-500 uppercase">Switch Point</p>
+              <p className="mt-1 text-gray-900">{pole.switch_point_number || '-'}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-500 uppercase">Status</p>
+              <p className="mt-1 text-gray-900">{pole.status || '-'}</p>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-gray-600 uppercase">Pole Number</label>
             <input type="text" name="pole_number" value={formData.pole_number || ''} onChange={handleChange} className="w-full p-2.5 border rounded text-sm" />
@@ -101,6 +120,32 @@ export const PoleInspectModal = ({ pole, onClose, onRefresh, projectId }) => {
               <input type="checkbox" name="arm_deteriorated" checked={formData.arm_deteriorated || false} onChange={handleChange} />
               Deteriorated Arm
             </label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-xs text-gray-700">
+            <div className="rounded-lg border p-3">
+              <p className="font-semibold text-gray-500 uppercase">Latitude</p>
+              <p className="mt-1 text-gray-900">{pole.latitude || '-'}</p>
+            </div>
+            <div className="rounded-lg border p-3">
+              <p className="font-semibold text-gray-500 uppercase">Longitude</p>
+              <p className="mt-1 text-gray-900">{pole.longitude || '-'}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {[pole.image_url_1, pole.image_url_2].map((url, index) => (
+              <div key={index} className="rounded-lg border bg-gray-50 p-2">
+                <p className="mb-2 text-xs font-semibold uppercase text-gray-500">Photo {index + 1}</p>
+                {url ? (
+                  <a href={url} target="_blank" rel="noreferrer">
+                    <img src={url} alt={`Pole ${index + 1}`} className="h-28 w-full rounded object-cover" />
+                  </a>
+                ) : (
+                  <div className="flex h-28 items-center justify-center rounded bg-white text-xs text-gray-400">No photo</div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
