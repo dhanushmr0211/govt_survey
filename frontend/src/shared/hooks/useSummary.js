@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import API_BASE_URL from '../../config/api';
+import { isTgpl2Project } from '../utils/projectType';
 
 export const useSummary = (projectId, date = null, mode = 'exact', fromDate = null, toDate = null) => {
   const token = localStorage.getItem('token');
-  const isTgpl2 = String(projectId) === '4';
+  const isTgpl2 = isTgpl2Project(projectId);
 
   return useQuery({
     queryKey: ['districtSummary', projectId, date, mode, fromDate, toDate],

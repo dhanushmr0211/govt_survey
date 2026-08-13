@@ -7,6 +7,7 @@ import { useToastStore } from '../../../store/toastStore';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 import { isMobileEditRestricted } from '../utils/mobileRestrictions';
+import { isTgpl2Project, isTgplProject } from '../../../shared/utils/projectType';
 
 const getAutoRoadCategory = (roadType, roadWidthStr) => {
   const normalizedRoadType = typeof roadType === 'string' ? roadType : (roadType ? String(roadType) : '');
@@ -56,9 +57,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     'prajnatm29@gmail.com'
   ]).has((user?.email || '').toLowerCase());
   const activeProject = useAuthStore((state) => state.activeProject);
-  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
-  const isTgpl2 = activeProject?.project_type === 'TGPL2_SURVEY' || String(activeProject?.id) === '4' || String(projectId) === '4';
-  const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
+  const effectiveProjectId = projectId ?? activeProject?.id ?? Number(localStorage.getItem('master_selectedProjectId')) || null;
+  const isTgpl = isTgplProject(effectiveProjectId, activeProject);
+  const isTgpl2 = isTgpl2Project(effectiveProjectId, activeProject);
+  const isIdeck = String(effectiveProjectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
   const showDeleteButton = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'prelectricals01@gmail.com';
   const canEdit = (user?.role === 'MASTER_ADMIN' || activeProject?.section_j) && !(isTgpl && selectedDetail?.type === 'switch_point');

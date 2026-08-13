@@ -3,11 +3,12 @@ import { useSummary } from '../../../shared/hooks/useSummary';
 import { Zap, Lightbulb, ArrowUpRight } from 'lucide-react';
 import { getLocalDateString } from '../../../shared/utils/date';
 import { useAuthStore } from '../../../store/authStore';
+import { isTgpl2Project, isTgplProject } from '../../../shared/utils/projectType';
 
 export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCounts = false }) => {
   const activeProject = useAuthStore((state) => state.activeProject);
-  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
-  const isTgpl2 = activeProject?.project_type === 'TGPL2_SURVEY' || String(activeProject?.id) === '4' || String(projectId) === '4';
+  const isTgpl = isTgplProject(projectId, activeProject);
+  const isTgpl2 = isTgpl2Project(projectId, activeProject);
 
   const [selectedFilter, setSelectedFilter] = useState('today');
   const today = getLocalDateString();
