@@ -53,7 +53,7 @@ async function getPendingSubmissions(projectId) {
      LEFT JOIN tgpl2_wards w ON p.ward_id = w.id
      LEFT JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
      LEFT JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
-     WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted IS NOT TRUE
+     WHERE p.project_id = $1 AND COALESCE(UPPER(p.status), 'PENDING') = 'PENDING' AND p.is_deleted IS NOT TRUE
      ORDER BY p.created_at DESC`,
     [projectId]
   );
@@ -67,7 +67,7 @@ async function getConfirmedSubmissions(projectId) {
      LEFT JOIN tgpl2_wards w ON p.ward_id = w.id
      LEFT JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
      LEFT JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
-     WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
+     WHERE p.project_id = $1 AND UPPER(p.status) = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
      ORDER BY p.confirmed_at DESC LIMIT 500`,
     [projectId]
   );
@@ -95,7 +95,7 @@ async function getEmployeeTracking(projectId) {
       p.confirmed_by::text as employee_name,
       COUNT(p.id) as confirmed_count
      FROM tgpl2_poles p
-     WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.confirmed_by IS NOT NULL AND p.is_deleted IS NOT TRUE
+     WHERE p.project_id = $1 AND UPPER(p.status) = 'CONFIRMED' AND p.confirmed_by IS NOT NULL AND p.is_deleted IS NOT TRUE
      GROUP BY p.confirmed_by
      ORDER BY confirmed_count DESC`,
     [projectId]

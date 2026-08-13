@@ -4,14 +4,16 @@ import API_BASE_URL from '../../config/api';
 
 export const usePendingQueue = (projectId) => {
   const token = localStorage.getItem('token');
-  
+  const isTgpl2 = String(projectId) === '4';
+
   return useQuery({
     queryKey: ['pendingQueue', projectId],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/queue/pending`, {
+      const surveyPath = isTgpl2 ? 'tgpl2-survey' : 'pole-survey';
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/${surveyPath}/queue/pending`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return res.data.queue || [];
+      return res.data?.queue || res.data?.poles || [];
     },
     enabled: !!projectId,
   });

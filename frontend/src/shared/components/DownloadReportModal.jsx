@@ -17,13 +17,17 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadedBytes, setDownloadedBytes] = useState(0);
 
+  const isTgpl2 = String(projectId) === '4';
+
   const { data: summary = [] } = useQuery({
     queryKey: ['report-districts', projectId, token],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/summary/districts`, {
+      const surveyPath = isTgpl2 ? 'tgpl2-survey' : 'pole-survey';
+      const summaryPath = isTgpl2 ? 'summary/wards' : 'summary/districts';
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/${surveyPath}/${summaryPath}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return res.data.summary || [];
+      return res.data?.summary || res.data?.wards || [];
     },
     enabled: isOpen && !!projectId && !!token,
   });
@@ -63,7 +67,8 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
     setIsDownloading(true);
     setDownloadedBytes(0);
     try {
-      let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/report/download`;
+      const surveyPath = isTgpl2 ? 'tgpl2-survey' : 'pole-survey';
+      let url = `${API_BASE_URL}/projects/${projectId}/${surveyPath}/report/download`;
       const params = [];
       if (districtId) params.push(`district=${encodeURIComponent(districtId)}`);
       if (ulbId) params.push(`ulbId=${encodeURIComponent(ulbId)}`);
