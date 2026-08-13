@@ -563,16 +563,22 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     if (!isTgpl) return {};
     return details.reduce((acc, item) => {
       if (item.survey_type === 'installation') return acc;
-      const spId = item.ccms_number || 'NO_CCMS';
-      if (!acc[spId]) {
-        acc[spId] = {
-          id: spId,
-          switch_point_number: item.ccms_number,
+      const ccmsKey = item.ccms_number || 'NO_CCMS';
+      if (!acc[ccmsKey]) {
+        acc[ccmsKey] = {
+          id: ccmsKey,
+          switch_point_number: item.ccms_number || 'No CCMS',
+          switchPointNumbers: new Set(),
           poles: [],
         };
       }
+
+      if (item.switch_point_number) {
+        acc[ccmsKey].switchPointNumbers.add(String(item.switch_point_number));
+      }
+
       if (item.pole_id) {
-        acc[spId].poles.push({
+        acc[ccmsKey].poles.push({
           ...item,
           latitude: item.pole_latitude,
           longitude: item.pole_longitude,
@@ -586,16 +592,22 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     if (!isTgpl) return {};
     return details.reduce((acc, item) => {
       if (item.survey_type !== 'installation') return acc;
-      const spId = item.ccms_number || 'NO_CCMS';
-      if (!acc[spId]) {
-        acc[spId] = {
-          id: spId,
-          switch_point_number: item.ccms_number,
+      const ccmsKey = item.ccms_number || 'NO_CCMS';
+      if (!acc[ccmsKey]) {
+        acc[ccmsKey] = {
+          id: ccmsKey,
+          switch_point_number: item.ccms_number || 'No CCMS',
+          switchPointNumbers: new Set(),
           poles: [],
         };
       }
+
+      if (item.switch_point_number) {
+        acc[ccmsKey].switchPointNumbers.add(String(item.switch_point_number));
+      }
+
       if (item.pole_id) {
-        acc[spId].poles.push({
+        acc[ccmsKey].poles.push({
           ...item,
           latitude: item.pole_latitude,
           longitude: item.pole_longitude,
@@ -658,19 +670,25 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                   <p className="text-xs text-slate-400 italic pl-2">No survey CCMS units found.</p>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                    {Object.values(surveySwitchPoints).map((sp) => (
-                      <button
-                        key={sp.id}
-                        onClick={() => setSelectedCcms({ id: sp.id, type: 'survey' })}
-                        className={`rounded-lg border p-3 text-center transition ${selectedCcms.id === sp.id && selectedCcms.type === 'survey' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
-                      >
-                        <p className="text-xs text-slate-500">CCMS</p>
-                        <p className="text-base font-bold truncate max-w-full" title={sp.switch_point_number || 'No CCMS'}>
-                          {sp.switch_point_number || 'No CCMS'}
-                        </p>
-                        <p className="text-xs text-slate-500">{sp.poles.length} Poles</p>
-                      </button>
-                    ))}
+                    {Object.values(surveySwitchPoints).map((sp) => {
+                      const switchPointCount = sp.switchPointNumbers?.size || 0;
+                      return (
+                        <button
+                          key={sp.id}
+                          onClick={() => setSelectedCcms({ id: sp.id, type: 'survey' })}
+                          className={`rounded-lg border p-3 text-center transition ${selectedCcms.id === sp.id && selectedCcms.type === 'survey' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+                        >
+                          <p className="text-xs text-slate-500">CCMS</p>
+                          <p className="text-base font-bold truncate max-w-full" title={sp.switch_point_number || 'No CCMS'}>
+                            {sp.switch_point_number || 'No CCMS'}
+                          </p>
+                          <div className="mt-2 grid grid-cols-2 gap-1 text-[10px]">
+                            <span className="rounded bg-violet-50 px-1 py-0.5 text-violet-700">SP: {switchPointCount}</span>
+                            <span className="rounded bg-emerald-50 px-1 py-0.5 text-emerald-700">Poles: {sp.poles.length}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -682,19 +700,25 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                   <p className="text-xs text-slate-400 italic pl-2">No installation CCMS units found.</p>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                    {Object.values(installationSwitchPoints).map((sp) => (
-                      <button
-                        key={sp.id}
-                        onClick={() => setSelectedCcms({ id: sp.id, type: 'installation' })}
-                        className={`rounded-lg border p-3 text-center transition ${selectedCcms.id === sp.id && selectedCcms.type === 'installation' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
-                      >
-                        <p className="text-xs text-slate-500">CCMS</p>
-                        <p className="text-base font-bold truncate max-w-full" title={sp.switch_point_number || 'No CCMS'}>
-                          {sp.switch_point_number || 'No CCMS'}
-                        </p>
-                        <p className="text-xs text-slate-500">{sp.poles.length} Poles</p>
-                      </button>
-                    ))}
+                    {Object.values(installationSwitchPoints).map((sp) => {
+                      const switchPointCount = sp.switchPointNumbers?.size || 0;
+                      return (
+                        <button
+                          key={sp.id}
+                          onClick={() => setSelectedCcms({ id: sp.id, type: 'installation' })}
+                          className={`rounded-lg border p-3 text-center transition ${selectedCcms.id === sp.id && selectedCcms.type === 'installation' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+                        >
+                          <p className="text-xs text-slate-500">CCMS</p>
+                          <p className="text-base font-bold truncate max-w-full" title={sp.switch_point_number || 'No CCMS'}>
+                            {sp.switch_point_number || 'No CCMS'}
+                          </p>
+                          <div className="mt-2 grid grid-cols-2 gap-1 text-[10px]">
+                            <span className="rounded bg-violet-50 px-1 py-0.5 text-violet-700">SP: {switchPointCount}</span>
+                            <span className="rounded bg-emerald-50 px-1 py-0.5 text-emerald-700">Poles: {sp.poles.length}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -751,12 +775,16 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                   return (
                     <div key={`${sp.id}_${selectedCcms.type}`} className="rounded-lg border border-slate-150 overflow-hidden mb-6 bg-white shadow-sm">
                       {/* CCMS Header */}
-                      <div className="bg-slate-50 p-4 border-b border-slate-150 flex justify-between items-center">
+                      <div className="bg-slate-50 p-4 border-b border-slate-150 flex justify-between items-center gap-3">
                         <div>
                           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             {selectedCcms.type === 'installation' ? 'CCMS Unit (Installation)' : 'CCMS Unit (Survey)'}
                           </span>
                           <h3 className="text-base font-bold text-slate-950">CCMS No: {sp.switch_point_number || 'No CCMS'}</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <span className="rounded bg-violet-50 px-2 py-1 font-semibold text-violet-700">Switch Points: {sp.switchPointNumbers?.size || 0}</span>
+                          <span className="rounded bg-emerald-50 px-2 py-1 font-semibold text-emerald-700">Total Poles: {sp.poles.length}</span>
                         </div>
                       </div>
                       <div className="overflow-x-auto">

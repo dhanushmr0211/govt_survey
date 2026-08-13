@@ -238,18 +238,7 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
             <table className="premium-table">
               <thead>
                 <tr>
-                  <th>TMC/CMC</th>
-                  {!isTgpl ? (
-                    <>
-                      <th>Total Switch Points</th>
-                      <th>Total Poles</th>
-                    </>
-                  ) : (
-                    <>
-                      <th>Total Survey Poles</th>
-                      <th>Total Installation</th>
-                    </>
-                  )}
+                  <th>Ward / ULB</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -257,17 +246,6 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
                 {district.ulbs.map((ulb) => (
                   <tr key={ulb.ulb_id}>
                     <td className="font-semibold text-slate-950">{ulb.ulb_name}</td>
-                    {!isTgpl ? (
-                      <>
-                        <td>{ulb.total_switch_points}</td>
-                        <td>{ulb.total_poles}</td>
-                      </>
-                    ) : (
-                      <>
-                        <td>{ulb.total_survey_poles}</td>
-                        <td>{ulb.total_inst_poles}</td>
-                      </>
-                    )}
                     <td>
                       <button
                         onClick={() => onViewDetails(ulb, { date: effectiveDate, mode, fromDate: effectiveFromDate, toDate: effectiveToDate })}
