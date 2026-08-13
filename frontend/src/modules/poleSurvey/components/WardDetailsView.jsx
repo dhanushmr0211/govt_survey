@@ -57,7 +57,8 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     'prajnatm29@gmail.com'
   ]).has((user?.email || '').toLowerCase());
   const activeProject = useAuthStore((state) => state.activeProject);
-  const effectiveProjectId = projectId ?? activeProject?.id ?? Number(localStorage.getItem('master_selectedProjectId')) || null;
+  const selectedProjectId = Number(localStorage.getItem('master_selectedProjectId')) || null;
+  const effectiveProjectId = projectId ?? activeProject?.id ?? selectedProjectId;
   const isTgpl = isTgplProject(effectiveProjectId, activeProject);
   const isTgpl2 = isTgpl2Project(effectiveProjectId, activeProject);
   const isIdeck = String(effectiveProjectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
