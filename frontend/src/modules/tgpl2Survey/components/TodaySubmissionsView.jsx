@@ -6,12 +6,19 @@ export const TodaySubmissionsView = ({ projectId }) => {
   const token = localStorage.getItem('token');
 
   const { data: poles = [], isLoading } = useQuery({
-    queryKey: ['tgpl2-today-submissions', projectId],
+    queryKey: ['tgpl2-all-submissions', projectId],
     queryFn: async () => {
-      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/tgpl2-survey/queue/today`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.data.poles || [];
+      const [pendingRes, confirmedRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/projects/${projectId}/tgpl2-survey/queue/pending`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_BASE_URL}/projects/${projectId}/tgpl2-survey/queue/confirmed`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      ]);
+
+      const merged = [...(pendingRes.data.poles || []), ...(confirmedRes.data.poles || [])];
+      return merged.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
     },
     enabled: !!projectId,
   });
@@ -23,13 +30,13 @@ export const TodaySubmissionsView = ({ projectId }) => {
   return (
     <div className="space-y-3">
       <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
-        <h2 className="text-base font-bold text-gray-900">Today's Submissions</h2>
-        <p className="text-xs text-gray-500 mt-1">{poles.length} TGPL-2 pole submissions today</p>
+        <h2 className="text-base font-bold text-gray-900">All Submissions</h2>
+        <p className="text-xs text-gray-500 mt-1">{poles.length} TGPL-2 pole submissions</p>
       </div>
 
       {poles.length === 0 ? (
         <div className="bg-white p-6 rounded-lg border border-gray-100 text-center text-sm text-gray-500">
-          No submissions found for today.
+          No submissions found.
         </div>
       ) : (
         poles.map((pole) => (

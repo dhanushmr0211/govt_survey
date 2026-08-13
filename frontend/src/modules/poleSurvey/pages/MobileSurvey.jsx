@@ -27,6 +27,7 @@ export default function MobileSurvey() {
 
   const projectId = activeProject?.id;
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
+  const isTgpl2 = activeProject?.project_type === 'TGPL2_SURVEY' || String(activeProject?.id) === '4';
 
   useEffect(() => {
     if (isTgpl && selectedUlb && !view) {
@@ -266,6 +267,18 @@ export default function MobileSurvey() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
+                  {isTgpl2 && (
+                    <button
+                      onClick={() => setView('ccms')}
+                      className={`p-4 rounded-lg border flex flex-col items-center justify-center gap-2 transition-colors ${
+                        view === 'ccms'
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-gray-200 hover:border-primary/50'
+                      }`}
+                    >
+                      <span className="text-sm font-medium">Create CCMS</span>
+                    </button>
+                  )}
                   {!isTgpl && (
                     <button
                       onClick={() => setView('switch_point')}
@@ -290,6 +303,10 @@ export default function MobileSurvey() {
                   </button>
                 </div>
               </div>
+            )}
+
+            {view === 'ccms' && selectedUlb && (
+              <CcmsForm ulb={selectedUlb} onBack={() => setView(null)} />
             )}
 
             {view === 'switch_point' && selectedUlb && (

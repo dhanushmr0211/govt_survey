@@ -57,6 +57,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   ]).has((user?.email || '').toLowerCase());
   const activeProject = useAuthStore((state) => state.activeProject);
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
+  const isTgpl2 = activeProject?.project_type === 'TGPL2_SURVEY' || String(activeProject?.id) === '4' || String(projectId) === '4';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
   const showDeleteButton = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'prelectricals01@gmail.com';
@@ -82,8 +83,15 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   }, [projectId, token]);
 
   const { data: wards = [], isLoading: isLoadingWards } = useQuery({
-    queryKey: ['wardSummary', ulb.ulb_id, date, mode, fromDate, toDate],
+    queryKey: ['wardSummary', ulb.ulb_id, date, mode, fromDate, toDate, isTgpl2],
     queryFn: async () => {
+      if (isTgpl2) {
+        const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/tgpl2-survey/summary/wards`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        return res.data.wards || [];
+      }
+
       const params = new URLSearchParams();
       if (date) params.append('date', date);
       if (mode) params.append('mode', mode);
@@ -98,9 +106,16 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   });
 
   const { data: details = [], isLoading: isLoadingDetails } = useQuery({
-    queryKey: ['wardDetails', ulb.ulb_id, selectedWard, date, mode, fromDate, toDate],
+    queryKey: ['wardDetails', ulb.ulb_id, selectedWard, date, mode, fromDate, toDate, isTgpl2],
     queryFn: async () => {
       if (!selectedWard) return [];
+      if (isTgpl2) {
+        const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/tgpl2-survey/summary/wards/${selectedWard}/details`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        return res.data.details || [];
+      }
+
       const params = new URLSearchParams();
       if (date) params.append('date', date);
       if (mode) params.append('mode', mode);

@@ -7,7 +7,8 @@ import { useAuthStore } from '../../../store/authStore';
 export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCounts = false }) => {
   const activeProject = useAuthStore((state) => state.activeProject);
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
-  
+  const isTgpl2 = activeProject?.project_type === 'TGPL2_SURVEY' || String(activeProject?.id) === '4' || String(projectId) === '4';
+
   const [selectedFilter, setSelectedFilter] = useState('today');
   const today = getLocalDateString();
   const [fromDate, setFromDate] = useState(today);
@@ -31,34 +32,39 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
 
   if (isLoading) return <div className="premium-panel p-8 text-slate-500">Loading summary...</div>;
 
-  // Group by district
+  // Group by district / ward
   const districts = summary.reduce((acc, row) => {
-    if (!acc[row.district_id]) {
-      acc[row.district_id] = {
-        id: row.district_id,
-        name: row.district_name,
+    const districtId = row.district_id ?? row.ward_id ?? row.id ?? row.ward_name ?? 'unknown';
+    const districtName = row.district_name ?? row.ward_name ?? 'Ward';
+
+    if (!acc[districtId]) {
+      acc[districtId] = {
+        id: districtId,
+        name: districtName,
         ulbs: [],
+        total_ccms: 0,
         total_switch_points: 0,
         total_poles: 0,
         total_survey_poles: 0,
         total_inst_poles: 0,
       };
     }
-    acc[row.district_id].ulbs.push(row);
-    acc[row.district_id].total_switch_points += parseInt(row.total_switch_points || 0);
-    acc[row.district_id].total_poles += parseInt(row.total_poles || 0);
-    acc[row.district_id].total_survey_poles += parseInt(row.total_survey_poles || 0);
-    acc[row.district_id].total_inst_poles += parseInt(row.total_inst_poles || 0);
+    acc[districtId].ulbs.push(row);
+    acc[districtId].total_ccms += parseInt(row.total_ccms || 0);
+    acc[districtId].total_switch_points += parseInt(row.total_switch_points || 0);
+    acc[districtId].total_poles += parseInt(row.total_poles || 0);
+    acc[districtId].total_survey_poles += parseInt(row.total_survey_poles || 0);
+    acc[districtId].total_inst_poles += parseInt(row.total_inst_poles || 0);
     return acc;
   }, {});
   const filteredDistricts = Object.values(districts).filter(d => 
-    !hideZeroCounts || d.total_switch_points > 0 || d.total_poles > 0 || d.total_survey_poles > 0 || d.total_inst_poles > 0
+    !hideZeroCounts || d.total_ccms > 0 || d.total_switch_points > 0 || d.total_poles > 0 || d.total_survey_poles > 0 || d.total_inst_poles > 0
   ).map(d => ({
     ...d,
-    ulbs: d.ulbs.filter(u => !hideZeroCounts || parseInt(u.total_switch_points) > 0 || parseInt(u.total_poles) > 0 || parseInt(u.total_survey_poles) > 0 || parseInt(u.total_inst_poles) > 0)
+    ulbs: d.ulbs.filter(u => !hideZeroCounts || parseInt(u.total_ccms || u.total_ccms_units || 0) > 0 || parseInt(u.total_switch_points || 0) > 0 || parseInt(u.total_poles || 0) > 0 || parseInt(u.total_survey_poles || 0) > 0 || parseInt(u.total_inst_poles || 0) > 0)
   })).filter(d => !hideZeroCounts || d.ulbs.length > 0);
 
-
+  const totalCCMS = summary.reduce((sum, row) => sum + parseInt(row.total_ccms || 0), 0);
   const totalSwitchPoints = summary.reduce((sum, row) => sum + parseInt(row.total_switch_points || 0), 0);
   const totalPoles = summary.reduce((sum, row) => sum + parseInt(row.total_poles || 0), 0);
   const totalSurveyPoles = summary.reduce((sum, row) => sum + parseInt(row.total_survey_poles || 0), 0);
@@ -104,7 +110,37 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
       )}
       {/* Total Stats Card */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {!isTgpl ? (
+        {isTgpl2 ? (
+          <>
+            <div className="premium-panel flex items-center justify-between p-5">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total CCMS Units</p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalCCMS}</p>
+              </div>
+              <div className="rounded-lg bg-blue-50 p-3 text-blue-700">
+                <Zap size={26} />
+              </div>
+            </div>
+            <div className="premium-panel flex items-center justify-between p-5">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Switch Points</p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalSwitchPoints}</p>
+              </div>
+              <div className="rounded-lg bg-amber-50 p-3 text-amber-700">
+                <Lightbulb size={26} />
+              </div>
+            </div>
+            <div className="premium-panel flex items-center justify-between p-5 md:col-span-2">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Poles</p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalPoles}</p>
+              </div>
+              <div className="rounded-lg bg-emerald-50 p-3 text-emerald-700">
+                <Lightbulb size={26} />
+              </div>
+            </div>
+          </>
+        ) : !isTgpl ? (
           <>
             <div className="premium-panel flex items-center justify-between p-5">
               <div>
@@ -153,10 +189,27 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
         <div key={district.id} className="premium-panel overflow-hidden">
           <div className="flex flex-col justify-between gap-4 border-b border-slate-100 p-5 lg:flex-row lg:items-center">
             <h2 className="text-lg font-bold text-slate-950">
-              {district.name.toUpperCase().replace(' DISTRICT', '')} DISTRICT
+              {isTgpl2
+                ? (typeof district?.name === 'string' ? district.name : 'Ward').toUpperCase()
+                : `${(typeof district?.name === 'string' ? district.name.toUpperCase().replace(' DISTRICT', '') : 'DISTRICT')} DISTRICT`}
             </h2>
             <div className="flex flex-wrap gap-3">
-              {!isTgpl ? (
+              {isTgpl2 ? (
+                <>
+                  <div className="min-w-[130px] rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-center">
+                    <p className="text-xs font-semibold text-blue-700">CCMS Units</p>
+                    <p className="text-xl font-bold text-blue-900">{district.total_ccms}</p>
+                  </div>
+                  <div className="min-w-[130px] rounded-lg border border-violet-100 bg-violet-50 px-4 py-2 text-center">
+                    <p className="text-xs font-semibold text-violet-700">Switch Points</p>
+                    <p className="text-xl font-bold text-violet-900">{district.total_switch_points}</p>
+                  </div>
+                  <div className="min-w-[130px] rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-center">
+                    <p className="text-xs font-semibold text-amber-700">Total Poles</p>
+                    <p className="text-xl font-bold text-amber-900">{district.total_poles}</p>
+                  </div>
+                </>
+              ) : !isTgpl ? (
                 <>
                   <div className="min-w-[130px] rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-center">
                     <p className="text-xs font-semibold text-blue-700">Switch Points</p>

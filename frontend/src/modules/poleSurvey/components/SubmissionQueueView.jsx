@@ -42,6 +42,7 @@ export const SubmissionQueueView = ({ projectId }) => {
   const [activeSurveyType, setActiveSurveyType] = useState('survey');
   const activeProject = useAuthStore((state) => state.activeProject);
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
+  const isTgpl2 = activeProject?.project_type === 'TGPL2_SURVEY' || String(activeProject?.id) === '4' || String(projectId) === '4';
   const [ulbs, setUlbs] = useState([]);
 
   useEffect(() => {
@@ -597,6 +598,14 @@ export const SubmissionQueueView = ({ projectId }) => {
                 >
                   Switch Points
                 </button>
+                {isTgpl2 && (
+                  <button
+                    className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'ccms' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                    onClick={() => { setActiveType('ccms'); setPage(1); }}
+                  >
+                    CCMS
+                  </button>
+                )}
                 <button
                   className={`rounded-md px-4 py-2 text-sm font-semibold transition ${activeType === 'pole' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
                   onClick={() => { setActiveType('pole'); setPage(1); }}

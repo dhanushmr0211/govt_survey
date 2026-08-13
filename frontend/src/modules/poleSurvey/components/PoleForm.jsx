@@ -12,8 +12,9 @@ import { InAppCamera } from '../../../shared/components/InAppCamera';
 import { Camera } from 'lucide-react';
 
 const getAutoRoadCategory = (roadType, roadWidthStr) => {
-  if (!roadType) return null;
-  const typeUpper = roadType.toUpperCase();
+  const normalizedRoadType = typeof roadType === 'string' ? roadType : (roadType ? String(roadType) : '');
+  if (!normalizedRoadType.trim()) return null;
+  const typeUpper = normalizedRoadType.toUpperCase();
   const width = Number(roadWidthStr);
 
   if (typeUpper.includes('GALLI')) {
