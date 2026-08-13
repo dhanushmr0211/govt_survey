@@ -725,21 +725,28 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
             </div>
           )
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+          <div className="space-y-3">
             {isLoadingWards ? (
-              [...Array(8)].map((_, i) => (
-                <div key={i} className="h-16 animate-pulse rounded-lg bg-white"></div>
+              [...Array(6)].map((_, i) => (
+                <div key={i} className="h-14 animate-pulse rounded-lg bg-white border border-slate-200"></div>
               ))
             ) : (
               wards.map((ward) => (
                 <button
                   key={ward.ward_number}
                   onClick={() => setSelectedWard(ward.ward_number)}
-                  className={`rounded-lg border p-3 text-center transition ${selectedWard === ward.ward_number ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+                  className={`w-full rounded-lg border p-3 text-left transition ${selectedWard === ward.ward_number ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
                 >
-                  <p className="text-xs text-slate-500">Ward</p>
-                  <p className="text-lg font-bold">{ward.ward_number}</p>
-                  <p className="text-xs text-slate-500">{ward.total_poles} Poles</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold uppercase tracking-wide text-slate-500">Ward</span>
+                      <span className="text-base font-bold">{ward.ward_number}</span>
+                      <span className="text-sm text-slate-500">({ward.total_poles} Poles)</span>
+                    </div>
+                    <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary">
+                      View Details
+                    </span>
+                  </div>
                 </button>
               ))
             )}
@@ -749,7 +756,9 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
 
       {/* Ward Details */}
       {!selectedWard ? (
-        <div className="py-20 text-center text-slate-500">Select a ward to view details</div>
+        wards.length === 0 && !isLoadingWards ? (
+          <div className="py-20 text-center text-slate-500">No wards found.</div>
+        ) : null
       ) : (
         <div className="p-5">
           {isLoadingDetails ? (

@@ -43,6 +43,7 @@ export const SubmissionQueueView = ({ projectId }) => {
   const activeProject = useAuthStore((state) => state.activeProject);
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
   const isTgpl2 = activeProject?.project_type === 'TGPL2_SURVEY' || String(activeProject?.id) === '4' || String(projectId) === '4';
+  const surveyPath = isTgpl2 ? 'tgpl2-survey' : isTgpl ? 'tgpl-survey' : 'pole-survey';
   const [ulbs, setUlbs] = useState([]);
 
   useEffect(() => {
@@ -121,7 +122,7 @@ export const SubmissionQueueView = ({ projectId }) => {
         : activeTab === 'confirmed' 
           ? 'queue/confirmed' 
           : 'queue/deleted';
-      let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}?page=${page}&limit=${limit}`;
+      let url = `${API_BASE_URL}/projects/${projectId}/${surveyPath}/${endpoint}?page=${page}&limit=${limit}`;
       if (fromDate) url += `&fromDate=${fromDate}`;
       if (toDate) url += `&toDate=${toDate}`;
       if (activeType !== 'all') url += `&type=${activeType}`;
@@ -131,7 +132,10 @@ export const SubmissionQueueView = ({ projectId }) => {
       const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return { queue: res.data.queue || [], total: res.data.total || 0 };
+
+      const rows = res.data?.queue ?? res.data?.poles ?? [];
+      const total = Number(res.data?.total ?? rows.length ?? 0);
+      return { queue: Array.isArray(rows) ? rows : [], total };
     },
     enabled: !!projectId,
   });
@@ -162,9 +166,13 @@ export const SubmissionQueueView = ({ projectId }) => {
 
   const confirmMutation = useMutation({
     mutationFn: async ({ id, type }) => {
-      const endpoint = type === 'switch_point' 
-        ? `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${id}/confirm`
-        : `${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${id}/confirm`;
+      const endpoint = type === 'switch_point'
+        ? isTgpl2
+          ? `${API_BASE_URL}/projects/${projectId}/tgpl2-survey/switch-points/${id}/confirm`
+          : `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${id}/confirm`
+        : isTgpl2
+          ? `${API_BASE_URL}/projects/${projectId}/tgpl2-survey/poles/${id}/confirm`
+          : `${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${id}/confirm`;
       
       const res = await axios.post(endpoint, {}, {
         headers: { Authorization: `Bearer ${token}` },
@@ -183,9 +191,10 @@ export const SubmissionQueueView = ({ projectId }) => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const surveyPath = isTgpl ? 'tgpl-survey' : 'pole-survey';
       const endpoint = selectedSubmission.type === 'switch_point'
-        ? `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${selectedSubmission.id}`
+        ? isTgpl2
+          ? `${API_BASE_URL}/projects/${projectId}/tgpl2-survey/switch-points/${selectedSubmission.id}`
+          : `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${selectedSubmission.id}`
         : `${API_BASE_URL}/projects/${projectId}/${surveyPath}/poles/${selectedSubmission.id}`;
       
       let payload = { ...formData };

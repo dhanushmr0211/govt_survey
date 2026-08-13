@@ -275,9 +275,16 @@ function createApp() {
   apiRouter.use('/projects', projectRouter);
   apiRouter.use('/projects/:projectId/pole-survey', authenticate, requireProjectMember(), (req, res, next) => {
     const projectId = String(req.params.projectId || req.headers['x-project-id']);
-    console.log(`[ROUTE DELEGATION] projectId: ${projectId}, TGPL_PROJECT_ID: ${TGPL_PROJECT_ID}, Match: ${projectId === TGPL_PROJECT_ID || projectId === '3' || Number(projectId) === 3}`);
-    if (projectId === TGPL_PROJECT_ID || projectId === '3' || Number(projectId) === 3) {
+    const numericProjectId = Number(projectId);
+    const isTgplProject = projectId === TGPL_PROJECT_ID || projectId === '3' || numericProjectId === 3;
+    const isTgpl2Project = projectId === '4' || numericProjectId === 4;
+
+    console.log(`[ROUTE DELEGATION] projectId: ${projectId}, TGPL_PROJECT_ID: ${TGPL_PROJECT_ID}, Match: ${isTgplProject}, TGPL2: ${isTgpl2Project}`);
+    if (isTgplProject) {
       return tgplSurveyRouter(req, res, next);
+    }
+    if (isTgpl2Project) {
+      return tgpl2SurveyRouter(req, res, next);
     }
     return poleSurveyRouter(req, res, next);
   });
