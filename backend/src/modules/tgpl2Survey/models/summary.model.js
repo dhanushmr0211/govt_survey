@@ -119,6 +119,13 @@ async function getMobileUserTracking(projectId) {
 }
 
 async function getMyStats(projectId, userId) {
+  const totalCcmsResult = await query(
+    `SELECT COUNT(id) as total_ccms_units
+     FROM tgpl2_ccms_points
+     WHERE project_id = $1 AND created_by = $2 AND is_deleted IS NOT TRUE`,
+    [projectId, userId]
+  );
+
   const polesResult = await query(
     `SELECT 
       COUNT(id) as total_poles,
@@ -137,12 +144,22 @@ async function getMyStats(projectId, userId) {
     [projectId, userId]
   );
 
+  const todayCcmsResult = await query(
+    `SELECT COUNT(id) as today_ccms_units
+     FROM tgpl2_ccms_points
+     WHERE project_id = $1 AND created_by = $2 AND is_deleted IS NOT TRUE
+       AND created_at::date = NOW()::date`,
+    [projectId, userId]
+  );
+
   return {
     total: {
+      ccms_units: Number(totalCcmsResult.rows[0].total_ccms_units || 0),
       poles: Number(polesResult.rows[0].total_poles || 0),
       switch_points: Number(spResult.rows[0].total_switch_points || 0)
     },
     today: {
+      ccms_units: Number(todayCcmsResult.rows[0].today_ccms_units || 0),
       poles: Number(polesResult.rows[0].today_poles || 0),
       switch_points: Number(spResult.rows[0].today_switch_points || 0)
     }

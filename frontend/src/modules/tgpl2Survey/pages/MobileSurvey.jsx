@@ -49,11 +49,15 @@ export default function MobileSurvey() {
     enabled: searchTerm.length >= 1 && !!projectId && activeTab === 'survey',
   });
 
-  const { data: stats = { total: { switch_points: 0, poles: 0 }, today: { switch_points: 0, poles: 0 } } } = useQuery({
+  const { data: stats = {
+    total: { ccms_units: 0, switch_points: 0, poles: 0 },
+    today: { ccms_units: 0, switch_points: 0, poles: 0 },
+    dateWise: { date: selectedDate, ccms_units: 0, switch_points: 0, poles: 0 }
+  } } = useQuery({
     queryKey: ['tgpl2-my-stats', projectId, selectedDate],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/tgpl2-survey/my-stats`, {
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/tgpl2-survey/my-stats?date=${selectedDate}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data;
@@ -87,33 +91,76 @@ export default function MobileSurvey() {
               <p className="text-xs text-teal-100 mt-1">Project ID: {projectId}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                <span className="text-xs font-semibold text-gray-400">Today's Switch Points</span>
-                <p className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.switch_points ?? 0}</p>
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider flex items-center gap-2">
+                <span className="w-1.5 h-3 bg-emerald-500 rounded-full"></span>
+                Today's Submissions
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                  <span className="text-xs font-semibold text-gray-400">CCMS Units</span>
+                  <p className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.ccms_units ?? 0}</p>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                  <span className="text-xs font-semibold text-gray-400">Switch Points</span>
+                  <p className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.switch_points ?? 0}</p>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm col-span-2">
+                  <span className="text-xs font-semibold text-gray-400">Poles</span>
+                  <p className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.poles ?? 0}</p>
+                </div>
               </div>
-              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                <span className="text-xs font-semibold text-gray-400">Today's Poles</span>
-                <p className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.poles ?? 0}</p>
-              </div>
-              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                <span className="text-xs font-semibold text-gray-400">Total Switch Points</span>
-                <p className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.switch_points ?? 0}</p>
-              </div>
-              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                <span className="text-xs font-semibold text-gray-400">Total Poles</span>
-                <p className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.poles ?? 0}</p>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider flex items-center gap-2">
+                <span className="w-1.5 h-3 bg-blue-500 rounded-full"></span>
+                Total Submissions
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                  <span className="text-xs font-semibold text-gray-400">CCMS Units</span>
+                  <p className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.ccms_units ?? 0}</p>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                  <span className="text-xs font-semibold text-gray-400">Switch Points</span>
+                  <p className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.switch_points ?? 0}</p>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm col-span-2">
+                  <span className="text-xs font-semibold text-gray-400">Poles</span>
+                  <p className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.poles ?? 0}</p>
+                </div>
               </div>
             </div>
 
             <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase">Date</label>
+              <div className="flex flex-col gap-2">
+                <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-1.5 h-3 bg-amber-500 rounded-full"></span>
+                  Date-Wise Submissions
+                </h3>
+                <p className="text-xs text-gray-400">Select a specific date to view statistics</p>
+              </div>
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
               />
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex flex-col">
+                  <span className="text-xs font-semibold text-amber-700">CCMS Units</span>
+                  <span className="text-2xl font-black text-gray-900 mt-1">{stats?.dateWise?.ccms_units ?? 0}</span>
+                </div>
+                <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex flex-col">
+                  <span className="text-xs font-semibold text-amber-700">Switch Points</span>
+                  <span className="text-2xl font-black text-gray-900 mt-1">{stats?.dateWise?.switch_points ?? 0}</span>
+                </div>
+                <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 col-span-2 flex flex-col">
+                  <span className="text-xs font-semibold text-amber-700">Poles</span>
+                  <span className="text-2xl font-black text-gray-900 mt-1">{stats?.dateWise?.poles ?? 0}</span>
+                </div>
+              </div>
             </div>
           </div>
         )}

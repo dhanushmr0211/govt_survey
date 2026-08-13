@@ -8,8 +8,9 @@ import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
 
 const getAutoRoadCategory = (roadType, roadWidthStr) => {
-  if (!roadType) return null;
-  const typeUpper = roadType.toUpperCase();
+  const normalizedRoadType = typeof roadType === 'string' ? roadType : (roadType ? String(roadType) : '');
+  if (!normalizedRoadType.trim()) return null;
+  const typeUpper = normalizedRoadType.toUpperCase();
   const width = Number(roadWidthStr);
 
   if (typeUpper.includes('GALLI')) {
