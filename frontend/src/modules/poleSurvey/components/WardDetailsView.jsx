@@ -391,10 +391,12 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   };
 
   useEffect(() => {
-    if (isTgpl && wards.length > 0 && !selectedWard) {
+    if (isTgpl2 && !selectedWard) {
+      setSelectedWard(ulb?.ward_id || ulb?.id || ulb?.ulb_id);
+    } else if (isTgpl && wards.length > 0 && !selectedWard) {
       setSelectedWard(wards[0].ward_number);
     }
-  }, [isTgpl, wards, selectedWard]);
+  }, [isTgpl, isTgpl2, wards, selectedWard, ulb]);
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -793,16 +795,30 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                   return (
                     <div key={`${sp.id}_${selectedCcms.type}`} className="rounded-lg border border-slate-150 overflow-hidden mb-6 bg-white shadow-sm">
                       {/* CCMS Header */}
-                      <div className="bg-slate-50 p-4 border-b border-slate-150 flex justify-between items-center gap-3">
+                      <div className="bg-slate-50 p-4 border-b border-slate-150 flex justify-between items-center gap-3 flex-wrap">
                         <div>
                           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                             {selectedCcms.type === 'installation' ? 'CCMS Unit (Installation)' : 'CCMS Unit (Survey)'}
                           </span>
                           <h3 className="text-base font-bold text-slate-950">CCMS No: {sp.switch_point_number || 'No CCMS'}</h3>
                         </div>
-                        <div className="flex flex-wrap gap-2 text-xs">
-                          {!isTgpl && <span className="rounded bg-violet-50 px-2 py-1 font-semibold text-violet-700">Switch Points: {sp.switchPointNumbers?.size || 0}</span>}
-                          <span className="rounded bg-emerald-50 px-2 py-1 font-semibold text-emerald-700">Total Poles: {sp.poles.length}</span>
+                        <div className="flex items-center gap-4">
+                          <div className="flex flex-wrap gap-2 text-xs">
+                            {!isTgpl && <span className="rounded bg-violet-50 px-2 py-1 font-semibold text-violet-700">Switch Points: {sp.switchPointNumbers?.size || 0}</span>}
+                            <span className="rounded bg-emerald-50 px-2 py-1 font-semibold text-emerald-700">Total Poles: {sp.poles.length}</span>
+                          </div>
+                          <button 
+                            onClick={() => {
+                              // We use the first pole to get CCMS level data (dtc_number, etc.) since it's duplicated across poles in the join
+                              const ccmsData = sp.poles[0] || {};
+                              setSelectedDetail({ type: 'switch_point', data: { ...ccmsData, id: ccmsData.ccms_id, is_ccms_only: true } });
+                              setFormData({ ...ccmsData, id: ccmsData.ccms_id, ulb_id: ulb?.ulb_id || ulb?.id });
+                              setIsEditing(false);
+                            }}
+                            className="font-semibold text-primary hover:text-primary-dark text-sm border border-primary/20 px-3 py-1.5 rounded-md bg-white shadow-sm transition-colors"
+                          >
+                            View CCMS Details
+                          </button>
                         </div>
                       </div>
                       <div className="overflow-x-auto">
@@ -820,6 +836,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                             ) : (
                               <tr>
                                 <th>Pole No</th>
+                                {isTgpl2 && <th>Switch Point No</th>}
                                 <th>Type</th>
                                 <th>DTC No</th>
                                 <th>Light 1 Type</th>
@@ -842,6 +859,20 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                                   </>
                                 ) : (
                                   <>
+                                    {isTgpl2 && (
+                                      <td>
+                                        <button 
+                                          onClick={() => {
+                                            setSelectedDetail({ type: 'switch_point', data: { ...pole, id: pole.switch_point_id } });
+                                            setFormData({ ...pole, id: pole.switch_point_id, ulb_id: ulb?.ulb_id || ulb?.id });
+                                            setIsEditing(false);
+                                          }}
+                                          className="font-semibold text-primary hover:underline"
+                                        >
+                                          {pole.switch_point_number || 'View'}
+                                        </button>
+                                      </td>
+                                    )}
                                     <td>{pole.pole_type || 'N/A'}</td>
                                     <td>{pole.dtc_number || 'N/A'}</td>
                                     <td>{pole.light_type || 'N/A'}</td>
@@ -1073,14 +1104,24 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     {selectedDetail.type === 'switch_point' ? (
                       isCcmsLayout ? (
-                        <>
-                          {renderField('Ward No', 'ward_number', selectedDetail.data.ward_number)}
-                          {renderField('CCMS No', 'switch_point_number', selectedDetail.data.switch_point_number)}
-                          {renderField('Meter Type', 'meter_type', selectedDetail.data.meter_type, ['1P', '3P'])}
-                          {renderField('RR Number', 'meter_rr_number', selectedDetail.data.meter_rr_number)}
-                          {renderField('Serial Number', 'meter_serial_number', selectedDetail.data.meter_serial_number)}
-                          {renderField('Meter Dim. Status', 'meter_condition', selectedDetail.data.meter_condition, ['Working', 'not working', 'missing', 'door lock', 'no meter'])}
-                        </>
+                        selectedDetail.data.is_ccms_only ? (
+                          <>
+                            {renderField('Ward No', 'ward_number', selectedDetail.data.ward_number)}
+                            {renderField('CCMS No', 'ccms_number', selectedDetail.data.ccms_number || selectedDetail.data.switch_point_number)}
+                            {isTgpl2 && renderField('DTC No', 'dtc_number', selectedDetail.data.dtc_number)}
+                            {isTgpl2 && renderField('DTC Capacity', 'dtc_capacity', selectedDetail.data.dtc_capacity)}
+                          </>
+                        ) : (
+                          <>
+                            {renderField('Ward No', 'ward_number', selectedDetail.data.ward_number)}
+                            {isTgpl2 && renderField('CCMS No', 'ccms_number', selectedDetail.data.ccms_number)}
+                            {renderField(isTgpl2 ? 'Switch Point No' : 'CCMS No', 'switch_point_number', selectedDetail.data.switch_point_number)}
+                            {renderField('Meter Type', 'meter_type', selectedDetail.data.meter_type, ['1P', '3P'])}
+                            {renderField('RR Number', 'meter_rr_number', selectedDetail.data.meter_rr_number || selectedDetail.data.rr_number)}
+                            {renderField('Serial Number', 'meter_serial_number', selectedDetail.data.meter_serial_number || selectedDetail.data.serial_number)}
+                            {renderField('Meter Dim. Status', 'meter_condition', selectedDetail.data.meter_condition || selectedDetail.data.meter_status, ['Working', 'not working', 'missing', 'door lock', 'no meter'])}
+                          </>
+                        )
                       ) : (
                         <>
                           {renderField('Ward No', 'ward_number', selectedDetail.data.ward_number)}

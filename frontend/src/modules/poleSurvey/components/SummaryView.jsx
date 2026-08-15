@@ -266,22 +266,46 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
               </table>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="premium-table">
+            <div className="overflow-x-auto p-2 sm:p-4">
+              <table className="w-full min-w-full divide-y divide-gray-100">
                 <thead>
                   <tr>
-                    <th>Ward / ULB</th>
-                    <th>Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">WARD / ULB</th>
+                    {isTgpl2 ? (
+                      <>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">CCMS UNITS</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">SWITCH POINTS</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">TOTAL POLES</th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">INSTALLATION COUNT</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">TOTAL POLES</th>
+                      </>
+                    )}
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">ACTIONS</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {district.ulbs.map((ulb) => (
-                    <tr key={ulb.ulb_id ?? ulb.id ?? ulb.ulb_name}>
-                      <td className="font-semibold text-slate-950">{ulb.ulb_name}</td>
-                      <td>
+                    <tr key={ulb.ulb_id ?? ulb.id ?? ulb.ulb_name} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-4 text-sm font-semibold text-slate-900">{String(ulb.ulb_name || 'N/A')}</td>
+                      {isTgpl2 ? (
+                        <>
+                          <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_ccms || 0)}</td>
+                          <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_switch_points || 0)}</td>
+                          <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_poles || 0)}</td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_inst_poles || 0)}</td>
+                          <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_poles || 0)}</td>
+                        </>
+                      )}
+                      <td className="px-4 py-4 text-sm">
                         <button
                           onClick={() => onViewDetails(ulb, { date: effectiveDate, mode, fromDate: effectiveFromDate, toDate: effectiveToDate })}
-                          className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-dark"
+                          className="inline-flex items-center gap-1 text-sm font-semibold text-red-500 hover:text-red-700 transition-colors"
                         >
                           View Full Details <ArrowUpRight size={14} />
                         </button>
