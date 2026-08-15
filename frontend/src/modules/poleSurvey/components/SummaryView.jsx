@@ -166,8 +166,8 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
           <>
             <div className="premium-panel flex items-center justify-between p-5">
               <div>
-                <p className="text-sm font-medium text-slate-500">Total CCMS Units</p>
-                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalCCMS}</p>
+                <p className="text-sm font-medium text-slate-500">Total Installation Count</p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalInstPoles}</p>
               </div>
               <div className="rounded-lg bg-blue-50 p-3 text-blue-700">
                 <Zap size={26} />
@@ -224,8 +224,8 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
               ) : (
                 <>
                   <div className="min-w-[130px] rounded-lg border border-blue-100 bg-blue-50 px-4 py-2 text-center">
-                    <p className="text-xs font-semibold text-blue-700">CCMS Units</p>
-                    <p className="text-xl font-bold text-blue-900">{district.total_ccms}</p>
+                    <p className="text-xs font-semibold text-blue-700">Installation Count</p>
+                    <p className="text-xl font-bold text-blue-900">{district.total_inst_poles}</p>
                   </div>
                   <div className="min-w-[130px] rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-center">
                     <p className="text-xs font-semibold text-amber-700">Total Poles</p>
@@ -240,7 +240,7 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
               {district.ulbs.map((ulb) => (
                 <div
                   key={ulb.ulb_id ?? ulb.id ?? ulb.ulb_name}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm transition hover:border-slate-300 hover:bg-white"
+                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm transition hover:border-slate-300 hover:bg-white"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-bold uppercase tracking-wide text-slate-500">Ward</span>
@@ -267,7 +267,7 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
                 </thead>
                 <tbody>
                   {district.ulbs.map((ulb) => (
-                    <tr key={ulb.ulb_id}>
+                    <tr key={ulb.ulb_id ?? ulb.id ?? ulb.ulb_name}>
                       <td className="font-semibold text-slate-950">{ulb.ulb_name}</td>
                       <td>
                         <button

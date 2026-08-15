@@ -25,22 +25,70 @@ async function getWardsSummary(projectId) {
 
 async function getWardDetails(projectId, wardId) {
   const result = await query(
-    `SELECT 
+    `SELECT
+      c.id AS ccms_id,
       c.ccms_number,
       c.dtc_number,
       c.dtc_capacity,
+      c.ward_id,
+      c.created_by,
+      c.created_at,
+      sp.id AS switch_point_id,
       sp.switch_point_number,
       sp.meter_status,
       sp.meter_type,
       sp.rr_number,
       sp.serial_number,
-      COUNT(p.id) FILTER (WHERE p.is_deleted IS NOT TRUE) as pole_count
+      sp.ward_id AS switch_point_ward_id,
+      p.id AS pole_id,
+      p.pole_number,
+      p.pole_type,
+      p.pole_condition,
+      p.light_type,
+      p.light_type_2,
+      p.light_capacity,
+      p.light_capacity_2,
+      p.light_working_status,
+      p.road_type,
+      p.road_width_mtrs,
+      p.latitude AS pole_latitude,
+      p.longitude AS pole_longitude,
+      p.created_by AS pole_created_by,
+      p.created_at AS pole_created_at,
+      p.confirmed_by AS pole_confirmed_by,
+      p.confirmed_at AS pole_confirmed_at,
+      p.status,
+      p.image_url_1,
+      p.image_url_2,
+      p.how_many_lights_in_pole,
+      p.arm_type,
+      p.arm_status,
+      p.present_arm_no,
+      p.present_arm_length,
+      p.conductor_type,
+      p.pole_to_pole_distance,
+      p.pole_earthing_exists,
+      p.pole_defective,
+      p.arm_deteriorated,
+      p.meter_dimensional_status,
+      p.req_arm_number,
+      p.req_arm_length,
+      p.req_led_lights_no,
+      p.req_led_wattage,
+      p.req_dedicated_wire
      FROM tgpl2_ccms_points c
-     LEFT JOIN tgpl2_switch_points sp ON c.id = sp.ccms_id AND sp.project_id = $1
-     LEFT JOIN tgpl2_poles p ON sp.id = p.switch_point_id AND p.project_id = $1
-     WHERE c.ward_id = $2 AND c.project_id = $1 AND c.is_deleted IS NOT TRUE
-     GROUP BY c.id, c.ccms_number, c.dtc_number, c.dtc_capacity, sp.id, sp.switch_point_number, sp.meter_status, sp.meter_type, sp.rr_number, sp.serial_number
-     ORDER BY c.ccms_number ASC, sp.switch_point_number ASC`,
+     LEFT JOIN tgpl2_switch_points sp
+       ON c.id = sp.ccms_id
+      AND sp.project_id = $1
+      AND sp.is_deleted IS NOT TRUE
+     LEFT JOIN tgpl2_poles p
+       ON sp.id = p.switch_point_id
+      AND p.project_id = $1
+      AND p.is_deleted IS NOT TRUE
+     WHERE c.ward_id = $2
+       AND c.project_id = $1
+       AND c.is_deleted IS NOT TRUE
+     ORDER BY c.ccms_number ASC, sp.switch_point_number ASC, p.pole_number ASC`,
     [projectId, wardId]
   );
   return result.rows;
