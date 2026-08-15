@@ -61,6 +61,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const effectiveProjectId = projectId ?? activeProject?.id ?? selectedProjectId;
   const isTgpl = isTgplProject(effectiveProjectId, activeProject);
   const isTgpl2 = isTgpl2Project(effectiveProjectId, activeProject);
+  const isCcmsLayout = isTgpl || isTgpl2;
   const isIdeck = String(effectiveProjectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
   const showDeleteButton = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'prelectricals01@gmail.com';
@@ -155,9 +156,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
         delete sanitized.meter_condition;
       }
 
-      const surveyPath = isTgpl ? 'tgpl-survey' : 'pole-survey';
+      const surveyPath = isTgpl ? 'tgpl-survey' : isTgpl2 ? 'tgpl2-survey' : 'pole-survey';
+      const projectSurveyPath = isTgpl2 ? 'tgpl2-survey' : isTgpl ? 'tgpl-survey' : 'pole-survey';
       const endpoint = selectedDetail.type === 'switch_point'
-        ? `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${selectedDetail.data.id}`
+        ? `${API_BASE_URL}/projects/${projectId}/${projectSurveyPath}/switch-points/${selectedDetail.data.id}`
         : `${API_BASE_URL}/projects/${projectId}/${surveyPath}/poles/${selectedDetail.data.pole_id || selectedDetail.data.id}`;
       
       const res = await axios.patch(endpoint, sanitized, {
@@ -200,7 +202,9 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
       const id = type === 'switch_point' ? selectedDetail.data.id : selectedDetail.data.pole_id;
       const endpoint = isTgpl
         ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/poles/${id}`
-        : `${API_BASE_URL}/projects/${projectId}/pole-survey/submissions/${id}?type=${type}`;
+        : isTgpl2
+          ? `${API_BASE_URL}/projects/${projectId}/tgpl2-survey/poles/${id}`
+          : `${API_BASE_URL}/projects/${projectId}/pole-survey/submissions/${id}?type=${type}`;
       const res = await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -529,13 +533,13 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   // Group details by switch point / CCMS
   const switchPoints = useMemo(() => {
     return details.reduce((acc, item) => {
-      const spId = isTgpl ? item.ccms_id : item.switch_point_id;
+      const spId = isCcmsLayout ? item.ccms_id : item.switch_point_id;
       if (!spId) return acc;
       if (!acc[spId]) {
         acc[spId] = {
           id: spId,
-          switch_point_number: isTgpl ? item.ccms_number : item.switch_point_number,
-          switch_point_type: isTgpl ? 'CCMS' : item.switch_point_type,
+          switch_point_number: isCcmsLayout ? item.ccms_number : item.switch_point_number,
+          switch_point_type: isCcmsLayout ? 'CCMS' : item.switch_point_type,
           meter_exists: item.meter_exists,
           meter_type: item.meter_type,
           meter_rr_number: item.meter_rr_number,
@@ -563,7 +567,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   }, [details, isTgpl]);
 
   const surveySwitchPoints = useMemo(() => {
-    if (!isTgpl) return {};
+    if (!isCcmsLayout) return {};
     return details.reduce((acc, item) => {
       if (item.survey_type === 'installation') return acc;
       const ccmsKey = item.ccms_number || 'NO_CCMS';
@@ -592,7 +596,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   }, [details, isTgpl]);
 
   const installationSwitchPoints = useMemo(() => {
-    if (!isTgpl) return {};
+    if (!isCcmsLayout) return {};
     return details.reduce((acc, item) => {
       if (item.survey_type !== 'installation') return acc;
       const ccmsKey = item.ccms_number || 'NO_CCMS';
@@ -621,7 +625,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   }, [details, isTgpl]);
 
   useEffect(() => {
-    if (isTgpl) {
+    if (isCcmsLayout) {
       const surveyList = Object.values(surveySwitchPoints);
       const instList = Object.values(installationSwitchPoints);
       if (surveyList.length > 0) {
@@ -655,7 +659,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
 
       {/* CCMS List (for TGPL) or Ward List (for standard) */}
       <div className="p-5 border-b border-slate-100 bg-slate-50 space-y-4">
-        {isTgpl ? (
+        {isCcmsLayout ? (
           isLoadingDetails ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
               {[...Array(4)].map((_, i) => (
@@ -772,7 +776,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
             </div>
           ) : (
             <div className="space-y-6">
-              {isTgpl ? (
+              {isCcmsLayout ? (
                 (() => {
                   const sp = selectedCcms.type === 'installation' 
                     ? installationSwitchPoints[selectedCcms.id] 
@@ -795,7 +799,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                           <h3 className="text-base font-bold text-slate-950">CCMS No: {sp.switch_point_number || 'No CCMS'}</h3>
                         </div>
                         <div className="flex flex-wrap gap-2 text-xs">
-                          <span className="rounded bg-violet-50 px-2 py-1 font-semibold text-violet-700">Switch Points: {sp.switchPointNumbers?.size || 0}</span>
+                          {!isTgpl && <span className="rounded bg-violet-50 px-2 py-1 font-semibold text-violet-700">Switch Points: {sp.switchPointNumbers?.size || 0}</span>}
                           <span className="rounded bg-emerald-50 px-2 py-1 font-semibold text-emerald-700">Total Poles: {sp.poles.length}</span>
                         </div>
                       </div>
@@ -1066,7 +1070,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                   <p className="font-semibold text-gray-700 mb-2">Technical Details</p>
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     {selectedDetail.type === 'switch_point' ? (
-                      isTgpl ? (
+                      isCcmsLayout ? (
                         <>
                           {renderField('Ward No', 'ward_number', selectedDetail.data.ward_number)}
                           {renderField('CCMS No', 'switch_point_number', selectedDetail.data.switch_point_number)}
@@ -1087,7 +1091,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                           {renderField('Meter Condition', 'meter_condition', selectedDetail.data.meter_condition, ['working', 'not working', 'missing'])}
                         </>
                       )
-                    ) : isTgpl ? (
+                    ) : isCcmsLayout ? (
                       selectedDetail.data.survey_type === 'installation' ? (
                         <>
                           {renderField('Ward No', 'ward_number', selectedDetail.data.ward_number)}
