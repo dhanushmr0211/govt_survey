@@ -236,25 +236,30 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
             </div>
           </div>
           {!isTgpl && !isTgpl2 ? (
-            <div className="space-y-3 p-4">
-              {district.ulbs.map((ulb) => (
-                <div
-                  key={ulb.ulb_id ?? ulb.id ?? ulb.ulb_name}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm transition hover:border-slate-300 hover:bg-white"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold uppercase tracking-wide text-slate-500">Ward</span>
-                    <span className="text-base font-bold text-slate-900">{String(ulb.ulb_name || 'N/A')}</span>
-                    <span className="text-sm font-medium text-red-500">({Number(ulb.total_poles || 0)} Poles)</span>
-                  </div>
-                  <button
-                    onClick={() => onViewDetails(ulb, { date: effectiveDate, mode, fromDate: effectiveFromDate, toDate: effectiveToDate })}
-                    className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-500 shadow-sm transition hover:bg-red-50"
-                  >
-                    View Data
-                  </button>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="premium-table">
+                <thead>
+                  <tr>
+                    <th>Ward / ULB</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {district.ulbs.map((ulb) => (
+                    <tr key={ulb.ulb_id ?? ulb.id ?? ulb.ulb_name}>
+                      <td className="font-semibold text-slate-950">{ulb.ulb_name}</td>
+                      <td>
+                        <button
+                          onClick={() => onViewDetails(ulb, { date: effectiveDate, mode, fromDate: effectiveFromDate, toDate: effectiveToDate })}
+                          className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-dark"
+                        >
+                          View Full Details <ArrowUpRight size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className="overflow-x-auto">
