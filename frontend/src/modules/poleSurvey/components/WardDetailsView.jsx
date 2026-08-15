@@ -732,26 +732,28 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
             </div>
           )
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
             {isLoadingWards ? (
               [...Array(6)].map((_, i) => (
-                <div key={i} className="h-14 animate-pulse rounded-lg bg-white border border-slate-200"></div>
+                <div key={i} className="h-20 animate-pulse rounded-lg bg-white border border-slate-200"></div>
               ))
             ) : (
               wards.map((ward) => (
                 <button
                   key={ward.ward_number}
                   onClick={() => setSelectedWard(ward.ward_number)}
-                  className={`w-full rounded-lg border p-3 text-left transition ${selectedWard === ward.ward_number ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
+                  className={`rounded-lg border p-3 text-center transition flex flex-col items-center justify-center ${selectedWard === ward.ward_number ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold uppercase tracking-wide text-slate-500">Ward</span>
-                      <span className="text-base font-bold">{ward.ward_number}</span>
-                      <span className="text-sm text-slate-500">({ward.total_poles} Poles)</span>
-                    </div>
-                    <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary">
-                      View Details
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">Ward</p>
+                  <p className="text-lg font-bold truncate max-w-full" title={ward.ward_number}>
+                    {ward.ward_number}
+                  </p>
+                  <div className="mt-2 grid grid-cols-2 gap-1 text-[10px] w-full">
+                    <span className="rounded bg-violet-50 px-1 py-0.5 font-semibold text-violet-700 truncate" title={`Switch Points: ${ward.total_switch_points || 0}`}>
+                      SP: {ward.total_switch_points || 0}
+                    </span>
+                    <span className="rounded bg-emerald-50 px-1 py-0.5 font-semibold text-emerald-700 truncate" title={`Poles: ${ward.total_poles || 0}`}>
+                      Poles: {ward.total_poles || 0}
                     </span>
                   </div>
                 </button>

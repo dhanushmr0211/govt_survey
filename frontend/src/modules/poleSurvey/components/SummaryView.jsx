@@ -236,25 +236,34 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
             </div>
           </div>
           {!isTgpl && !isTgpl2 ? (
-            <div className="space-y-3 p-4">
-              {district.ulbs.map((ulb) => (
-                <div
-                  key={ulb.ulb_id ?? ulb.id ?? ulb.ulb_name}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm transition hover:border-slate-300 hover:bg-white"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold uppercase tracking-wide text-slate-500">Ward</span>
-                    <span className="text-base font-bold text-slate-900">{String(ulb.ulb_name || 'N/A')}</span>
-                    <span className="text-sm font-medium text-red-500">({Number(ulb.total_poles || 0)} Poles)</span>
-                  </div>
-                  <button
-                    onClick={() => onViewDetails(ulb, { date: effectiveDate, mode, fromDate: effectiveFromDate, toDate: effectiveToDate })}
-                    className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-500 shadow-sm transition hover:bg-red-50"
-                  >
-                    View Data
-                  </button>
-                </div>
-              ))}
+            <div className="overflow-x-auto p-2 sm:p-4">
+              <table className="w-full min-w-full divide-y divide-gray-100">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">TMC/CMC</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">TOTAL SWITCH POINTS</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">TOTAL POLES</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {district.ulbs.map((ulb) => (
+                    <tr key={ulb.ulb_id ?? ulb.id ?? ulb.ulb_name} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-4 text-sm font-semibold text-slate-900">{String(ulb.ulb_name || 'N/A')}</td>
+                      <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_switch_points || 0)}</td>
+                      <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_poles || 0)}</td>
+                      <td className="px-4 py-4 text-sm">
+                        <button
+                          onClick={() => onViewDetails(ulb, { date: effectiveDate, mode, fromDate: effectiveFromDate, toDate: effectiveToDate })}
+                          className="inline-flex items-center gap-1 text-sm font-semibold text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          View Full Details <ArrowUpRight size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className="overflow-x-auto">
