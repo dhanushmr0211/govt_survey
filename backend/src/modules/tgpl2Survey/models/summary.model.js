@@ -119,32 +119,243 @@ async function getWardDetails(projectId, wardId) {
   return result.rows;
 }
 
-async function getPendingSubmissions(projectId) {
-  const result = await query(
-    `SELECT p.*, w.name as ward_name, c.ccms_number, sp.switch_point_number, p.created_by::text as surveyor_name
-     FROM tgpl2_poles p
-     LEFT JOIN tgpl2_wards w ON p.ward_id = w.id
-     LEFT JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
-     LEFT JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
-     WHERE p.project_id = $1 AND COALESCE(UPPER(p.status), 'PENDING') = 'PENDING' AND p.is_deleted IS NOT TRUE
-     ORDER BY p.created_at DESC`,
-    [projectId]
-  );
-  return result.rows;
+async function buildQueueQuery(projectId, type, queueStatus, page = 1, limit = 50, fromDate = null, toDate = null) {
+  const offset = (page - 1) * limit;
+  const queries = [];
+  const params = [projectId];
+  let paramIndex = 2;
+
+  const dateFilter = (tableAlias) => {
+    let filter = '';
+    const dateCol = queueStatus === 'CONFIRMED' ? 'confirmed_at' : 'created_at';
+    if (fromDate && toDate) {
+      filter = ` AND (${tableAlias}.${dateCol})::date BETWEEN $${paramIndex} AND $${paramIndex + 1}`;
+      params.push(fromDate, toDate);
+      paramIndex += 2;
+    }
+    return filter;
+  };
+
+  const ccmsQuery = `
+    SELECT 
+      'ccms' as type,
+      c.id,
+      c.project_id,
+      c.ward_id,
+      w.name as ward_name,
+      c.ward_number,
+      c.created_by as user_id,
+      c.created_by::text as user_name,
+      c.created_at,
+      c.confirmed_at,
+      c.confirmed_by,
+      c.confirmed_by::text as confirmed_by_name,
+      COALESCE(UPPER(c.status), 'PENDING') as status,
+      c.is_deleted,
+      c.ccms_number as identifier,
+      c.ccms_number,
+      c.dtc_number,
+      c.dtc_capacity,
+      NULL as switch_point_number,
+      NULL as meter_status,
+      NULL as meter_type,
+      NULL as rr_number,
+      NULL as serial_number,
+      NULL as pole_number,
+      NULL as pole_type,
+      NULL as pole_condition,
+      NULL as light_type,
+      NULL as light_type_2,
+      NULL as light_capacity,
+      NULL as light_capacity_2,
+      NULL as light_working_status,
+      NULL as road_type,
+      NULL as road_width_mtrs,
+      NULL::float as latitude,
+      NULL::float as longitude,
+      NULL as how_many_lights_in_pole,
+      NULL as arm_type,
+      NULL as arm_status,
+      NULL as present_arm_no,
+      NULL as present_arm_length,
+      NULL as conductor_type,
+      NULL as pole_to_pole_distance,
+      NULL as pole_earthing_exists,
+      NULL::boolean as pole_defective,
+      NULL::boolean as arm_deteriorated,
+      NULL as meter_dimensional_status,
+      NULL as req_arm_number,
+      NULL as req_arm_length,
+      NULL as req_led_lights_no,
+      NULL as req_led_wattage,
+      NULL as req_dedicated_wire,
+      NULL as image_url_1,
+      NULL as image_url_2
+    FROM tgpl2_ccms_points c
+    LEFT JOIN tgpl2_wards w ON c.ward_id = w.id
+
+    WHERE c.project_id = $1 AND c.is_deleted IS NOT TRUE AND COALESCE(UPPER(c.status), 'PENDING') = '${queueStatus}'
+    ${dateFilter('c')}
+  `;
+
+  const spQuery = `
+    SELECT 
+      'switch_point' as type,
+      sp.id,
+      sp.project_id,
+      sp.ward_id,
+      w.name as ward_name,
+      c.ward_number,
+      sp.created_by as user_id,
+      sp.created_by::text as user_name,
+      sp.created_at,
+      sp.confirmed_at,
+      sp.confirmed_by,
+      sp.confirmed_by::text as confirmed_by_name,
+      COALESCE(UPPER(sp.status), 'PENDING') as status,
+      sp.is_deleted,
+      sp.switch_point_number as identifier,
+      c.ccms_number,
+      c.dtc_number,
+      c.dtc_capacity,
+      sp.switch_point_number,
+      sp.meter_status,
+      sp.meter_type,
+      sp.rr_number,
+      sp.serial_number,
+      NULL as pole_number,
+      NULL as pole_type,
+      NULL as pole_condition,
+      NULL as light_type,
+      NULL as light_type_2,
+      NULL as light_capacity,
+      NULL as light_capacity_2,
+      NULL as light_working_status,
+      NULL as road_type,
+      NULL as road_width_mtrs,
+      NULL::float as latitude,
+      NULL::float as longitude,
+      NULL as how_many_lights_in_pole,
+      NULL as arm_type,
+      NULL as arm_status,
+      NULL as present_arm_no,
+      NULL as present_arm_length,
+      NULL as conductor_type,
+      NULL as pole_to_pole_distance,
+      NULL as pole_earthing_exists,
+      NULL::boolean as pole_defective,
+      NULL::boolean as arm_deteriorated,
+      NULL as meter_dimensional_status,
+      NULL as req_arm_number,
+      NULL as req_arm_length,
+      NULL as req_led_lights_no,
+      NULL as req_led_wattage,
+      NULL as req_dedicated_wire,
+      NULL as image_url_1,
+      NULL as image_url_2
+    FROM tgpl2_switch_points sp
+    LEFT JOIN tgpl2_ccms_points c ON sp.ccms_id = c.id
+    LEFT JOIN tgpl2_wards w ON sp.ward_id = w.id
+
+    WHERE sp.project_id = $1 AND sp.is_deleted IS NOT TRUE AND COALESCE(UPPER(sp.status), 'PENDING') = '${queueStatus}'
+    ${dateFilter('sp')}
+  `;
+
+  const poleQuery = `
+    SELECT 
+      'pole' as type,
+      p.id,
+      p.project_id,
+      p.ward_id,
+      w.name as ward_name,
+      p.ward_number,
+      p.created_by as user_id,
+      p.created_by::text as user_name,
+      p.created_at,
+      p.confirmed_at,
+      p.confirmed_by,
+      p.confirmed_by::text as confirmed_by_name,
+      COALESCE(UPPER(p.status), 'PENDING') as status,
+      p.is_deleted,
+      p.pole_number as identifier,
+      p.ccms_number,
+      p.dtc_number,
+      p.dtc_capacity,
+      sp.switch_point_number,
+      sp.meter_status,
+      p.meter_type,
+      p.meter_rr_number as rr_number,
+      p.meter_serial_number as serial_number,
+      p.pole_number,
+      p.pole_type,
+      p.pole_condition,
+      p.light_type,
+      p.light_type_2,
+      p.light_capacity,
+      p.light_capacity_2,
+      p.light_working_status,
+      p.road_type,
+      p.road_width_mtrs,
+      p.latitude,
+      p.longitude,
+      p.how_many_lights_in_pole,
+      p.arm_type,
+      p.arm_status,
+      p.present_arm_no,
+      p.present_arm_length,
+      p.conductor_type,
+      p.pole_to_pole_distance,
+      p.pole_earthing_exists,
+      p.pole_defective,
+      p.arm_deteriorated,
+      p.meter_dimensional_status,
+      p.req_arm_number,
+      p.req_arm_length,
+      p.req_led_lights_no,
+      p.req_led_wattage,
+      p.req_dedicated_wire,
+      p.image_url_1,
+      p.image_url_2
+    FROM tgpl2_poles p
+    LEFT JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
+    LEFT JOIN tgpl2_wards w ON p.ward_id = w.id
+
+    WHERE p.project_id = $1 AND p.is_deleted IS NOT TRUE AND COALESCE(UPPER(p.status), 'PENDING') = '${queueStatus}'
+    ${dateFilter('p')}
+  `;
+
+  let mainQuery = '';
+  if (type === 'ccms') {
+    mainQuery = ccmsQuery;
+  } else if (type === 'switch_point') {
+    mainQuery = spQuery;
+  } else if (type === 'pole') {
+    mainQuery = poleQuery;
+  } else {
+    // all
+    mainQuery = `${ccmsQuery} UNION ALL ${spQuery} UNION ALL ${poleQuery}`;
+  }
+
+  // Count query
+  const countSql = `SELECT COUNT(*) as total FROM (${mainQuery}) as q`;
+  const countRes = await query(countSql, params);
+  const total = Number(countRes.rows[0].total || 0);
+
+  // Data query with ordering & limit/offset
+  const dateCol = queueStatus === 'CONFIRMED' ? 'confirmed_at' : 'created_at';
+  const dataSql = `${mainQuery} ORDER BY ${dateCol} DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+  params.push(limit, offset);
+
+  const dataRes = await query(dataSql, params);
+  return { rows: dataRes.rows, total };
 }
 
-async function getConfirmedSubmissions(projectId) {
-  const result = await query(
-    `SELECT p.*, w.name as ward_name, c.ccms_number, sp.switch_point_number, p.created_by::text as surveyor_name
-     FROM tgpl2_poles p
-     LEFT JOIN tgpl2_wards w ON p.ward_id = w.id
-     LEFT JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
-     LEFT JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
-     WHERE p.project_id = $1 AND UPPER(p.status) = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
-     ORDER BY p.confirmed_at DESC LIMIT 500`,
-    [projectId]
-  );
-  return result.rows;
+async function getPendingSubmissions(projectId, type = 'all', page = 1, limit = 50, fromDate = null, toDate = null) {
+  return buildQueueQuery(projectId, type, 'PENDING', page, limit, fromDate, toDate);
+}
+
+async function getConfirmedSubmissions(projectId, type = 'all', page = 1, limit = 50, fromDate = null, toDate = null) {
+  return buildQueueQuery(projectId, type, 'CONFIRMED', page, limit, fromDate, toDate);
 }
 
 async function getTodaySubmissions(projectId, userId) {

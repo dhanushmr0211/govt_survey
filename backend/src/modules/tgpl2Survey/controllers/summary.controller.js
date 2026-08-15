@@ -34,8 +34,16 @@ async function getWardDetailsHandler(req, res, next) {
 async function getPendingSubmissionsHandler(req, res, next) {
   try {
     const { projectId } = req.params;
-    const pending = await getPendingSubmissions(Number(projectId));
-    res.json({ poles: pending });
+    const { type = 'all', page = 1, limit = 50, fromDate = null, toDate = null } = req.query;
+    const { rows, total } = await getPendingSubmissions(
+      Number(projectId),
+      type,
+      Number(page),
+      Number(limit),
+      fromDate,
+      toDate
+    );
+    res.json({ queue: rows, total, poles: rows });
   } catch (error) {
     next(error);
   }
@@ -44,8 +52,16 @@ async function getPendingSubmissionsHandler(req, res, next) {
 async function getConfirmedSubmissionsHandler(req, res, next) {
   try {
     const { projectId } = req.params;
-    const confirmed = await getConfirmedSubmissions(Number(projectId));
-    res.json({ poles: confirmed });
+    const { type = 'all', page = 1, limit = 50, fromDate = null, toDate = null } = req.query;
+    const { rows, total } = await getConfirmedSubmissions(
+      Number(projectId),
+      type,
+      Number(page),
+      Number(limit),
+      fromDate,
+      toDate
+    );
+    res.json({ queue: rows, total, poles: rows });
   } catch (error) {
     next(error);
   }

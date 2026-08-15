@@ -6,13 +6,19 @@ const { ROLES } = require('../../../constants/roles');
 const {
   createCcmsHandler,
   getCcmsHandler,
-  getLastCcmsHandler
+  getLastCcmsHandler,
+  confirmCcmsHandler,
+  updateCcmsHandler,
+  deleteCcmsHandler
 } = require('../controllers/ccms.controller');
 
 const {
   createSwitchPointHandler,
   getSwitchPointsHandler,
-  getLastSwitchPointHandler
+  getLastSwitchPointHandler,
+  confirmSwitchPointHandler,
+  updateSwitchPointHandler,
+  deleteSwitchPointHandler
 } = require('../controllers/switchPoint.controller');
 
 const {
@@ -56,11 +62,17 @@ tgpl2SurveyRouter.get('/wards', async (req, res, next) => {
 tgpl2SurveyRouter.post('/ccms', createCcmsHandler);
 tgpl2SurveyRouter.get('/ccms', getCcmsHandler);
 tgpl2SurveyRouter.get('/ccms/last', getLastCcmsHandler);
+tgpl2SurveyRouter.post('/ccms/:id/confirm', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.EMPLOYEE, ROLES.CLIENT), confirmCcmsHandler);
+tgpl2SurveyRouter.patch('/ccms/:id', updateCcmsHandler);
+tgpl2SurveyRouter.delete('/ccms/:id', deleteCcmsHandler);
 
 // Switch Points
 tgpl2SurveyRouter.post('/switch-points', createSwitchPointHandler);
 tgpl2SurveyRouter.get('/switch-points', getSwitchPointsHandler);
 tgpl2SurveyRouter.get('/switch-points/last', getLastSwitchPointHandler);
+tgpl2SurveyRouter.post('/switch-points/:id/confirm', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.EMPLOYEE, ROLES.CLIENT), confirmSwitchPointHandler);
+tgpl2SurveyRouter.patch('/switch-points/:id', updateSwitchPointHandler);
+tgpl2SurveyRouter.delete('/switch-points/:id', deleteSwitchPointHandler);
 
 // Poles
 tgpl2SurveyRouter.post('/poles', createPoleHandler);
