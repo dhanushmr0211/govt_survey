@@ -197,6 +197,8 @@ export const TodaySubmissionsView = ({ projectId }) => {
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
+              {renderField('Created By', 'user_name', selectedPole.user_name)}
+              {renderField('Confirmed By', 'confirmed_by_name', selectedPole.confirmed_by_name)}
               {renderField('Ward', 'ward_name', selectedPole.ward_name)}
               {renderField('CCMS Number', 'ccms_number', selectedPole.ccms_number)}
               {renderField('Switch Point', 'switch_point_number', selectedPole.switch_point_number)}

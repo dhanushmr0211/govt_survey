@@ -1,6 +1,42 @@
 const { createPole, getPoles, updatePole, confirmPole } = require('../models/pole.model');
-const { query } = require('../../../config/db');
+const { query, pool, tgplPool } = require('../../../config/db');
 const { ROLES } = require('../../../constants/roles');
+
+async function enrichUserNames(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return rows;
+
+  const userIds = [...new Set(
+    rows
+      .flatMap((row) => [row.created_by, row.user_id, row.confirmed_by])
+      .filter((id) => id !== null && id !== undefined && id !== '' && !Number.isNaN(Number(id)))
+      .map((id) => Number(id))
+  )];
+
+  if (userIds.length === 0) return rows;
+
+  const userRes = await pool.query(
+    `SELECT id, name FROM users WHERE id = ANY($1)`,
+    [userIds]
+  );
+
+  const userMap = Object.fromEntries(
+    userRes.rows.map((user) => [String(user.id), user.name])
+  );
+
+  rows.forEach((row) => {
+    const createdBy = row.created_by ?? row.user_id;
+    if (createdBy != null) {
+      row.user_name = userMap[String(createdBy)] || String(createdBy);
+    }
+
+    const confirmedBy = row.confirmed_by;
+    if (confirmedBy != null) {
+      row.confirmed_by_name = userMap[String(confirmedBy)] || String(confirmedBy);
+    }
+  });
+
+  return rows;
+}
 
 async function createPoleHandler(req, res, next) {
   try {
@@ -17,8 +53,19 @@ async function getPolesHandler(req, res, next) {
   try {
     const { projectId } = req.params;
     const { status, limit = 50, offset = 0 } = req.query;
-    const polesList = await getPoles(Number(projectId), status, Number(limit), Number(offset));
-    res.json({ poles: polesList });
+    const polesList = await tgplPool.query(
+      `SELECT p.*, w.name as ward_name, c.ccms_number, sp.switch_point_number
+       FROM tgpl2_poles p
+       LEFT JOIN tgpl2_wards w ON p.ward_id = w.id
+       LEFT JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
+       LEFT JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
+       WHERE p.project_id = $1 AND COALESCE(UPPER(p.status), 'PENDING') = UPPER($2) AND p.is_deleted IS NOT TRUE
+       ORDER BY p.created_at DESC LIMIT $3 OFFSET $4`,
+      [Number(projectId), status, Number(limit), Number(offset)]
+    );
+
+    const enrichedPoles = await enrichUserNames(polesList.rows);
+    res.json({ poles: enrichedPoles });
   } catch (error) {
     next(error);
   }

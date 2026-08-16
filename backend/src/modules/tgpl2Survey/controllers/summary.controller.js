@@ -1,6 +1,9 @@
 const excel = require('exceljs');
 const {
   getWardsSummary,
+  getWardSummary,
+  getCcmsSummary,
+  getSwitchPointDetails,
   getWardDetails,
   getPendingSubmissions,
   getConfirmedSubmissions,
@@ -26,6 +29,36 @@ async function getWardDetailsHandler(req, res, next) {
     const { projectId, wardId } = req.params;
     const details = await getWardDetails(Number(projectId), Number(wardId));
     res.json({ details });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getWardSummaryHandler(req, res, next) {
+  try {
+    const { projectId, wardId } = req.params;
+    const rows = await getWardSummary(Number(projectId), Number(wardId));
+    res.json({ ccms: rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getCcmsSummaryHandler(req, res, next) {
+  try {
+    const { projectId, ccmsId } = req.params;
+    const rows = await getCcmsSummary(Number(projectId), Number(ccmsId));
+    res.json({ switch_points: rows });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getSwitchPointDetailsHandler(req, res, next) {
+  try {
+    const { projectId, switchPointId } = req.params;
+    const poles = await getSwitchPointDetails(Number(projectId), Number(switchPointId));
+    res.json({ poles });
   } catch (error) {
     next(error);
   }
@@ -135,7 +168,8 @@ async function downloadReportHandler(req, res, next) {
       { header: 'Latitude', key: 'latitude', width: 15 },
       { header: 'Longitude', key: 'longitude', width: 15 },
       { header: 'Status', key: 'status', width: 12 },
-      { header: 'Surveyor Name', key: 'surveyor_name', width: 20 },
+      { header: 'Created By', key: 'user_name', width: 20 },
+      { header: 'Confirmed By', key: 'confirmed_by_name', width: 20 },
       { header: 'Image URL 1', key: 'image_url_1', width: 35 },
       { header: 'Image URL 2', key: 'image_url_2', width: 35 }
     ];
@@ -165,6 +199,9 @@ async function downloadReportHandler(req, res, next) {
 
 module.exports = {
   getWardsSummaryHandler,
+  getWardSummaryHandler,
+  getCcmsSummaryHandler,
+  getSwitchPointDetailsHandler,
   getWardDetailsHandler,
   getPendingSubmissionsHandler,
   getConfirmedSubmissionsHandler,

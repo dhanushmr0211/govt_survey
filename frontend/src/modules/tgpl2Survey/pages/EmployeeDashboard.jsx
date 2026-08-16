@@ -1,29 +1,32 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import API_BASE_URL from '../../../config/api';
 import { useAuthStore } from '../../../store/authStore';
-import { PoleInspectModal } from '../components/PoleInspectModal';
+import { SubmissionQueueView } from '../components/SubmissionQueueView';
+import { WardSummaryView } from '../components/WardSummaryView';
+import { CcmsSummaryView } from '../components/CcmsSummaryView';
+import { SwitchPointDetailsView } from '../components/SwitchPointDetailsView';
 
 export default function Tgpl2EmployeeDashboard() {
   const { activeProject, clearActiveProject, logout } = useAuthStore();
   const projectId = activeProject?.id;
-  const queryClient = useQueryClient();
-  const [selectedPole, setSelectedPole] = useState(null);
-  const [tab, setTab] = useState('PENDING');
+  const [activeView, setActiveView] = useState('queue');
+  const [selectedWard, setSelectedWard] = useState(null);
+  const [selectedCcms, setSelectedCcms] = useState(null);
+  const [selectedSwitchPoint, setSelectedSwitchPoint] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  const token = localStorage.getItem('token');
 
-  const { data: poles = [], isLoading } = useQuery({
-    queryKey: ['tgpl2-poles', projectId, tab],
+  const { data: wards = [], isLoading: isWardsLoading } = useQuery({
+    queryKey: ['tgpl2-ward-cards', projectId],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const endpoint = tab === 'PENDING' ? 'queue/pending' : 'queue/confirmed';
-      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/tgpl2-survey/${endpoint}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/tgpl2-survey/summary/wards`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      return res.data.poles || [];
+      return res.data?.wards || [];
     },
-    enabled: !!projectId,
+    enabled: !!projectId && activeView === 'summary' && !selectedWard
   });
 
   const downloadReport = async () => {
@@ -55,12 +58,97 @@ export default function Tgpl2EmployeeDashboard() {
           <div><p className="text-xs font-semibold uppercase text-emerald-600">TGPL-2</p><h1 className="text-xl font-bold">Inspection Console</h1></div>
           <div className="flex gap-2"><button onClick={clearActiveProject} className="rounded border px-3 py-2 text-sm">Projects</button><button onClick={downloadReport} disabled={downloading} className="rounded bg-emerald-600 px-3 py-2 text-sm font-semibold text-white">{downloading ? 'Downloading…' : 'Download Report'}</button><button onClick={logout} className="rounded border px-3 py-2 text-sm text-red-600">Logout</button></div>
         </header>
-        <section className="rounded-xl bg-white p-4 shadow-sm">
-          <div className="mb-4 flex gap-2"><button onClick={() => setTab('PENDING')} className={`rounded px-3 py-2 text-sm font-semibold ${tab === 'PENDING' ? 'bg-amber-500 text-white' : 'bg-slate-100'}`}>Pending</button><button onClick={() => setTab('CONFIRMED')} className={`rounded px-3 py-2 text-sm font-semibold ${tab === 'CONFIRMED' ? 'bg-emerald-600 text-white' : 'bg-slate-100'}`}>Confirmed</button></div>
-          {isLoading ? <p className="p-6 text-center text-slate-500">Loading poles…</p> : <div className="overflow-x-auto"><table className="min-w-full text-sm"><thead className="border-b text-left text-slate-500"><tr><th className="p-3">Pole</th><th className="p-3">Ward</th><th className="p-3">CCMS / Switch Point</th><th className="p-3">Surveyor</th><th className="p-3">Action</th></tr></thead><tbody>{poles.map((pole) => <tr key={pole.id} className="border-b"><td className="p-3 font-semibold">{pole.pole_number || '—'}</td><td className="p-3">{pole.ward_name}</td><td className="p-3">{pole.ccms_number} / {pole.switch_point_number}</td><td className="p-3">{pole.surveyor_name || '—'}</td><td className="p-3"><button onClick={() => setSelectedPole(pole)} className="font-semibold text-emerald-700">Inspect</button></td></tr>)}</tbody></table>{poles.length === 0 && <p className="p-6 text-center text-slate-500">No {tab.toLowerCase()} poles.</p>}</div>}
-        </section>
+
+        <div className="flex gap-2 rounded-xl bg-white p-2 shadow-sm">
+          <button
+            onClick={() => setActiveView('queue')}
+            className={`rounded px-3 py-2 text-sm font-semibold ${activeView === 'queue' ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+          >
+            Submission Queue
+          </button>
+          <button
+            onClick={() => {
+              setActiveView('summary');
+              setSelectedWard(null);
+              setSelectedCcms(null);
+              setSelectedSwitchPoint(null);
+            }}
+            className={`rounded px-3 py-2 text-sm font-semibold ${activeView === 'summary' ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+          >
+            Summary Drill-down
+          </button>
+        </div>
+
+        {activeView === 'queue' && <SubmissionQueueView projectId={projectId} />}
+
+        {activeView === 'summary' && !selectedWard && (
+          <section className="rounded-xl bg-white p-4 shadow-sm">
+            <div className="mb-4">
+              <p className="text-sm font-semibold text-slate-500">Ward &gt; CCMS &gt; Switch Point</p>
+              <h2 className="text-lg font-bold text-slate-900">Ward Cards</h2>
+            </div>
+            {isWardsLoading ? (
+              <p className="p-6 text-center text-slate-500">Loading wards...</p>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2">
+                {wards.map((ward) => (
+                  <button
+                    key={ward.ward_id}
+                    onClick={() => setSelectedWard(ward)}
+                    className="rounded-lg border border-slate-200 p-4 text-left hover:bg-slate-50"
+                  >
+                    <p className="text-sm font-bold text-slate-900">{ward.ward_name}</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-600">
+                      <p>CCMS: {ward.total_ccms || 0}</p>
+                      <p>Switch Points: {ward.total_switch_points || 0}</p>
+                      <p>Poles: {ward.total_poles || 0}</p>
+                      <p>Pending: {ward.pending_poles || 0}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {activeView === 'summary' && selectedWard && !selectedCcms && (
+          <WardSummaryView
+            projectId={projectId}
+            ward={selectedWard}
+            onSelectCcms={setSelectedCcms}
+            onBackToWards={() => setSelectedWard(null)}
+          />
+        )}
+
+        {activeView === 'summary' && selectedWard && selectedCcms && !selectedSwitchPoint && (
+          <CcmsSummaryView
+            projectId={projectId}
+            ward={selectedWard}
+            ccms={selectedCcms}
+            onSelectSwitchPoint={setSelectedSwitchPoint}
+            onBackToWard={() => {
+              setSelectedWard(null);
+              setSelectedCcms(null);
+            }}
+            onBackToCcms={() => setSelectedCcms(null)}
+          />
+        )}
+
+        {activeView === 'summary' && selectedWard && selectedCcms && selectedSwitchPoint && (
+          <SwitchPointDetailsView
+            projectId={projectId}
+            ward={selectedWard}
+            ccms={selectedCcms}
+            switchPoint={selectedSwitchPoint}
+            onBackToCcms={() => setSelectedSwitchPoint(null)}
+            onBackToWard={() => {
+              setSelectedWard(null);
+              setSelectedCcms(null);
+              setSelectedSwitchPoint(null);
+            }}
+          />
+        )}
       </section>
-      {selectedPole && <PoleInspectModal pole={selectedPole} projectId={projectId} onClose={() => setSelectedPole(null)} onRefresh={() => queryClient.invalidateQueries({ queryKey: ['tgpl2-poles', projectId] })} />}
     </main>
   );
 }

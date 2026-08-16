@@ -32,6 +32,9 @@ const {
 
 const {
   getWardsSummaryHandler,
+  getWardSummaryHandler,
+  getCcmsSummaryHandler,
+  getSwitchPointDetailsHandler,
   getWardDetailsHandler,
   getPendingSubmissionsHandler,
   getConfirmedSubmissionsHandler,
@@ -95,6 +98,9 @@ tgpl2SurveyRouter.get('/queue/pending', getPendingSubmissionsHandler);
 tgpl2SurveyRouter.get('/queue/confirmed', getConfirmedSubmissionsHandler);
 tgpl2SurveyRouter.get('/queue/today', getTodaySubmissionsHandler);
 tgpl2SurveyRouter.get('/summary/wards', getWardsSummaryHandler);
+tgpl2SurveyRouter.get('/summary/wards/:wardId/ccms', getWardSummaryHandler);
+tgpl2SurveyRouter.get('/summary/ccms/:ccmsId/switch-points', getCcmsSummaryHandler);
+tgpl2SurveyRouter.get('/summary/switch-points/:switchPointId/poles', getSwitchPointDetailsHandler);
 tgpl2SurveyRouter.get('/summary/wards/:wardId/details', getWardDetailsHandler);
 tgpl2SurveyRouter.get('/report/download', downloadReportHandler);
 

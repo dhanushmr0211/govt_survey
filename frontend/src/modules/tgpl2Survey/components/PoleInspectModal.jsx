@@ -83,6 +83,10 @@ export const PoleInspectModal = ({ pole, onClose, onRefresh, projectId }) => {
               <p className="mt-1 text-gray-900">{pole.ward_name || '-'}</p>
             </div>
             <div>
+              <p className="font-semibold text-gray-500 uppercase">Surveyor</p>
+              <p className="mt-1 text-gray-900">{pole.surveyor_name || pole.user_name || '-'}</p>
+            </div>
+            <div>
               <p className="font-semibold text-gray-500 uppercase">CCMS</p>
               <p className="mt-1 text-gray-900">{pole.ccms_number || '-'}</p>
             </div>
@@ -93,6 +97,10 @@ export const PoleInspectModal = ({ pole, onClose, onRefresh, projectId }) => {
             <div>
               <p className="font-semibold text-gray-500 uppercase">Status</p>
               <p className="mt-1 text-gray-900">{pole.status || '-'}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-500 uppercase">Confirmed By</p>
+              <p className="mt-1 text-gray-900">{pole.confirmed_by_name || '-'}</p>
             </div>
           </div>
 
