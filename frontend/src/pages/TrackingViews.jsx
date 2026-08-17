@@ -428,8 +428,8 @@ export function MobileUserTrackingView({ projectId }) {
           <tbody className="bg-white divide-y divide-gray-200">
             {tracking.map((user) => (
               <tr key={user.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{user.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.email}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900">{user.user_name || user.surveyor_name || user.name || user.user_id || '—'}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.email || user.user_email || '—'}</td>
                 {!isTgpl ? (
                   <>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_sp}</td>
@@ -602,7 +602,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Time</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Identifier</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ward</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">ULB Name</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{String(projectId) === '4' ? 'Ward Name' : 'ULB Name'}</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
             </tr>
           </thead>

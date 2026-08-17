@@ -684,7 +684,7 @@ export const SubmissionQueueView = ({ projectId }) => {
               <th>Name</th>
               {activeTab !== 'deleted' && <th>Date/Time</th>}
               <th>Ward</th>
-              <th>ULB Name</th>
+              <th>{String(projectId) === '4' ? 'Ward Name' : 'ULB Name'}</th>
               {activeTab === 'deleted' && <th>Deleted By</th>}
               {activeTab === 'deleted' && <th>Deleted Date/Time</th>}
               <th>Action</th>
@@ -843,7 +843,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                     <p className="font-medium">{selectedSubmission.ward_number}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs">ULB</p>
+                    <p className="text-gray-500 text-xs">{String(projectId) === '4' ? 'Ward' : 'ULB'}</p>
                     {isEditing ? (
                       <select
                         name="ulb_id"
@@ -861,7 +861,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         }}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
                       >
-                        <option value="">Select ULB...</option>
+                        <option value="">{String(projectId) === '4' ? 'Select Ward...' : 'Select ULB...'}</option>
                         {ulbs.map(u => (
                           <option key={u.id} value={u.id}>{u.name}</option>
                         ))}

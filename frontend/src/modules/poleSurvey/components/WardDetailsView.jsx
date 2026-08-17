@@ -885,26 +885,40 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                                   </>
                                 )}
                                 <td>
-                                  <button 
-                                    onClick={() => {
-                                      setSelectedDetail({ type: 'pole', data: pole });
-                                      setFormData({ 
-                                        ...pole,
-                                        ulb_id: ulb.ulb_id,
-                                        pole_number: pole.pole_number || pole.identifier
-                                      });
-                                      setIsEditing(false);
-                                    }}
-                                    className="font-semibold text-primary hover:text-primary-dark"
-                                  >
-                                    View Details
-                                  </button>
+                                  <div className="flex gap-2">
+                                    {isTgpl2 && pole.switch_point_id && (
+                                      <button 
+                                        onClick={() => {
+                                          setSelectedDetail({ type: 'switch_point', data: { ...pole, id: pole.switch_point_id } });
+                                          setFormData({ ...pole, id: pole.switch_point_id, ulb_id: ulb?.ulb_id || ulb?.id });
+                                          setIsEditing(false);
+                                        }}
+                                        className="font-semibold text-blue-600 hover:text-blue-800 text-xs whitespace-nowrap"
+                                      >
+                                        SP Details
+                                      </button>
+                                    )}
+                                    <button 
+                                      onClick={() => {
+                                        setSelectedDetail({ type: 'pole', data: pole });
+                                        setFormData({ 
+                                          ...pole,
+                                          ulb_id: ulb.ulb_id,
+                                          pole_number: pole.pole_number || pole.identifier
+                                        });
+                                        setIsEditing(false);
+                                      }}
+                                      className="font-semibold text-primary hover:text-primary-dark"
+                                    >
+                                      View Details
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
                             {sp.poles.length === 0 && (
                               <tr>
-                                <td colSpan={selectedCcms.type === 'installation' ? 6 : 7} className="text-center text-slate-500">
+                                <td colSpan={selectedCcms.type === 'installation' ? 6 : (isTgpl2 ? 8 : 7)} className="text-center text-slate-500">
                                   No poles under this CCMS.
                                 </td>
                               </tr>
@@ -1070,7 +1084,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                     </p>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">ULB</p>
+                    <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">{isTgpl2 ? 'Ward' : 'ULB'}</p>
                     {isEditing ? (
                       <select
                         name="ulb_id"
@@ -1088,7 +1102,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                         }}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
                       >
-                        <option value="">Select ULB...</option>
+                        <option value="">{isTgpl2 ? 'Select Ward...' : 'Select ULB...'}</option>
                         {ulbs.map(u => (
                           <option key={u.id} value={u.id}>{u.name}</option>
                         ))}

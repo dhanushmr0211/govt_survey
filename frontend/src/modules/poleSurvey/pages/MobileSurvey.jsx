@@ -251,7 +251,7 @@ export default function MobileSurvey() {
               <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm space-y-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-xs text-gray-500">{isTgpl ? 'Selected Ward' : 'Selected ULB'}</p>
+                    <p className="text-xs text-gray-500">{isTgpl2 ? 'Selected Ward' : 'Selected ULB'}</p>
                     <p className="font-semibold text-gray-900">{selectedUlb.name}</p>
                   </div>
                   <button

@@ -119,7 +119,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
         </div>
 
         <div className="space-y-4">
-          {isTgpl ? (
+          {(isTgpl || isTgpl2) ? (
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Select Ward</label>
               <select
@@ -153,7 +153,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Select ULB</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700">{isTgpl2 ? 'Select Ward' : 'Select ULB'}</label>
                 <select
                   value={ulbId}
                   onChange={(e) => setUlbId(e.target.value)}

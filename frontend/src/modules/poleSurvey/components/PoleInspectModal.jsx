@@ -481,7 +481,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                 <p className="font-semibold text-slate-900">{pole.ward_number}</p>
               </div>
               <div>
-                <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">ULB</p>
+                <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">{String(projectId) === '4' ? 'Ward' : 'ULB'}</p>
                 {isEditing ? (
                   <select
                     name="ulb_id"
@@ -499,7 +499,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                     }}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary text-xs p-1"
                   >
-                    <option value="">Select ULB...</option>
+                    <option value="">{String(projectId) === '4' ? 'Select Ward...' : 'Select ULB...'}</option>
                     {ulbs.map(u => (
                       <option key={u.id} value={u.id}>{u.name}</option>
                     ))}
