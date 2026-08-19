@@ -382,6 +382,7 @@ async function downloadReportHandler(req, res, next) {
       { header: 'Location', key: 'latitude_longitude', width: 25 },
       { header: 'Date', key: 'created_date', width: 15 },
       { header: 'Date-Time', key: 'created_at', width: 20 },
+      { header: 'Status', key: 'status', width: 15 },
       { header: 'Submitter', key: 'user_name', width: 20 }
     ];
     
@@ -437,7 +438,8 @@ async function downloadReportHandler(req, res, next) {
         address: sp.ulb_name || sp.district_name || '',
         latitude_longitude: latLong,
         created_date: dateStr,
-        created_at: dateTimeStr
+        created_at: dateTimeStr,
+        status: sp.status || 'PENDING'
       });
 
       activeSpCols.forEach(key => {
@@ -485,6 +487,7 @@ async function downloadReportHandler(req, res, next) {
       { header: 'Address', key: 'latitude_longitude', width: 25 },
       { header: 'Date', key: 'created_date', width: 15 },
       { header: 'Date-Time', key: 'created_at', width: 20 },
+      { header: 'Status', key: 'status', width: 15 },
       { header: 'Submitter', key: 'user_name', width: 20 }
     ];
 
@@ -515,7 +518,8 @@ async function downloadReportHandler(req, res, next) {
         sub_div: p.ulb_name || p.district_name || '',
         latitude_longitude: latLong,
         created_date: dateStr,
-        created_at: dateTimeStr
+        created_at: dateTimeStr,
+        status: p.status || 'CONFIRMED'
       });
 
       activePoleCols.forEach(key => {
