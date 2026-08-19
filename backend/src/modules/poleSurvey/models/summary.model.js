@@ -1069,7 +1069,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
     JOIN ulbs ulb ON sp.ulb_id = ulb.id
     JOIN districts d ON ulb.district_id = d.id
     WHERE sp.project_id = $1 
-      AND (sp.status = 'CONFIRMED' OR EXISTS (SELECT 1 FROM poles p_sub WHERE p_sub.switch_point_id = sp.id AND p_sub.status = 'CONFIRMED' AND p_sub.is_deleted IS NOT TRUE))
+      AND sp.status = 'CONFIRMED'
       AND sp.is_deleted IS NOT TRUE
     AND ($2::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', sp.created_at)))::date <= $2)
     AND ($3::int IS NULL OR ulb.district_id = $3)
@@ -1123,7 +1123,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
   
   const pResult = await query(pSql, params);
 
-  // Ensure any switch points referenced by the returned poles are also included in the switchPoints sheet
+  // Ensure any confirmed switch points referenced by the returned confirmed poles are also included in the switchPoints sheet
   const existingSpIds = new Set(spResult.rows.map(s => s.id));
   const missingSpIds = [...new Set(pResult.rows.map(p => p.switch_point_id).filter(id => id && !existingSpIds.has(id)))];
 
@@ -1140,7 +1140,7 @@ async function getReportData(projectId, districtId, tillDate, ulbId, districtSco
       LEFT JOIN users u_conf ON sp.confirmed_by = u_conf.id
       JOIN ulbs ulb ON sp.ulb_id = ulb.id
       JOIN districts d ON ulb.district_id = d.id
-      WHERE sp.id = ANY($1) AND sp.project_id = $2 AND sp.is_deleted IS NOT TRUE
+      WHERE sp.id = ANY($1) AND sp.project_id = $2 AND sp.status = 'CONFIRMED' AND sp.is_deleted IS NOT TRUE
       ORDER BY sp.created_at DESC
     `, [missingSpIds, projectId]);
 
