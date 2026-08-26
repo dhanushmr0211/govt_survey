@@ -1,4 +1,5 @@
 const { getPoles, updatePole, confirmPole } = require('../models/pole.model');
+const { getInstallations, updateInstallation, confirmInstallation } = require('../models/installation.model');
 const { query } = require('../../../config/db');
 const { ROLES } = require('../../../constants/roles');
 
@@ -22,6 +23,17 @@ async function getPolesHandler(req, res, next) {
   }
 }
 
+async function getInstallationsHandler(req, res, next) {
+  try {
+    const { projectId } = req.params;
+    const { status, limit = 50, offset = 0 } = req.query;
+    const installations = await getInstallations(Number(projectId), status, Number(limit), Number(offset));
+    res.json({ installations });
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function getCcmsListHandler(req, res, next) {
   try {
     const { projectId } = req.params;
@@ -36,8 +48,11 @@ async function getCcmsListHandler(req, res, next) {
 
     const result = await query(
       `SELECT ccms_number, MAX(id) as id 
-       FROM poles 
-       WHERE project_id = $1 AND ward_id = $2 AND ccms_number IS NOT NULL AND ccms_number != '' AND is_deleted = FALSE
+       FROM (
+         SELECT id, ccms_number, created_at FROM poles WHERE project_id = $1 AND ward_id = $2 AND ccms_number IS NOT NULL AND ccms_number != '' AND is_deleted = FALSE
+         UNION ALL
+         SELECT id, ccms_number, created_at FROM tgpl_installations WHERE project_id = $1 AND ward_id = $2 AND ccms_number IS NOT NULL AND ccms_number != '' AND is_deleted = FALSE
+       ) combined_ccms
        GROUP BY ccms_number 
        ORDER BY MAX(created_at) DESC 
        LIMIT 10`,
@@ -61,6 +76,9 @@ async function updatePoleHandler(req, res, next) {
     const { projectId } = req.params;
     const data = req.body;
     
+    // Check if updating an installation vs pole
+    const isInstallation = data.survey_type === 'installation' || data.type === 'installation';
+    
     // Map ulb_id/ulb_name to ward_id/ward_number if present
     const parsedUlbId = (data.ulb_id !== undefined && data.ulb_id !== null && data.ulb_id !== '') ? Number(data.ulb_id) : null;
     if (parsedUlbId && parsedUlbId > 0) {
@@ -71,12 +89,27 @@ async function updatePoleHandler(req, res, next) {
     }
     if (data.ulb_name) data.ward_number = data.ulb_name;
 
-    // Retrieve current pole fields to handle partial updates correctly
-    const poleRes = await query(`SELECT ward_id, ccms_number, pole_number, survey_type, status, created_by FROM poles WHERE id = $1`, [Number(id)]);
-    const currentPole = poleRes.rows[0];
+    // Check table based on isInstallation or existing records
+    let currentPole = null;
+    let table = 'poles';
+    
+    const poleRes = await query(`SELECT ward_id, ccms_number, pole_number, 'survey' as survey_type, status, created_by FROM poles WHERE id = $1`, [Number(id)]);
+    if (poleRes.rows.length > 0 && !isInstallation) {
+      currentPole = poleRes.rows[0];
+      table = 'poles';
+    } else {
+      const instRes = await query(`SELECT ward_id, ccms_number, pole_number, 'installation' as survey_type, status, created_by FROM tgpl_installations WHERE id = $1`, [Number(id)]);
+      if (instRes.rows.length > 0) {
+        currentPole = instRes.rows[0];
+        table = 'tgpl_installations';
+      } else if (poleRes.rows.length > 0) {
+        currentPole = poleRes.rows[0];
+        table = 'poles';
+      }
+    }
 
     if (!currentPole) {
-      return res.status(404).json({ message: 'Pole not found' });
+      return res.status(404).json({ message: 'Record not found' });
     }
 
     // Permission check for editing
@@ -98,57 +131,54 @@ async function updatePoleHandler(req, res, next) {
       }
     }
 
-    if (currentPole) {
-      const checkWardId = data.ward_id || currentPole.ward_id;
-      const checkCcmsNumber = data.ccms_number !== undefined ? data.ccms_number : currentPole.ccms_number;
-      const checkPoleNumber = data.pole_number !== undefined ? data.pole_number : currentPole.pole_number;
-      const checkSurveyType = data.survey_type || currentPole.survey_type || 'survey';
+    const checkWardId = data.ward_id || currentPole.ward_id;
+    const checkCcmsNumber = data.ccms_number !== undefined ? data.ccms_number : currentPole.ccms_number;
+    const checkPoleNumber = data.pole_number !== undefined ? data.pole_number : currentPole.pole_number;
 
-      if (checkCcmsNumber && checkPoleNumber) {
-        const ccmsClean = String(checkCcmsNumber).trim();
-        const poleClean = String(checkPoleNumber).trim();
+    if (checkCcmsNumber && checkPoleNumber) {
+      const ccmsClean = String(checkCcmsNumber).trim();
+      const poleClean = String(checkPoleNumber).trim();
+      const normCcms = normalizeIdentifier(ccmsClean);
+      const normPole = normalizeIdentifier(poleClean);
 
-        const normCcms = normalizeIdentifier(ccmsClean);
-        const normPole = normalizeIdentifier(poleClean);
+      const existingRecords = await query(
+        `SELECT id, ccms_number, pole_number FROM ${table} 
+         WHERE project_id = $1 
+           AND ward_id = $2 
+           AND id != $3
+           AND is_deleted = FALSE`,
+        [Number(projectId), Number(checkWardId), Number(id)]
+      );
 
-        // Fetch existing poles in the target ward (excluding this one)
-        const existingPoles = await query(
-          `SELECT id, ccms_number, pole_number, survey_type FROM poles 
-           WHERE project_id = $1 
-             AND ward_id = $2 
-             AND id != $3
-             AND is_deleted = FALSE`,
-          [Number(projectId), Number(checkWardId), Number(id)]
-        );
-
-        // Normalize matching CCMS value if found
-        const existingCcmsRow = existingPoles.rows.find(row => normalizeIdentifier(row.ccms_number) === normCcms);
-        if (existingCcmsRow) {
-          if (data.ccms_number !== undefined) data.ccms_number = existingCcmsRow.ccms_number;
-        } else {
-          if (data.ccms_number !== undefined) data.ccms_number = ccmsClean;
-        }
-
-        const isDuplicate = existingPoles.rows.some(row => {
-          const rowSurveyType = row.survey_type || 'survey';
-          return rowSurveyType === checkSurveyType &&
-                 normalizeIdentifier(row.ccms_number) === normCcms &&
-                 normalizeIdentifier(row.pole_number) === normPole;
-        });
-
-        if (isDuplicate) {
-          const typeStr = checkSurveyType === 'installation' ? 'installation' : 'survey';
-          return res.status(400).json({ 
-            message: `Pole No. "${poleClean}" under CCMS "${data.ccms_number || checkCcmsNumber}" already has a submitted ${typeStr} record in this ward.`
-          });
-        }
-
-        if (data.pole_number !== undefined) data.pole_number = poleClean;
+      const existingCcmsRow = existingRecords.rows.find(row => normalizeIdentifier(row.ccms_number) === normCcms);
+      if (existingCcmsRow) {
+        if (data.ccms_number !== undefined) data.ccms_number = existingCcmsRow.ccms_number;
+      } else {
+        if (data.ccms_number !== undefined) data.ccms_number = ccmsClean;
       }
+
+      const isDuplicate = existingRecords.rows.some(row => {
+        return normalizeIdentifier(row.ccms_number) === normCcms &&
+               normalizeIdentifier(row.pole_number) === normPole;
+      });
+
+      if (isDuplicate) {
+        const typeStr = table === 'tgpl_installations' ? 'installation' : 'survey';
+        return res.status(400).json({ 
+          message: `Pole No. "${poleClean}" under CCMS "${data.ccms_number || checkCcmsNumber}" already has a submitted ${typeStr} record in this ward.`
+        });
+      }
+
+      if (data.pole_number !== undefined) data.pole_number = poleClean;
     }
 
-    const updated = await updatePole(id, projectId, data);
-    res.json({ pole: updated });
+    let updated;
+    if (table === 'tgpl_installations') {
+      updated = await updateInstallation(id, projectId, data);
+    } else {
+      updated = await updatePole(id, projectId, data);
+    }
+    res.json({ pole: updated, installation: updated });
   } catch (error) {
     next(error);
   }
@@ -159,8 +189,13 @@ async function confirmPoleHandler(req, res, next) {
     const { id } = req.params;
     const { projectId } = req.params;
     const userId = req.user.id;
-    const confirmed = await confirmPole(id, projectId, userId);
-    res.json({ pole: confirmed });
+    
+    // Try confirming in tgpl_installations if not in poles or if requested
+    let confirmed = await confirmPole(id, projectId, userId);
+    if (!confirmed) {
+      confirmed = await confirmInstallation(id, projectId, userId);
+    }
+    res.json({ pole: confirmed, installation: confirmed });
   } catch (error) {
     next(error);
   }
@@ -174,56 +209,51 @@ async function validateMoveHandler(req, res, next) {
     const targetWardId = Number(ulb_id);
     const targetCcmsNum = ccms_number !== undefined ? ccms_number : switch_point_number;
 
-    // Fetch target ward Name
     const wardRes = await query(`SELECT name FROM wards WHERE id = $1`, [targetWardId]);
     const targetWardName = wardRes.rows[0]?.name || 'N/A';
 
-    if (type === 'pole') {
-      const poleRes = await query(
-        `SELECT p.pole_number, p.ward_id, w.name as ward_name, p.ccms_number 
-         FROM poles p
-         JOIN wards w ON p.ward_id = w.id
-         WHERE p.id = $1 AND p.project_id = $2`,
-        [id, projectId]
-      );
-      const pole = poleRes.rows[0];
-      if (!pole) {
-        return res.status(404).json({ message: 'Pole not found' });
-      }
+    const isInst = type === 'installation';
+    const table = isInst ? 'tgpl_installations' : 'poles';
 
-      const locationChanged =
-        Number(pole.ward_id) !== targetWardId ||
-        pole.ccms_number !== targetCcmsNum;
+    const poleRes = await query(
+      `SELECT p.pole_number, p.ward_id, w.name as ward_name, p.ccms_number 
+       FROM ${table} p
+       JOIN wards w ON p.ward_id = w.id
+       WHERE p.id = $1 AND p.project_id = $2`,
+      [id, projectId]
+    );
+    const pole = poleRes.rows[0];
+    if (!pole) {
+      return res.status(404).json({ message: 'Record not found' });
+    }
 
-      if (!locationChanged) {
-        return res.json({ shouldWarn: false });
-      }
+    const locationChanged =
+      Number(pole.ward_id) !== targetWardId ||
+      pole.ccms_number !== targetCcmsNum;
 
-      if (!targetCcmsNum || targetCcmsNum === 'NO_CCMS') {
-        return res.json({ shouldWarn: false });
-      }
-
-      // Check if poles exist in target ward with target CCMS number
-      const ccmsRes = await query(
-        `SELECT id FROM poles 
-         WHERE project_id = $1 AND ward_id = $2 AND ccms_number = $3 AND is_deleted IS NOT TRUE 
-         LIMIT 1`,
-        [projectId, targetWardId, targetCcmsNum]
-      );
-
-      if (ccmsRes.rows.length > 0) {
-        // If present, push directly without warning prompt
-        return res.json({ shouldWarn: false });
-      } else {
-        // If not present, warn and ask to confirm creating it
-        return res.json({
-          shouldWarn: true,
-          action: 'create',
-          message: `Pole No. "${pole.pole_number || 'N/A'}" is shifting from Ward "${pole.ward_name}" (CCMS #${pole.ccms_number || 'None'}) to target Ward "${targetWardName}" (CCMS #${targetCcmsNum || 'None'}).\n\nNo matching CCMS exists in the target ward. A new CCMS group will be created. Proceed?`
-        });
-      }
-    } else {
+    if (!locationChanged) {
       return res.json({ shouldWarn: false });
+    }
+
+    if (!targetCcmsNum || targetCcmsNum === 'NO_CCMS') {
+      return res.json({ shouldWarn: false });
+    }
+
+    const ccmsRes = await query(
+      `SELECT id FROM ${table} 
+       WHERE project_id = $1 AND ward_id = $2 AND ccms_number = $3 AND is_deleted IS NOT TRUE 
+       LIMIT 1`,
+      [projectId, targetWardId, targetCcmsNum]
+    );
+
+    if (ccmsRes.rows.length > 0) {
+      return res.json({ shouldWarn: false });
+    } else {
+      return res.json({
+        shouldWarn: true,
+        action: 'create',
+        message: `Pole No. "${pole.pole_number || 'N/A'}" is shifting from Ward "${pole.ward_name}" (CCMS #${pole.ccms_number || 'None'}) to target Ward "${targetWardName}" (CCMS #${targetCcmsNum || 'None'}).\n\nNo matching CCMS exists in the target ward. A new CCMS group will be created. Proceed?`
+      });
     }
   } catch (error) {
     next(error);
@@ -241,14 +271,24 @@ async function deletePoleHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to delete submissions.' });
     }
 
-    await query(
-      `UPDATE poles 
-       SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $1 
-       WHERE id = $2 AND project_id = $3`,
-      [userId, id, projectId]
-    );
+    const poleRes = await query(`SELECT id FROM poles WHERE id = $1 AND project_id = $2`, [id, projectId]);
+    if (poleRes.rows.length > 0) {
+      await query(
+        `UPDATE poles 
+         SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $1 
+         WHERE id = $2 AND project_id = $3`,
+        [userId, id, projectId]
+      );
+    } else {
+      await query(
+        `UPDATE tgpl_installations 
+         SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $1 
+         WHERE id = $2 AND project_id = $3`,
+        [userId, id, projectId]
+      );
+    }
 
-    res.json({ message: 'Pole successfully deleted.' });
+    res.json({ message: 'Record successfully deleted.' });
   } catch (error) {
     next(error);
   }
@@ -256,9 +296,11 @@ async function deletePoleHandler(req, res, next) {
 
 module.exports = {
   getPolesHandler,
+  getInstallationsHandler,
   getCcmsListHandler,
   updatePoleHandler,
   confirmPoleHandler,
   validateMoveHandler,
   deletePoleHandler
 };
+

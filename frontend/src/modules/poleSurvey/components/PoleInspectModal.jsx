@@ -522,37 +522,50 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                     {renderField('Ward No', 'ward_number', pole.ward_number)}
                     {renderField('CCMS No', 'ccms_number', pole.ccms_number)}
                     {renderField('Pole No', 'pole_number', pole.pole_number)}
+                    {renderField('Pole Type', 'pole_type', pole.pole_type, ['RCC', 'TUBULAR', 'HIGH MAST', 'MINI MAST'])}
                     {renderField('Lights Count', 'how_many_lights_in_pole', pole.how_many_lights_in_pole, Array.from({length: 6}, (_, i) => String(i)))}
                     {Number(formData.how_many_lights_in_pole || pole.how_many_lights_in_pole || 0) >= 1 && (
                       <>
-                        {renderField('Light 1 Type', 'light_type', pole.light_type, ['NEW LED', 'OLD LED'])}
-                        {renderField('Light 1 Capacity', 'light_capacity', pole.light_capacity, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                        {renderField('Light 1 Type', 'light_type', pole.light_type, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                        {renderField('Light 1 Wattage', 'light_wattage', pole.light_wattage || pole.light_capacity, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                        {renderField('Light 1 Status', 'light_status', pole.light_status, ['WORKING', 'NOT WORKING'])}
+                        {renderField('Light 1 ARM Status', 'arm_status', pole.arm_status, ['NEW', 'OLD', 'EMPTY'])}
                       </>
                     )}
                     {Number(formData.how_many_lights_in_pole || pole.how_many_lights_in_pole || 0) >= 2 && (
                       <>
-                        {renderField('Light 2 Type', 'light_type_2', pole.light_type_2, ['NEW LED', 'OLD LED'])}
-                        {renderField('Light 2 Capacity', 'light_capacity_2', pole.light_capacity_2, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                        {renderField('Light 2 Type', 'light_type_2', pole.light_type_2, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                        {renderField('Light 2 Wattage', 'light_wattage_2', pole.light_wattage_2 || pole.light_capacity_2, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                        {renderField('Light 2 Status', 'light_status_2', pole.light_status_2, ['WORKING', 'NOT WORKING'])}
+                        {renderField('Light 2 ARM Status', 'arm_status_2', pole.arm_status_2, ['NEW', 'OLD', 'EMPTY'])}
                       </>
                     )}
                     {Number(formData.how_many_lights_in_pole || pole.how_many_lights_in_pole || 0) >= 3 && (
                       <>
-                        {renderField('Light 3 Type', 'light_type_3', pole.light_type_3, ['NEW LED', 'OLD LED'])}
-                        {renderField('Light 3 Capacity', 'light_capacity_3', pole.light_capacity_3, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                        {renderField('Light 3 Type', 'light_type_3', pole.light_type_3, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                        {renderField('Light 3 Wattage', 'light_wattage_3', pole.light_wattage_3 || pole.light_capacity_3, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                        {renderField('Light 3 Status', 'light_status_3', pole.light_status_3, ['WORKING', 'NOT WORKING'])}
+                        {renderField('Light 3 ARM Status', 'arm_status_3', pole.arm_status_3, ['NEW', 'OLD', 'EMPTY'])}
                       </>
                     )}
                     {Number(formData.how_many_lights_in_pole || pole.how_many_lights_in_pole || 0) >= 4 && (
                       <>
-                        {renderField('Light 4 Type', 'light_type_4', pole.light_type_4, ['NEW LED', 'OLD LED'])}
-                        {renderField('Light 4 Capacity', 'light_capacity_4', pole.light_capacity_4, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                        {renderField('Light 4 Type', 'light_type_4', pole.light_type_4, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                        {renderField('Light 4 Wattage', 'light_wattage_4', pole.light_wattage_4 || pole.light_capacity_4, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                        {renderField('Light 4 Status', 'light_status_4', pole.light_status_4, ['WORKING', 'NOT WORKING'])}
+                        {renderField('Light 4 ARM Status', 'arm_status_4', pole.arm_status_4, ['NEW', 'OLD', 'EMPTY'])}
                       </>
                     )}
                     {Number(formData.how_many_lights_in_pole || pole.how_many_lights_in_pole || 0) >= 5 && (
                       <>
-                        {renderField('Light 5 Type', 'light_type_5', pole.light_type_5, ['NEW LED', 'OLD LED'])}
-                        {renderField('Light 5 Capacity', 'light_capacity_5', pole.light_capacity_5, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                        {renderField('Light 5 Type', 'light_type_5', pole.light_type_5, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                        {renderField('Light 5 Wattage', 'light_wattage_5', pole.light_wattage_5 || pole.light_capacity_5, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                        {renderField('Light 5 Status', 'light_status_5', pole.light_status_5, ['WORKING', 'NOT WORKING'])}
+                        {renderField('Light 5 ARM Status', 'arm_status_5', pole.arm_status_5, ['NEW', 'OLD', 'EMPTY'])}
                       </>
                     )}
+                    {renderField('Dedicated Wire', 'dedicated_wire', pole.dedicated_wire || pole.req_dedicated_wire, ['YES', 'NO'])}
+                    {renderField('Infra Gap', 'infra_gap', pole.infra_gap, ['UG CABLE DAMAGE', 'AB CABLE DAMAGE', 'PC MISSING', 'OPEN JUNCTION BOX', 'POWER CABLE ON GROUND', 'NA'])}
                   </>
                 ) : isTgpl ? (
                   <>

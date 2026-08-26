@@ -821,6 +821,45 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                           </button>
                         </div>
                       </div>
+
+                      {/* Switch Point Sub-rows (isTgpl2 Survey only) */}
+                      {isTgpl2 && selectedCcms.type === 'survey' && (() => {
+                        // Group poles by switch_point_id to get unique SPs
+                        const spMap = {};
+                        sp.poles.forEach(pole => {
+                          if (pole.switch_point_id && !spMap[pole.switch_point_id]) {
+                            spMap[pole.switch_point_id] = pole;
+                          }
+                        });
+                        const spList = Object.values(spMap);
+                        if (spList.length === 0) return null;
+                        return (
+                          <div className="border-b border-slate-100 bg-violet-50/40 px-4 py-3">
+                            <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wider mb-2">Switch Points</p>
+                            <div className="flex flex-wrap gap-2">
+                              {spList.map(spPole => (
+                                <div key={spPole.switch_point_id} className="flex items-center gap-2 bg-white border border-violet-100 rounded-lg px-3 py-1.5 shadow-sm">
+                                  <span className="text-xs font-semibold text-slate-700">SP #{spPole.switch_point_number || spPole.switch_point_id}</span>
+                                  {spPole.meter_type && (
+                                    <span className="text-[10px] text-slate-500 border-l border-slate-200 pl-2">{spPole.meter_type}</span>
+                                  )}
+                                  <button
+                                    onClick={() => {
+                                      setSelectedDetail({ type: 'switch_point', data: { ...spPole, id: spPole.switch_point_id } });
+                                      setFormData({ ...spPole, id: spPole.switch_point_id, ulb_id: ulb?.ulb_id || ulb?.id });
+                                      setIsEditing(false);
+                                    }}
+                                    className="text-[11px] font-semibold text-violet-600 hover:text-violet-800 border border-violet-200 rounded px-2 py-0.5 hover:bg-violet-50 transition-colors"
+                                  >
+                                    View Details
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       <div className="overflow-x-auto">
                         <table className="premium-table text-sm">
                           <thead>
@@ -836,7 +875,6 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                             ) : (
                               <tr>
                                 <th>Pole No</th>
-                                {isTgpl2 && <th>Switch Point No</th>}
                                 <th>Type</th>
                                 <th>DTC No</th>
                                 <th>Light 1 Type</th>
@@ -859,20 +897,6 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                                   </>
                                 ) : (
                                   <>
-                                    {isTgpl2 && (
-                                      <td>
-                                        <button 
-                                          onClick={() => {
-                                            setSelectedDetail({ type: 'switch_point', data: { ...pole, id: pole.switch_point_id } });
-                                            setFormData({ ...pole, id: pole.switch_point_id, ulb_id: ulb?.ulb_id || ulb?.id });
-                                            setIsEditing(false);
-                                          }}
-                                          className="font-semibold text-primary hover:underline"
-                                        >
-                                          {pole.switch_point_number || 'View'}
-                                        </button>
-                                      </td>
-                                    )}
                                     <td>{pole.pole_type || 'N/A'}</td>
                                     <td>{pole.dtc_number || 'N/A'}</td>
                                     <td>{pole.light_type || 'N/A'}</td>
@@ -886,18 +910,6 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                                 )}
                                 <td>
                                   <div className="flex gap-2">
-                                    {isTgpl2 && pole.switch_point_id && (
-                                      <button 
-                                        onClick={() => {
-                                          setSelectedDetail({ type: 'switch_point', data: { ...pole, id: pole.switch_point_id } });
-                                          setFormData({ ...pole, id: pole.switch_point_id, ulb_id: ulb?.ulb_id || ulb?.id });
-                                          setIsEditing(false);
-                                        }}
-                                        className="font-semibold text-blue-600 hover:text-blue-800 text-xs whitespace-nowrap"
-                                      >
-                                        SP Details
-                                      </button>
-                                    )}
                                     <button 
                                       onClick={() => {
                                         setSelectedDetail({ type: 'pole', data: pole });
@@ -918,7 +930,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                             ))}
                             {sp.poles.length === 0 && (
                               <tr>
-                                <td colSpan={selectedCcms.type === 'installation' ? 6 : (isTgpl2 ? 8 : 7)} className="text-center text-slate-500">
+                                <td colSpan={selectedCcms.type === 'installation' ? 6 : 7} className="text-center text-slate-500">
                                   No poles under this CCMS.
                                 </td>
                               </tr>
@@ -1154,37 +1166,50 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                           {renderField('Ward No', 'ward_number', selectedDetail.data.ward_number)}
                           {renderField('CCMS No', 'ccms_number', selectedDetail.data.ccms_number)}
                           {renderField('Pole No', 'pole_number', selectedDetail.data.pole_number)}
-                          {renderField('Lights Count', 'how_many_lights_in_pole', selectedDetail.data.how_many_lights_in_pole, ['0', '1', '2', '3', '4', '5'])}
+                          {renderField('Pole Type', 'pole_type', selectedDetail.data.pole_type, ['RCC', 'TUBULAR', 'HIGH MAST', 'MINI MAST'])}
+                          {renderField('Lights Count', 'how_many_lights_in_pole', selectedDetail.data.how_many_lights_in_pole, ['1', '2', '3', '4', '5'])}
                           {Number(formData.how_many_lights_in_pole || selectedDetail.data.how_many_lights_in_pole) >= 1 && (
                             <>
-                              {renderField('Light 1 Type', 'light_type', selectedDetail.data.light_type, ['NEW LED', 'OLD LED'])}
-                              {renderField('Light 1 Capacity', 'light_capacity', selectedDetail.data.light_capacity, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                              {renderField('Light 1 Type', 'light_type', selectedDetail.data.light_type, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                              {renderField('Light 1 Wattage', 'light_wattage', selectedDetail.data.light_wattage || selectedDetail.data.light_capacity, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                              {renderField('Light 1 Status', 'light_status', selectedDetail.data.light_status, ['WORKING', 'NOT WORKING'])}
+                              {renderField('Light 1 ARM Status', 'arm_status', selectedDetail.data.arm_status, ['NEW', 'OLD', 'EMPTY'])}
                             </>
                           )}
                           {Number(formData.how_many_lights_in_pole || selectedDetail.data.how_many_lights_in_pole) >= 2 && (
                             <>
-                              {renderField('Light 2 Type', 'light_type_2', selectedDetail.data.light_type_2, ['NEW LED', 'OLD LED'])}
-                              {renderField('Light 2 Capacity', 'light_capacity_2', selectedDetail.data.light_capacity_2, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                              {renderField('Light 2 Type', 'light_type_2', selectedDetail.data.light_type_2, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                              {renderField('Light 2 Wattage', 'light_wattage_2', selectedDetail.data.light_wattage_2 || selectedDetail.data.light_capacity_2, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                              {renderField('Light 2 Status', 'light_status_2', selectedDetail.data.light_status_2, ['WORKING', 'NOT WORKING'])}
+                              {renderField('Light 2 ARM Status', 'arm_status_2', selectedDetail.data.arm_status_2, ['NEW', 'OLD', 'EMPTY'])}
                             </>
                           )}
                           {Number(formData.how_many_lights_in_pole || selectedDetail.data.how_many_lights_in_pole) >= 3 && (
                             <>
-                              {renderField('Light 3 Type', 'light_type_3', selectedDetail.data.light_type_3, ['NEW LED', 'OLD LED'])}
-                              {renderField('Light 3 Capacity', 'light_capacity_3', selectedDetail.data.light_capacity_3, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                              {renderField('Light 3 Type', 'light_type_3', selectedDetail.data.light_type_3, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                              {renderField('Light 3 Wattage', 'light_wattage_3', selectedDetail.data.light_wattage_3 || selectedDetail.data.light_capacity_3, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                              {renderField('Light 3 Status', 'light_status_3', selectedDetail.data.light_status_3, ['WORKING', 'NOT WORKING'])}
+                              {renderField('Light 3 ARM Status', 'arm_status_3', selectedDetail.data.arm_status_3, ['NEW', 'OLD', 'EMPTY'])}
                             </>
                           )}
                           {Number(formData.how_many_lights_in_pole || selectedDetail.data.how_many_lights_in_pole) >= 4 && (
                             <>
-                              {renderField('Light 4 Type', 'light_type_4', selectedDetail.data.light_type_4, ['NEW LED', 'OLD LED'])}
-                              {renderField('Light 4 Capacity', 'light_capacity_4', selectedDetail.data.light_capacity_4, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                              {renderField('Light 4 Type', 'light_type_4', selectedDetail.data.light_type_4, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                              {renderField('Light 4 Wattage', 'light_wattage_4', selectedDetail.data.light_wattage_4 || selectedDetail.data.light_capacity_4, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                              {renderField('Light 4 Status', 'light_status_4', selectedDetail.data.light_status_4, ['WORKING', 'NOT WORKING'])}
+                              {renderField('Light 4 ARM Status', 'arm_status_4', selectedDetail.data.arm_status_4, ['NEW', 'OLD', 'EMPTY'])}
                             </>
                           )}
                           {Number(formData.how_many_lights_in_pole || selectedDetail.data.how_many_lights_in_pole) >= 5 && (
                             <>
-                              {renderField('Light 5 Type', 'light_type_5', selectedDetail.data.light_type_5, ['NEW LED', 'OLD LED'])}
-                              {renderField('Light 5 Capacity', 'light_capacity_5', selectedDetail.data.light_capacity_5, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                              {renderField('Light 5 Type', 'light_type_5', selectedDetail.data.light_type_5, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                              {renderField('Light 5 Wattage', 'light_wattage_5', selectedDetail.data.light_wattage_5 || selectedDetail.data.light_capacity_5, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                              {renderField('Light 5 Status', 'light_status_5', selectedDetail.data.light_status_5, ['WORKING', 'NOT WORKING'])}
+                              {renderField('Light 5 ARM Status', 'arm_status_5', selectedDetail.data.arm_status_5, ['NEW', 'OLD', 'EMPTY'])}
                             </>
                           )}
+                          {renderField('Dedicated Wire', 'dedicated_wire', selectedDetail.data.dedicated_wire || selectedDetail.data.req_dedicated_wire, ['YES', 'NO'])}
+                          {renderField('Infra Gap', 'infra_gap', selectedDetail.data.infra_gap, ['UG CABLE DAMAGE', 'AB CABLE DAMAGE', 'PC MISSING', 'OPEN JUNCTION BOX', 'POWER CABLE ON GROUND', 'NA'])}
                         </>
                       ) : (
                         <>
@@ -1301,85 +1326,92 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                   )}
                 </div>
               </div>
-                {/* Right Side: Images */}
+                {/* Right Side: Images — only for poles in tgpl2 */}
               <div className="space-y-2">
-                <p className="font-semibold text-gray-700">Images</p>
-                {loadingImages ? (
-                  <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">
-                    <p>Loading images...</p>
-                  </div>
-                ) : images.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
-                    {images.map((img) => (
-                      <div key={img.id} className="border border-gray-100 rounded-lg overflow-hidden relative">
-                        <img
-                          src={img.signed_url}
-                          alt="Survey"
-                          className="w-full h-auto object-cover"
-                          onError={(e) => {
-                            if (!e.target.dataset.errorHandled) {
-                              e.target.dataset.errorHandled = 'true';
-                              e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
-                            }
-                          }}
-                        />
-                        <p className="text-xs text-gray-400 p-1 text-center">{new Date(img.uploaded_at).toLocaleString()}</p>
-                        {isEditing && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteImage(img.id)}
-                            className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full hover:bg-red-700 shadow-lg"
-                            title="Delete Image"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (selectedDetail.data.image_url_1 || selectedDetail.data.image_url_2) ? (
-                  <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
-                    {[selectedDetail.data.image_url_1, selectedDetail.data.image_url_2].filter(Boolean).map((imgUrl, index) => (
-                      <div key={index} className="border border-gray-100 rounded-lg overflow-hidden relative">
-                        <img
-                          src={imgUrl}
-                          alt="Survey"
-                          className="w-full h-auto object-cover"
-                          onError={(e) => {
-                            if (!e.target.dataset.errorHandled) {
-                              e.target.dataset.errorHandled = 'true';
-                              e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
-                            }
-                          }}
-                        />
-                        <p className="text-xs text-gray-400 p-1 text-center">Pole View {index + 1}</p>
-                      </div>
-                    ))}
+                {isTgpl2 && selectedDetail.type === 'switch_point' ? (
+                  <div className="bg-violet-50 h-40 flex items-center justify-center text-violet-400 rounded-lg border border-violet-100">
+                    <p className="text-sm font-medium">Images are only available for poles.</p>
                   </div>
                 ) : (
-                  <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">
-                    <div className="text-center">
-                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4-4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      <p className="mt-1">No images found for this submission.</p>
-                    </div>
-                  </div>
-                )}
+                  <>
+                    <p className="font-semibold text-gray-700">Images</p>
+                    {loadingImages ? (
+                      <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">
+                        <p>Loading images...</p>
+                      </div>
+                    ) : images.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
+                        {images.map((img) => (
+                          <div key={img.id} className="border border-gray-100 rounded-lg overflow-hidden relative">
+                            <img
+                              src={img.signed_url}
+                              alt="Survey"
+                              className="w-full h-auto object-cover"
+                              onError={(e) => {
+                                if (!e.target.dataset.errorHandled) {
+                                  e.target.dataset.errorHandled = 'true';
+                                  e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                                }
+                              }}
+                            />
+                            <p className="text-xs text-gray-400 p-1 text-center">{new Date(img.uploaded_at).toLocaleString()}</p>
+                            {isEditing && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteImage(img.id)}
+                                className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full hover:bg-red-700 shadow-lg"
+                                title="Delete Image"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (selectedDetail.data.image_url_1 || selectedDetail.data.image_url_2) ? (
+                      <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
+                        {[selectedDetail.data.image_url_1, selectedDetail.data.image_url_2].filter(Boolean).map((imgUrl, index) => (
+                          <div key={index} className="border border-gray-100 rounded-lg overflow-hidden relative">
+                            <img
+                              src={imgUrl}
+                              alt="Survey"
+                              className="w-full h-auto object-cover"
+                              onError={(e) => {
+                                if (!e.target.dataset.errorHandled) {
+                                  e.target.dataset.errorHandled = 'true';
+                                  e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                                }
+                              }}
+                            />
+                            <p className="text-xs text-gray-400 p-1 text-center">Pole View {index + 1}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 h-64 flex items-center justify-center text-gray-400 rounded-lg border-2 border-dashed border-gray-200">
+                        <div className="text-center">
+                          <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4-4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          <p className="mt-1">No images found for this submission.</p>
+                        </div>
+                      </div>
+                    )}
 
-
-                {/* Upload New Photo (Only in Edit Mode) */}
-                {isEditing && (
-                  <div className="border-2 border-dashed border-primary/30 p-4 rounded-lg bg-primary/5 text-center mt-2">
-                    <p className="text-xs font-medium text-primary mb-2">Upload New Photo (Gallery)</p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleUploadNewImage}
-                      className="text-xs"
-                    />
-                    <p className="text-xs text-gray-400 mt-1">Will be compressed automatically</p>
-                  </div>
+                    {/* Upload New Photo (Only in Edit Mode) */}
+                    {isEditing && (
+                      <div className="border-2 border-dashed border-primary/30 p-4 rounded-lg bg-primary/5 text-center mt-2">
+                        <p className="text-xs font-medium text-primary mb-2">Upload New Photo (Gallery)</p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleUploadNewImage}
+                          className="text-xs"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">Will be compressed automatically</p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

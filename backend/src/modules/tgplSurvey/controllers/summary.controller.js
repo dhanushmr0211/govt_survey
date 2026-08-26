@@ -306,7 +306,7 @@ const formatDateTime = (dateVal) => {
 async function downloadReportHandler(req, res, next) {
   try {
     const { projectId } = req.params;
-    const { tillDate, ulbId, fromDate, toDate, confirmedBy } = req.query;
+    const { tillDate, ulbId, fromDate, toDate, confirmedBy, reportType } = req.query;
     
     const allowedProject = await canAccessProject(Number(req.user.sub), req.user.role, Number(projectId));
     if (!allowedProject) {
@@ -341,9 +341,10 @@ async function downloadReportHandler(req, res, next) {
       ulbScope,
       fromDate || null,
       toDate || null,
-      confirmedBy ? Number(confirmedBy) : null
+      confirmedBy ? Number(confirmedBy) : null,
+      reportType || null
     );
-    console.log(`[TGPL REPORT] Poles: ${data.poles.length}`);
+    console.log(`[TGPL REPORT] Poles: ${data.poles?.length || 0}, Installations: ${data.installations?.length || 0}`);
 
     const tmpFile = path.join(os.tmpdir(), `report_tgpl_${projectId}_${Date.now()}.xlsx`);
     const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({
@@ -352,104 +353,172 @@ async function downloadReportHandler(req, res, next) {
       useSharedStrings: true
     });
     
-    // Poles Sheet (TGPL only has Poles, no Switch Points)
-    const pSheet = workbook.addWorksheet('Poles');
-    pSheet.columns = [
-      { header: 'Sl#', key: 'sl_no', width: 10 },
-      { header: 'Ward No#', key: 'ward_number', width: 15 },
-      { header: 'DTC No#', key: 'dtc_number', width: 15 },
-      { header: 'DTC Capacity', key: 'dtc_capacity', width: 15 },
-      { header: 'CCMS No#', key: 'ccms_number', width: 15 },
-      { header: 'Meter Phase', key: 'meter_type', width: 15 },
-      { header: 'Meter RR#', key: 'meter_rr_number', width: 15 },
-      { header: 'Meter Sl#', key: 'meter_serial_number', width: 20 },
-      { header: 'Meter Dismantle Status', key: 'meter_dimensional_status', width: 22 },
-      { header: 'Conductor Type', key: 'conductor_type', width: 15 },
-      { header: 'Pole No#', key: 'pole_number', width: 15 },
-      { header: 'Pole Type', key: 'pole_type', width: 15 },
-      { header: 'Pole Height', key: 'pole_height', width: 12 },
-      { header: 'Pole-Pole Distance (mtrs)', key: 'pole_to_pole_distance', width: 24 },
-      { header: 'Earthing Exist', key: 'pole_earthing_exists', width: 15 },
-      { header: 'ARM Type', key: 'arm_type', width: 15 },
-      { header: 'ARM Status', key: 'arm_status', width: 15 },
-      { header: 'ARM No#', key: 'present_arm_no', width: 15 },
-      { header: 'ARM Length', key: 'present_arm_length', width: 15 },
-      { header: 'Lights No#', key: 'how_many_lights_in_pole', width: 15 },
-      { header: 'Light 1 Type', key: 'light_type', width: 15 },
-      { header: 'Light 1 Capacity', key: 'light_capacity', width: 15 },
-      { header: 'Light 2 Type', key: 'light_type_2', width: 15 },
-      { header: 'Light 2 Capacity', key: 'light_capacity_2', width: 15 },
-      { header: 'Light 3 Type', key: 'light_type_3', width: 15 },
-      { header: 'Light 3 Capacity', key: 'light_capacity_3', width: 15 },
-      { header: 'Light 4 Type', key: 'light_type_4', width: 15 },
-      { header: 'Light 4 Capacity', key: 'light_capacity_4', width: 15 },
-      { header: 'Light 5 Type', key: 'light_type_5', width: 15 },
-      { header: 'Light 5 Capacity', key: 'light_capacity_5', width: 15 },
-      { header: 'Lights Status', key: 'light_working_status', width: 15 },
-      { header: 'Road Category', key: 'road_category', width: 15 },
-      { header: 'Road Type', key: 'road_type', width: 15 },
-      { header: 'Road Width (mtrs)', key: 'road_width_mtrs', width: 18 },
-      { header: 'Arm No#', key: 'req_arm_number', width: 15 },
-      { header: 'Arm Length (mtrs)', key: 'req_arm_length', width: 18 },
-      { header: 'Light No#', key: 'req_led_lights_no', width: 15 },
-      { header: 'Light Wattage', key: 'req_led_wattage', width: 15 },
-      { header: 'Dedicated Street Light Wire', key: 'req_dedicated_wire', width: 25 },
-      { header: 'Pole Image1#', key: 'image_url_1', width: 40 },
-      { header: 'Pole Image2#', key: 'image_url_2', width: 40 },
-      { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 },
-      { header: 'Created By', key: 'user_name', width: 15 },
-      { header: 'Created At', key: 'created_at', width: 20 },
-      { header: 'Confirmed By', key: 'confirmed_by_name', width: 15 }
-    ];
-    
-    // Header styling
-    const headerRow = pSheet.getRow(1);
-    headerRow.height = 24;
-    headerRow.eachCell((cell) => {
-      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } };
-      cell.alignment = { vertical: 'middle', horizontal: 'center' };
-    });
-    headerRow.commit();
-    
-    const activePoleCols = NUMERIC_COLS.filter(key => 
-      pSheet.columns.some(col => col.key === key)
-    );
+    const shouldIncludePoles = !reportType || reportType === 'survey' || reportType === 'pole' || reportType === 'all';
+    const shouldIncludeInst = !reportType || reportType === 'installation' || reportType === 'all';
 
-    data.poles.forEach((p, idx) => {
-      const latLong = p.latitude && p.longitude ? `${p.latitude}, ${p.longitude}` : (p.latitude || p.longitude || '');
+    if (shouldIncludePoles) {
+      // Poles Sheet
+      const pSheet = workbook.addWorksheet('Poles');
+      pSheet.columns = [
+        { header: 'Sl#', key: 'sl_no', width: 10 },
+        { header: 'Ward No#', key: 'ward_number', width: 15 },
+        { header: 'DTC No#', key: 'dtc_number', width: 15 },
+        { header: 'DTC Capacity', key: 'dtc_capacity', width: 15 },
+        { header: 'CCMS No#', key: 'ccms_number', width: 15 },
+        { header: 'Meter Phase', key: 'meter_type', width: 15 },
+        { header: 'Meter RR#', key: 'meter_rr_number', width: 15 },
+        { header: 'Meter Sl#', key: 'meter_serial_number', width: 20 },
+        { header: 'Meter Dismantle Status', key: 'meter_dimensional_status', width: 22 },
+        { header: 'Conductor Type', key: 'conductor_type', width: 15 },
+        { header: 'Pole No#', key: 'pole_number', width: 15 },
+        { header: 'Pole Type', key: 'pole_type', width: 15 },
+        { header: 'Pole Height', key: 'pole_height', width: 12 },
+        { header: 'Pole-Pole Distance (mtrs)', key: 'pole_to_pole_distance', width: 24 },
+        { header: 'Earthing Exist', key: 'pole_earthing_exists', width: 15 },
+        { header: 'ARM Type', key: 'arm_type', width: 15 },
+        { header: 'ARM Status', key: 'arm_status', width: 15 },
+        { header: 'ARM No#', key: 'present_arm_no', width: 15 },
+        { header: 'ARM Length', key: 'present_arm_length', width: 15 },
+        { header: 'Lights No#', key: 'how_many_lights_in_pole', width: 15 },
+        { header: 'Light 1 Type', key: 'light_type', width: 15 },
+        { header: 'Light 1 Capacity', key: 'light_capacity', width: 15 },
+        { header: 'Light 2 Type', key: 'light_type_2', width: 15 },
+        { header: 'Light 2 Capacity', key: 'light_capacity_2', width: 15 },
+        { header: 'Light 3 Type', key: 'light_type_3', width: 15 },
+        { header: 'Light 3 Capacity', key: 'light_capacity_3', width: 15 },
+        { header: 'Light 4 Type', key: 'light_type_4', width: 15 },
+        { header: 'Light 4 Capacity', key: 'light_capacity_4', width: 15 },
+        { header: 'Light 5 Type', key: 'light_type_5', width: 15 },
+        { header: 'Light 5 Capacity', key: 'light_capacity_5', width: 15 },
+        { header: 'Lights Status', key: 'light_working_status', width: 15 },
+        { header: 'Road Category', key: 'road_category', width: 15 },
+        { header: 'Road Type', key: 'road_type', width: 15 },
+        { header: 'Road Width (mtrs)', key: 'road_width_mtrs', width: 18 },
+        { header: 'Arm No#', key: 'req_arm_number', width: 15 },
+        { header: 'Arm Length (mtrs)', key: 'req_arm_length', width: 18 },
+        { header: 'Light No#', key: 'req_led_lights_no', width: 15 },
+        { header: 'Light Wattage', key: 'req_led_wattage', width: 15 },
+        { header: 'Dedicated Street Light Wire', key: 'req_dedicated_wire', width: 25 },
+        { header: 'Pole Image1#', key: 'image_url_1', width: 40 },
+        { header: 'Pole Image2#', key: 'image_url_2', width: 40 },
+        { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 },
+        { header: 'Created By', key: 'user_name', width: 15 },
+        { header: 'Created At', key: 'created_at', width: 20 },
+        { header: 'Confirmed By', key: 'confirmed_by_name', width: 15 }
+      ];
       
-      const formattedPole = {};
-      Object.keys(p).forEach(key => {
-        if (activePoleCols.includes(key)) {
-          formattedPole[key] = formatExcelValue(p[key]);
-        } else {
-          formattedPole[key] = p[key];
-        }
+      const headerRow = pSheet.getRow(1);
+      headerRow.height = 24;
+      headerRow.eachCell((cell) => {
+        cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF002060' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
       });
+      headerRow.commit();
+      
+      const activePoleCols = NUMERIC_COLS.filter(key => 
+        pSheet.columns.some(col => col.key === key)
+      );
 
-      const row = pSheet.addRow({
-        ...formattedPole,
-        sl_no: idx + 1,
-        ward_number: p.ward_number || p.ulb_name || '',
-        latitude_longitude: latLong,
-        created_at: formatDateTime(p.created_at)
+      (data.poles || []).forEach((p, idx) => {
+        const latLong = p.latitude && p.longitude ? `${p.latitude}, ${p.longitude}` : (p.latitude || p.longitude || '');
+        
+        const formattedPole = {};
+        Object.keys(p).forEach(key => {
+          if (activePoleCols.includes(key)) {
+            formattedPole[key] = formatExcelValue(p[key]);
+          } else {
+            formattedPole[key] = p[key];
+          }
+        });
+
+        const row = pSheet.addRow({
+          ...formattedPole,
+          sl_no: idx + 1,
+          ward_number: p.ward_number || p.ulb_name || '',
+          latitude_longitude: latLong,
+          created_at: formatDateTime(p.created_at)
+        });
+
+        activePoleCols.forEach(key => {
+          const cell = row.getCell(key);
+          if (typeof cell.value === 'number') {
+            cell.numFmt = Number.isInteger(cell.value) ? '0' : '0.##';
+          }
+        });
+
+        row.commit();
       });
+      pSheet.commit();
+    }
 
-      activePoleCols.forEach(key => {
-        const cell = row.getCell(key);
-        if (typeof cell.value === 'number') {
-          cell.numFmt = Number.isInteger(cell.value) ? '0' : '0.##';
-        }
+    if (shouldIncludeInst) {
+      // Installations Sheet
+      const iSheet = workbook.addWorksheet('Installations');
+      iSheet.columns = [
+        { header: 'Sl#', key: 'sl_no', width: 10 },
+        { header: 'Ward No#', key: 'ward_number', width: 15 },
+        { header: 'CCMS No#', key: 'ccms_number', width: 15 },
+        { header: 'Pole No#', key: 'pole_number', width: 15 },
+        { header: 'Pole Type', key: 'pole_type', width: 15 },
+        { header: 'Lights Count', key: 'how_many_lights_in_pole', width: 15 },
+        { header: 'Light 1 Type', key: 'light_type', width: 15 },
+        { header: 'Light 1 Wattage', key: 'light_wattage', width: 15 },
+        { header: 'Light 1 Status', key: 'light_status', width: 15 },
+        { header: 'Light 1 ARM Status', key: 'arm_status', width: 18 },
+        { header: 'Light 2 Type', key: 'light_type_2', width: 15 },
+        { header: 'Light 2 Wattage', key: 'light_wattage_2', width: 15 },
+        { header: 'Light 2 Status', key: 'light_status_2', width: 15 },
+        { header: 'Light 2 ARM Status', key: 'arm_status_2', width: 18 },
+        { header: 'Light 3 Type', key: 'light_type_3', width: 15 },
+        { header: 'Light 3 Wattage', key: 'light_wattage_3', width: 15 },
+        { header: 'Light 3 Status', key: 'light_status_3', width: 15 },
+        { header: 'Light 3 ARM Status', key: 'arm_status_3', width: 18 },
+        { header: 'Light 4 Type', key: 'light_type_4', width: 15 },
+        { header: 'Light 4 Wattage', key: 'light_wattage_4', width: 15 },
+        { header: 'Light 4 Status', key: 'light_status_4', width: 15 },
+        { header: 'Light 4 ARM Status', key: 'arm_status_4', width: 18 },
+        { header: 'Light 5 Type', key: 'light_type_5', width: 15 },
+        { header: 'Light 5 Wattage', key: 'light_wattage_5', width: 15 },
+        { header: 'Light 5 Status', key: 'light_status_5', width: 15 },
+        { header: 'Light 5 ARM Status', key: 'arm_status_5', width: 18 },
+        { header: 'Dedicated Wire', key: 'dedicated_wire', width: 15 },
+        { header: 'Infra Gap', key: 'infra_gap', width: 22 },
+        { header: 'Pole Number Image', key: 'image_url_1', width: 40 },
+        { header: 'Full Pole Image', key: 'image_url_2', width: 40 },
+        { header: 'Infra Gap Image', key: 'image_url_3', width: 40 },
+        { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 },
+        { header: 'Created By', key: 'user_name', width: 15 },
+        { header: 'Created At', key: 'created_at', width: 20 },
+        { header: 'Confirmed By', key: 'confirmed_by_name', width: 15 }
+      ];
+
+      const iHeaderRow = iSheet.getRow(1);
+      iHeaderRow.height = 24;
+      iHeaderRow.eachCell((cell) => {
+        cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E4D2B' } }; // Dark green header for installation
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
       });
+      iHeaderRow.commit();
 
-      row.commit();
-    });
-    pSheet.commit();
+      (data.installations || []).forEach((inst, idx) => {
+        const latLong = inst.latitude && inst.longitude ? `${inst.latitude}, ${inst.longitude}` : (inst.latitude || inst.longitude || '');
+        
+        const row = iSheet.addRow({
+          ...inst,
+          sl_no: idx + 1,
+          ward_number: inst.ward_number || inst.ulb_name || '',
+          latitude_longitude: latLong,
+          created_at: formatDateTime(inst.created_at)
+        });
+        row.commit();
+      });
+      iSheet.commit();
+    }
     
     await workbook.commit();
 
-    // Send the completed file with Content-Length so Excel treats it as valid
     const stat = fs.statSync(tmpFile);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=report_tgpl_${projectId}_${tillDate || 'all'}.xlsx`);

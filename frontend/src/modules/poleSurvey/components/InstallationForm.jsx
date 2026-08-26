@@ -19,27 +19,46 @@ export const InstallationForm = ({ ward, onBack }) => {
   const [formData, setFormData] = useState({
     ccms_number: '',
     pole_number: '',
-    how_many_lights: '0',
+    pole_type: '',
+    how_many_lights: '1',
+    // Light 1
     light_type: '',
-    light_capacity: '',
+    light_wattage: '',
+    light_status: '',
+    arm_status: '',
+    // Light 2
     light_type_2: '',
-    light_capacity_2: '',
+    light_wattage_2: '',
+    light_status_2: '',
+    arm_status_2: '',
+    // Light 3
     light_type_3: '',
-    light_capacity_3: '',
+    light_wattage_3: '',
+    light_status_3: '',
+    arm_status_3: '',
+    // Light 4
     light_type_4: '',
-    light_capacity_4: '',
+    light_wattage_4: '',
+    light_status_4: '',
+    arm_status_4: '',
+    // Light 5
     light_type_5: '',
-    light_capacity_5: '',
+    light_wattage_5: '',
+    light_status_5: '',
+    arm_status_5: '',
+    // Wire & Infra
+    dedicated_wire: '',
+    infra_gap: 'NA',
   });
 
   const [isCustomCcms, setIsCustomCcms] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [statusText, setStatusText] = useState('');
-  const [photos, setPhotos] = useState({ image1: null, image2: null });
-  const [compressing, setCompressing] = useState({ image1: false, image2: false });
+  const [photos, setPhotos] = useState({ image1: null, image2: null, image3: null });
+  const [compressing, setCompressing] = useState({ image1: false, image2: false, image3: false });
   const [cameraTarget, setCameraTarget] = useState(null);
 
-  const isCompressing = compressing.image1 || compressing.image2;
+  const isCompressing = compressing.image1 || compressing.image2 || compressing.image3;
 
   const createOfflineSubmissionId = () => {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -50,7 +69,7 @@ export const InstallationForm = ({ ward, onBack }) => {
 
   const buildImageFiles = () => Object.entries(photos)
     .filter(([, file]) => Boolean(file))
-    .map(([fieldName, file]) => ({ fieldName, file, type: 'pole' }));
+    .map(([fieldName, file]) => ({ fieldName, file, type: 'installation' }));
 
   const buildInitialImageStatus = (imageFiles) => imageFiles.reduce((acc, image) => {
     acc[image.fieldName] = false;
@@ -86,10 +105,13 @@ export const InstallationForm = ({ ward, onBack }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'infra_gap' && value === 'NA') {
+        setPhotos(p => ({ ...p, image3: null }));
+      }
+      return updated;
+    });
   };
 
   const handleCcmsDropdownChange = (e) => {
@@ -103,19 +125,80 @@ export const InstallationForm = ({ ward, onBack }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
-    
-    if (!formData.ccms_number) {
-      alert('CCMS number is required.');
-      return;
+  const validateForm = () => {
+    if (!formData.ccms_number || !formData.ccms_number.trim()) {
+      alert('CCMS Number is required.');
+      return false;
     }
-    if (!formData.pole_number) {
-      alert('Pole number is required.');
-      return;
+    if (!formData.pole_number || !formData.pole_number.trim()) {
+      alert('Pole Number is required.');
+      return false;
+    }
+    if (!formData.pole_type) {
+      alert('Pole Type is required.');
+      return false;
+    }
+    const count = Number(formData.how_many_lights);
+    if (isNaN(count) || count < 1) {
+      alert('Please select light count (at least 1).');
+      return false;
     }
 
+    for (let i = 1; i <= count; i++) {
+      const suffix = i === 1 ? '' : `_${i}`;
+      const lType = formData[`light_type${suffix}`];
+      const lWatt = formData[`light_wattage${suffix}`];
+      const lStat = formData[`light_status${suffix}`];
+      const aStat = formData[`arm_status${suffix}`];
+
+      if (!lType) {
+        alert(`Please select Light Type for Light ${i}.`);
+        return false;
+      }
+      if (!lWatt) {
+        alert(`Please select Wattage for Light ${i}.`);
+        return false;
+      }
+      if (!lStat) {
+        alert(`Please select Light Status for Light ${i}.`);
+        return false;
+      }
+      if (!aStat) {
+        alert(`Please select ARM Status for Light ${i}.`);
+        return false;
+      }
+    }
+
+    if (!formData.dedicated_wire) {
+      alert('Please select Dedicated Wire (YES/NO).');
+      return false;
+    }
+    if (!formData.infra_gap) {
+      alert('Please select Infra Gap.');
+      return false;
+    }
+
+    if (!photos.image1) {
+      alert('IMAGE 1: Pole Number Image is required.');
+      return false;
+    }
+    if (!photos.image2) {
+      alert('IMAGE 2: Full Pole Image is required.');
+      return false;
+    }
+    if (formData.infra_gap !== 'NA' && !photos.image3) {
+      alert('IMAGE 3: Infra Gap Image is required when Infra Gap is not NA.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    const token = localStorage.getItem('token');
     setUploading(true);
     setStatusText('Capturing GPS location...');
 
@@ -141,31 +224,51 @@ export const InstallationForm = ({ ward, onBack }) => {
       survey_type: 'installation',
       ccms_number: formData.ccms_number.trim(),
       pole_number: formData.pole_number.trim(),
-      how_many_lights_in_pole: formData.how_many_lights,
+      pole_type: formData.pole_type,
+      how_many_lights_in_pole: String(formData.how_many_lights),
       latitude: coords.latitude,
       longitude: coords.longitude,
       project_id: projectId,
       created_by: user?.id,
+      
       // Light 1
       light_type: lightCount >= 1 ? formData.light_type : '',
-      light_capacity: lightCount >= 1 ? formData.light_capacity : '',
+      light_wattage: lightCount >= 1 ? formData.light_wattage : '',
+      light_status: lightCount >= 1 ? formData.light_status : '',
+      arm_status: lightCount >= 1 ? formData.arm_status : '',
+      
       // Light 2
       light_type_2: lightCount >= 2 ? formData.light_type_2 : '',
-      light_capacity_2: lightCount >= 2 ? formData.light_capacity_2 : '',
+      light_wattage_2: lightCount >= 2 ? formData.light_wattage_2 : '',
+      light_status_2: lightCount >= 2 ? formData.light_status_2 : '',
+      arm_status_2: lightCount >= 2 ? formData.arm_status_2 : '',
+
       // Light 3
       light_type_3: lightCount >= 3 ? formData.light_type_3 : '',
-      light_capacity_3: lightCount >= 3 ? formData.light_capacity_3 : '',
+      light_wattage_3: lightCount >= 3 ? formData.light_wattage_3 : '',
+      light_status_3: lightCount >= 3 ? formData.light_status_3 : '',
+      arm_status_3: lightCount >= 3 ? formData.arm_status_3 : '',
+
       // Light 4
       light_type_4: lightCount >= 4 ? formData.light_type_4 : '',
-      light_capacity_4: lightCount >= 4 ? formData.light_capacity_4 : '',
+      light_wattage_4: lightCount >= 4 ? formData.light_wattage_4 : '',
+      light_status_4: lightCount >= 4 ? formData.light_status_4 : '',
+      arm_status_4: lightCount >= 4 ? formData.arm_status_4 : '',
+
       // Light 5
       light_type_5: lightCount >= 5 ? formData.light_type_5 : '',
-      light_capacity_5: lightCount >= 5 ? formData.light_capacity_5 : '',
+      light_wattage_5: lightCount >= 5 ? formData.light_wattage_5 : '',
+      light_status_5: lightCount >= 5 ? formData.light_status_5 : '',
+      arm_status_5: lightCount >= 5 ? formData.arm_status_5 : '',
+
+      // Wire & Infra
+      dedicated_wire: formData.dedicated_wire,
+      infra_gap: formData.infra_gap,
     };
 
     const imageFiles = buildImageFiles();
     const localRowPayload = {
-      type: 'pole',
+      type: 'installation',
       offlineSubmissionId,
       data: { ...payload, offline_submission_id: offlineSubmissionId },
       images: imageFiles,
@@ -193,23 +296,23 @@ export const InstallationForm = ({ ward, onBack }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const poleId = res.data.id;
+      const instId = res.data.id;
       await offlineDb.submissions.update(offlineRowId, {
         status: 'syncing',
-        serverEntityId: poleId,
+        serverEntityId: instId,
         lastRetryAt: Date.now(),
         lastError: null,
         errorMessage: null,
       });
-      if (poleId && imageFiles.length > 0) {
+      if (instId && imageFiles.length > 0) {
         const imageStatus = { ...localRowPayload.imageUploadStatus };
         setStatusText('Uploading photos...');
         for (let i = 0; i < imageFiles.length; i++) {
           const img = imageFiles[i];
           const formDataUpload = new FormData();
           formDataUpload.append('file', img.file);
-          formDataUpload.append('entity_type', 'pole');
-          formDataUpload.append('entity_id', poleId);
+          formDataUpload.append('entity_type', 'installation');
+          formDataUpload.append('entity_id', instId);
           await axios.post(
             `${API_BASE_URL}/projects/${projectId}/pole-survey/files`,
             formDataUpload,
@@ -233,26 +336,37 @@ export const InstallationForm = ({ ward, onBack }) => {
 
       queryClient.invalidateQueries(['submissions']);
       queryClient.invalidateQueries(['my-stats']);
-      alert('Installation pole submitted successfully!');
+      alert('Installation record submitted successfully!');
       
-      // Reset images
-      setPhotos({ image1: null, image2: null });
-      
-      // Keep ward/CCMS, reset pole fields
+      // Reset form
+      setPhotos({ image1: null, image2: null, image3: null });
       setFormData((prev) => ({
         ccms_number: prev.ccms_number,
         pole_number: '',
-        how_many_lights: '0',
+        pole_type: '',
+        how_many_lights: '1',
         light_type: '',
-        light_capacity: '',
+        light_wattage: '',
+        light_status: '',
+        arm_status: '',
         light_type_2: '',
-        light_capacity_2: '',
+        light_wattage_2: '',
+        light_status_2: '',
+        arm_status_2: '',
         light_type_3: '',
-        light_capacity_3: '',
+        light_wattage_3: '',
+        light_status_3: '',
+        arm_status_3: '',
         light_type_4: '',
-        light_capacity_4: '',
+        light_wattage_4: '',
+        light_status_4: '',
+        arm_status_4: '',
         light_type_5: '',
-        light_capacity_5: '',
+        light_wattage_5: '',
+        light_status_5: '',
+        arm_status_5: '',
+        dedicated_wire: '',
+        infra_gap: 'NA',
       }));
     } catch (error) {
       console.error('Error submitting installation:', error);
@@ -268,24 +382,34 @@ export const InstallationForm = ({ ward, onBack }) => {
         ? 'No internet connection. Submission saved locally and will upload automatically when you have signal.'
         : (error.response?.data?.message || 'Error submitting installation'));
 
-      // Reset images
-      setPhotos({ image1: null, image2: null });
-
-      // Keep ward/CCMS, reset pole fields
+      setPhotos({ image1: null, image2: null, image3: null });
       setFormData((prev) => ({
         ccms_number: prev.ccms_number,
         pole_number: '',
-        how_many_lights: '0',
+        pole_type: '',
+        how_many_lights: '1',
         light_type: '',
-        light_capacity: '',
+        light_wattage: '',
+        light_status: '',
+        arm_status: '',
         light_type_2: '',
-        light_capacity_2: '',
+        light_wattage_2: '',
+        light_status_2: '',
+        arm_status_2: '',
         light_type_3: '',
-        light_capacity_3: '',
+        light_wattage_3: '',
+        light_status_3: '',
+        arm_status_3: '',
         light_type_4: '',
-        light_capacity_4: '',
+        light_wattage_4: '',
+        light_status_4: '',
+        arm_status_4: '',
         light_type_5: '',
-        light_capacity_5: '',
+        light_wattage_5: '',
+        light_status_5: '',
+        arm_status_5: '',
+        dedicated_wire: '',
+        infra_gap: 'NA',
       }));
     } finally {
       setUploading(false);
@@ -293,40 +417,78 @@ export const InstallationForm = ({ ward, onBack }) => {
     }
   };
 
-  const lightOptions = ['NEW LED', 'OLD LED'];
-  const capacityOptions = ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'];
+  const poleTypeOptions = ['RCC', 'TUBULAR', 'HIGH MAST', 'MINI MAST'];
+  const lightTypeOptions = ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'];
+  const wattageOptions = ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'];
+  const lightStatusOptions = ['WORKING', 'NOT WORKING'];
+  const armStatusOptions = ['NEW', 'OLD', 'EMPTY'];
+  const dedicatedWireOptions = ['YES', 'NO'];
+  const infraGapOptions = ['UG CABLE DAMAGE', 'AB CABLE DAMAGE', 'PC MISSING', 'OPEN JUNCTION BOX', 'POWER CABLE ON GROUND', 'NA'];
 
   const renderLightFields = (num) => {
+    const suffix = num === 1 ? '' : `_${num}`;
     return (
-      <div key={num} className="p-3 border border-gray-100 rounded-lg bg-gray-50/50 space-y-3">
-        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Light {num} Details</h4>
+      <div key={num} className="p-3.5 border border-gray-200 rounded-xl bg-gray-50/70 space-y-3 shadow-sm">
+        <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-primary inline-block"></span> Light {num} Details
+        </h4>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-gray-700 font-medium mb-1 text-xs">Type</label>
+            <label className="block text-gray-700 font-semibold mb-1 text-xs">Light Type *</label>
             <select
-              name={num === 1 ? 'light_type' : `light_type_${num}`}
-              value={formData[num === 1 ? 'light_type' : `light_type_${num}`]}
+              name={`light_type${suffix}`}
+              value={formData[`light_type${suffix}`]}
               onChange={handleChange}
-              className="w-full p-2 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-primary"
+              className="w-full p-2.5 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary"
               required
             >
-              <option value="">Select Type</option>
-              {lightOptions.map((opt) => (
+              <option value="">Select Light Type</option>
+              {lightTypeOptions.map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-gray-700 font-medium mb-1 text-xs">Capacity</label>
+            <label className="block text-gray-700 font-semibold mb-1 text-xs">Wattage *</label>
             <select
-              name={num === 1 ? 'light_capacity' : `light_capacity_${num}`}
-              value={formData[num === 1 ? 'light_capacity' : `light_capacity_${num}`]}
+              name={`light_wattage${suffix}`}
+              value={formData[`light_wattage${suffix}`]}
               onChange={handleChange}
-              className="w-full p-2 border border-gray-200 rounded text-xs focus:ring-1 focus:ring-primary"
+              className="w-full p-2.5 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary"
               required
             >
-              <option value="">Select Capacity</option>
-              {capacityOptions.map((opt) => (
+              <option value="">Select Wattage</option>
+              {wattageOptions.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold mb-1 text-xs">Light Status *</label>
+            <select
+              name={`light_status${suffix}`}
+              value={formData[`light_status${suffix}`]}
+              onChange={handleChange}
+              className="w-full p-2.5 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              required
+            >
+              <option value="">Select Status</option>
+              {lightStatusOptions.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold mb-1 text-xs">ARM Status *</label>
+            <select
+              name={`arm_status${suffix}`}
+              value={formData[`arm_status${suffix}`]}
+              onChange={handleChange}
+              className="w-full p-2.5 border border-gray-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              required
+            >
+              <option value="">Select ARM Status</option>
+              {armStatusOptions.map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
@@ -336,8 +498,17 @@ export const InstallationForm = ({ ward, onBack }) => {
     );
   };
 
+  const imageSlots = [
+    { num: 1, key: 'image1', label: 'Image 1: Pole Number Image *', required: true },
+    { num: 2, key: 'image2', label: 'Image 2: Full Pole Image *', required: true },
+  ];
+
+  if (formData.infra_gap && formData.infra_gap !== 'NA') {
+    imageSlots.push({ num: 3, key: 'image3', label: 'Image 3: Infra Gap Image *', required: true });
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5 max-h-[72vh] overflow-y-auto">
+    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5 max-h-[75vh] overflow-y-auto">
       <div className="flex justify-between items-center border-b pb-3 mb-2">
         <div>
           <h2 className="text-lg font-bold text-gray-900">Installation Form</h2>
@@ -349,7 +520,7 @@ export const InstallationForm = ({ ward, onBack }) => {
       <div className="space-y-4 text-sm">
         {/* CCMS Number */}
         <div>
-          <label className="block text-gray-700 font-semibold mb-1">CCMS Number</label>
+          <label className="block text-gray-700 font-semibold mb-1">CCMS Number *</label>
           {isLoadingCcms ? (
             <div className="h-9 w-full bg-gray-50 animate-pulse rounded border border-gray-200"></div>
           ) : isCustomCcms ? (
@@ -399,7 +570,7 @@ export const InstallationForm = ({ ward, onBack }) => {
 
         {/* Pole Number */}
         <div>
-          <label className="block text-gray-700 font-semibold mb-1">Pole Number</label>
+          <label className="block text-gray-700 font-semibold mb-1">Pole Number *</label>
           <input
             type="text"
             name="pole_number"
@@ -411,9 +582,26 @@ export const InstallationForm = ({ ward, onBack }) => {
           />
         </div>
 
+        {/* Pole Type (1. under the pole number ask for pole type) */}
+        <div>
+          <label className="block text-gray-700 font-semibold mb-1">Pole Type *</label>
+          <select
+            name="pole_type"
+            value={formData.pole_type}
+            onChange={handleChange}
+            className="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium"
+            required
+          >
+            <option value="">Select Pole Type</option>
+            {poleTypeOptions.map((pt) => (
+              <option key={pt} value={pt}>{pt}</option>
+            ))}
+          </select>
+        </div>
+
         {/* How Many Lights */}
         <div>
-          <label className="block text-gray-700 font-semibold mb-1">How Many Lights</label>
+          <label className="block text-gray-700 font-semibold mb-1">How Many Lights *</label>
           <select
             name="how_many_lights"
             value={formData.how_many_lights}
@@ -421,7 +609,7 @@ export const InstallationForm = ({ ward, onBack }) => {
             className="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
             required
           >
-            {['0', '1', '2', '3', '4', '5'].map((o) => (
+            {['1', '2', '3', '4', '5'].map((o) => (
               <option key={o} value={o}>{o}</option>
             ))}
           </select>
@@ -436,11 +624,46 @@ export const InstallationForm = ({ ward, onBack }) => {
           </div>
         )}
 
-        <div className="space-y-2 pt-2 border-t border-gray-100">
-          <label className="block text-gray-700 font-semibold mb-1">Photos</label>
-          {[1, 2].map((num) => (
-            <div key={num} className="border border-gray-200 p-3 rounded-xl flex flex-col gap-1.5 bg-gray-50/30">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Image Slot {num}</span>
+        {/* After Light Section: Dedicated Wire & Infra Gap */}
+        <div className="pt-2 border-t border-gray-100 space-y-4">
+          <div>
+            <label className="block text-gray-700 font-semibold mb-1">Dedicated Wire *</label>
+            <select
+              name="dedicated_wire"
+              value={formData.dedicated_wire}
+              onChange={handleChange}
+              className="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium"
+              required
+            >
+              <option value="">Select Dedicated Wire</option>
+              {dedicatedWireOptions.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-semibold mb-1">Infra Gap *</label>
+            <select
+              name="infra_gap"
+              value={formData.infra_gap}
+              onChange={handleChange}
+              className="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium"
+              required
+            >
+              {infraGapOptions.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Image Uploads */}
+        <div className="space-y-3 pt-2 border-t border-gray-100">
+          <label className="block text-gray-700 font-semibold mb-1">Photographs (All Required)</label>
+          {imageSlots.map(({ num, key, label }) => (
+            <div key={num} className="border border-gray-200 p-3 rounded-xl flex flex-col gap-1.5 bg-gray-50/50">
+              <span className="text-xs font-bold text-gray-700">{label}</span>
               
               <div className="flex flex-wrap items-center gap-2 mt-1">
                 <button
@@ -452,15 +675,15 @@ export const InstallationForm = ({ ward, onBack }) => {
                 </button>
               </div>
 
-              {compressing[`image${num}`] && (
+              {compressing[key] && (
                 <span className="text-xs text-amber-600 animate-pulse font-semibold mt-1">Compressing image...</span>
               )}
-              {photos[`image${num}`] && !compressing[`image${num}`] && (
-                <div className="flex items-center justify-between bg-green-50 border border-green-100 p-2 rounded-lg mt-1">
-                  <span className="text-xs text-green-700 truncate font-semibold">Selected: {photos[`image${num}`].name}</span>
+              {photos[key] && !compressing[key] && (
+                <div className="flex items-center justify-between bg-green-50 border border-green-200 p-2 rounded-lg mt-1">
+                  <span className="text-xs text-green-700 truncate font-semibold">Selected: {photos[key].name}</span>
                   <button
                     type="button"
-                    onClick={() => setPhotos(prev => ({ ...prev, [`image${num}`]: null }))}
+                    onClick={() => setPhotos(prev => ({ ...prev, [key]: null }))}
                     className="text-red-500 hover:text-red-700 text-xs font-bold ml-2"
                   >
                     ✕
@@ -485,10 +708,11 @@ export const InstallationForm = ({ ward, onBack }) => {
           onClose={() => setCameraTarget(null)}
           onCapture={async (file) => {
             const num = cameraTarget;
+            const key = `image${num}`;
             setCameraTarget(null);
             if (!file) return;
 
-            setCompressing(prev => ({ ...prev, [`image${num}`]: true }));
+            setCompressing(prev => ({ ...prev, [key]: true }));
             
             const options = {
               maxSizeMB: 0.4,
@@ -499,20 +723,17 @@ export const InstallationForm = ({ ward, onBack }) => {
             };
 
             try {
-              console.log(`Original size from camera for Slot ${num}: ${(file.size / 1024).toFixed(2)} KB`);
               const compressedFile = await imageCompression(file, options);
-              console.log(`Compressed size from camera for Slot ${num}: ${(compressedFile.size / 1024).toFixed(2)} KB`);
-              
-              const fileName = `camera_slot_${num}_${Date.now()}_compressed.jpg`;
+              const fileName = `installation_slot_${num}_${Date.now()}_compressed.jpg`;
               const renamedFile = new File([compressedFile], fileName, { type: 'image/jpeg' });
               
-              setPhotos(prev => ({ ...prev, [`image${num}`]: renamedFile }));
+              setPhotos(prev => ({ ...prev, [key]: renamedFile }));
             } catch (error) {
               console.error(`Compression error for Slot ${num}:`, error);
               alert(`Failed to compress image in Slot ${num}. Using original.`);
-              setPhotos(prev => ({ ...prev, [`image${num}`]: file }));
+              setPhotos(prev => ({ ...prev, [key]: file }));
             } finally {
-              setCompressing(prev => ({ ...prev, [`image${num}`]: false }));
+              setCompressing(prev => ({ ...prev, [key]: false }));
             }
           }}
         />

@@ -19,7 +19,7 @@ async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
         projectId,
         entityType,
         entityId,
-        uploaded.objectName, // Store object name in the URL column for now
+        uploaded.objectName,
         uploadedBy
       );
     } catch (efErr) {
@@ -36,6 +36,35 @@ async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
         if (poleRes.rows.length > 0) {
           const updateCol = !poleRes.rows[0].image_url_1 ? 'image_url_1' : !poleRes.rows[0].image_url_2 ? 'image_url_2' : null;
           if (updateCol) await query(`UPDATE tgpl2_poles SET ${updateCol} = $1, updated_at = NOW() WHERE id = $2 AND project_id = $3`, [publicUrl, entityId, Number(projectId)]);
+        }
+      } else if (entityType === 'installation' || (String(projectId) === '3' && entityType === 'pole')) {
+        let instRes = null;
+        if (entityType === 'installation') {
+          instRes = await query('SELECT image_url_1, image_url_2, image_url_3 FROM tgpl_installations WHERE id = $1', [entityId]);
+        }
+        if (instRes && instRes.rows.length > 0) {
+          const inst = instRes.rows[0];
+          let updateCol = null;
+          if (!inst.image_url_1) updateCol = 'image_url_1';
+          else if (!inst.image_url_2) updateCol = 'image_url_2';
+          else if (!inst.image_url_3) updateCol = 'image_url_3';
+
+          if (updateCol) {
+            await query(`UPDATE tgpl_installations SET ${updateCol} = $1 WHERE id = $2`, [publicUrl, entityId]);
+          }
+        } else {
+          const poleRes = await query('SELECT image_url_1, image_url_2, image_url_3 FROM poles WHERE id = $1', [entityId]);
+          if (poleRes.rows.length > 0) {
+            const pole = poleRes.rows[0];
+            let updateCol = null;
+            if (!pole.image_url_1) updateCol = 'image_url_1';
+            else if (!pole.image_url_2) updateCol = 'image_url_2';
+            else if (!pole.image_url_3) updateCol = 'image_url_3';
+
+            if (updateCol) {
+              await query(`UPDATE poles SET ${updateCol} = $1 WHERE id = $2`, [publicUrl, entityId]);
+            }
+          }
         }
       } else if (entityType === 'pole') {
         const poleRes = await query('SELECT image_url_1, image_url_2, image_url_3 FROM poles WHERE id = $1', [entityId]);
@@ -82,7 +111,6 @@ async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
 async function getFilesForEntity(projectId, entityType, entityId) {
   const activePool = ['3', '4'].includes(String(projectId)) ? tgplPool : pool;
   return dbStorage.run(activePool, async () => {
-    // Fetch from entity_files — wrap in try-catch in case the table doesn't exist (e.g. legacy TGPL DB)
     let filesWithUrls = [];
     try {
       const files = await entityFileModel.getFilesForEntity(projectId, entityType, entityId);
@@ -94,38 +122,51 @@ async function getFilesForEntity(projectId, entityType, entityId) {
       console.error('Error querying entity_files (table may not exist):', dbErr.message);
     }
 
-    // Fallback for TGPL-family poles where images are stored directly on the pole record.
-    if (['3', '4'].includes(String(projectId)) && entityType === 'pole') {
+    // Fallback for TGPL-family poles & installations where images are stored directly on the record
+    if (['3', '4'].includes(String(projectId))) {
       try {
         const isTgpl2 = String(projectId) === '4';
-        const table = isTgpl2 ? 'tgpl2_poles' : 'poles';
-        const poleRes = await query(`SELECT image_url_1, image_url_2, created_at FROM ${table} WHERE id = $1`, [entityId]);
-        if (poleRes.rows.length > 0) {
-          const pole = poleRes.rows[0];
+        let table = isTgpl2 ? 'tgpl2_poles' : 'poles';
+        if (String(projectId) === '3' && entityType === 'installation') {
+          table = 'tgpl_installations';
+        }
+        const rowRes = await query(`SELECT image_url_1, image_url_2, image_url_3, created_at FROM ${table} WHERE id = $1`, [entityId]);
+        if (rowRes.rows.length > 0) {
+          const row = rowRes.rows[0];
           const extraFiles = [];
-          if (pole.image_url_1) {
+          if (row.image_url_1) {
             extraFiles.push({
-              id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityId}-1`,
+              id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityType}-${entityId}-1`,
               project_id: Number(projectId),
-              entity_type: 'pole',
+              entity_type: entityType,
               entity_id: entityId,
-              url: pole.image_url_1,
-              signed_url: pole.image_url_1,
-              uploaded_at: pole.created_at || new Date()
+              url: row.image_url_1,
+              signed_url: row.image_url_1,
+              uploaded_at: row.created_at || new Date()
             });
           }
-          if (pole.image_url_2) {
+          if (row.image_url_2) {
             extraFiles.push({
-              id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityId}-2`,
+              id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityType}-${entityId}-2`,
               project_id: Number(projectId),
-              entity_type: 'pole',
+              entity_type: entityType,
               entity_id: entityId,
-              url: pole.image_url_2,
-              signed_url: pole.image_url_2,
-              uploaded_at: pole.created_at || new Date()
+              url: row.image_url_2,
+              signed_url: row.image_url_2,
+              uploaded_at: row.created_at || new Date()
             });
           }
-          // Deduplicate if already present in entity_files (comparing compatible signed_url formats)
+          if (row.image_url_3) {
+            extraFiles.push({
+              id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityType}-${entityId}-3`,
+              project_id: Number(projectId),
+              entity_type: entityType,
+              entity_id: entityId,
+              url: row.image_url_3,
+              signed_url: row.image_url_3,
+              uploaded_at: row.created_at || new Date()
+            });
+          }
           const existingUrls = new Set(filesWithUrls.map(f => f.signed_url));
           extraFiles.forEach(f => {
             if (!existingUrls.has(f.signed_url)) {
@@ -134,7 +175,7 @@ async function getFilesForEntity(projectId, entityType, entityId) {
           });
         }
       } catch (fallbackErr) {
-        console.error('Error querying poles for TGPL image fallback:', fallbackErr.message);
+        console.error('Error querying record for TGPL image fallback:', fallbackErr.message);
       }
     }
 
@@ -160,18 +201,19 @@ async function deleteFile(fileId, projectId) {
     if (fileIdStr.startsWith('fallback-tgpl-') || fileIdStr.startsWith('fallback-tgpl2-')) {
       const parts = fileIdStr.split('-');
       const isTgpl2 = fileIdStr.startsWith('fallback-tgpl2-');
-      const entityId = Number(parts[2]);
-      const index = Number(parts[3]);
+      const isInst = fileIdStr.includes('-installation-');
+      const entityId = Number(parts[parts.length - 2]);
+      const index = Number(parts[parts.length - 1]);
       
-      if (isNaN(index) || (index !== 1 && index !== 2)) {
+      if (isNaN(index) || (index < 1 || index > 3)) {
         throw new Error('Invalid fallback image slot index');
       }
       
-      const table = isTgpl2 ? 'tgpl2_poles' : 'poles';
+      const table = isInst ? 'tgpl_installations' : isTgpl2 ? 'tgpl2_poles' : 'poles';
       const updateCol = `image_url_${index}`;
-      const poleRes = await query(`SELECT ${updateCol} FROM ${table} WHERE id = $1`, [entityId]);
-      if (poleRes.rows.length > 0 && poleRes.rows[0][updateCol]) {
-        const url = poleRes.rows[0][updateCol];
+      const rowRes = await query(`SELECT ${updateCol} FROM ${table} WHERE id = $1`, [entityId]);
+      if (rowRes.rows.length > 0 && rowRes.rows[0][updateCol]) {
+        const url = rowRes.rows[0][updateCol];
         const prefix = `https://storage.googleapis.com/${env.gcsBucketName}/`;
         if (url.startsWith(prefix)) {
           const objectName = url.slice(prefix.length);
@@ -198,12 +240,20 @@ async function deleteFile(fileId, projectId) {
       await deleteObject(file.url);
     } catch (err) {
       console.error('Error deleting from GCS:', err);
-      // Continue deleting from DB even if GCS fails
     }
 
-    // Clear column from pole/switch_point
+    // Clear column from pole/installation/switch_point
     try {
-      if (file.entity_type === 'pole') {
+      if (file.entity_type === 'installation') {
+        await query(`
+          UPDATE tgpl_installations
+          SET
+            image_url_1 = CASE WHEN image_url_1 = $1 THEN NULL ELSE image_url_1 END,
+            image_url_2 = CASE WHEN image_url_2 = $1 THEN NULL ELSE image_url_2 END,
+            image_url_3 = CASE WHEN image_url_3 = $1 THEN NULL ELSE image_url_3 END
+          WHERE id = $2
+        `, [publicUrl, file.entity_id]);
+      } else if (file.entity_type === 'pole') {
         if (String(projectId) === '4') {
           await query(`
             UPDATE tgpl2_poles

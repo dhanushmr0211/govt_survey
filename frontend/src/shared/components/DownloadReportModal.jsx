@@ -10,6 +10,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
   const user = useAuthStore((state) => state.user);
   const today = getLocalDateString();
   const isTgpl = String(projectId) === '3';
+  const [reportType, setReportType] = useState('poles'); // 'poles' or 'installation'
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const [districtId, setDistrictId] = useState('');
@@ -56,6 +57,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
   const handleClose = () => {
     setDistrictId('');
     setUlbId('');
+    setReportType('poles');
     setFromDate(today);
     setToDate(today);
     setIsDownloading(false);
@@ -74,6 +76,9 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
       if (ulbId) params.push(`ulbId=${encodeURIComponent(ulbId)}`);
       if (fromDate) params.push(`fromDate=${encodeURIComponent(fromDate)}`);
       if (toDate) params.push(`toDate=${encodeURIComponent(toDate)}`);
+      if (isTgpl && reportType) {
+        params.push(`reportType=${encodeURIComponent(reportType)}`);
+      }
       if (params.length > 0) {
         url += `?${params.join('&')}`;
       }
@@ -92,7 +97,8 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
       const objectUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = objectUrl;
-      link.download = `report_${projectId}_${fromDate || 'from'}_${toDate || 'to'}.xlsx`;
+      const typeSuffix = isTgpl ? `_${reportType}` : '';
+      link.download = `report_${projectId}${typeSuffix}_${fromDate || 'from'}_${toDate || 'to'}.xlsx`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -110,13 +116,44 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Download Report</h3>
+          <h3 className="text-lg font-bold text-gray-900">Download Report</h3>
           <button onClick={handleClose} className="text-sm font-medium text-gray-500 hover:text-gray-700">
             Close
           </button>
         </div>
+
+        {/* For Project 3 (TGPL), show 2 tabs: Poles & Installation */}
+        {isTgpl && (
+          <div className="mb-4">
+            <label className="mb-1.5 block text-xs font-bold text-gray-600 uppercase tracking-wider">Report Category</label>
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+              <button
+                type="button"
+                onClick={() => setReportType('poles')}
+                className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                  reportType === 'poles'
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                📍 Survey Poles
+              </button>
+              <button
+                type="button"
+                onClick={() => setReportType('installation')}
+                className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${
+                  reportType === 'installation'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                ⚙️ Installation Form
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-4">
           {(isTgpl || isTgpl2) ? (
@@ -125,7 +162,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
               <select
                 value={ulbId}
                 onChange={(e) => setUlbId(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+                className="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
               >
                 <option value="">All Wards</option>
                 {ulbOptions.map((ward) => (
@@ -143,7 +180,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
                     setDistrictId(e.target.value);
                     setUlbId('');
                   }}
-                  className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+                  className="w-full rounded-lg border border-gray-300 p-2.5 text-sm"
                 >
                   <option value="">All Districts</option>
                   {districtOptions.map((district) => (
@@ -157,7 +194,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
                 <select
                   value={ulbId}
                   onChange={(e) => setUlbId(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+                  className="w-full rounded-lg border border-gray-300 p-2.5 text-sm"
                 >
                   <option value="">All Accessible ULBs</option>
                   {ulbOptions.map((ulb) => (
@@ -175,7 +212,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+                className="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
             <div>
@@ -184,7 +221,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
                 type="date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+                className="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
           </div>
@@ -202,16 +239,16 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
         <div className="mt-6 flex justify-end gap-2">
           <button
             onClick={handleClose}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-50 text-sm font-semibold"
           >
             Cancel
           </button>
           <button
             onClick={handleDownload}
             disabled={isDownloading}
-            className="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary/90 disabled:opacity-50"
+            className="rounded-lg bg-primary px-5 py-2 text-white hover:bg-primary/90 disabled:opacity-50 text-sm font-bold shadow-md shadow-primary/20"
           >
-            {isDownloading ? 'Downloading...' : 'Download'}
+            {isDownloading ? 'Downloading...' : 'Download Report'}
           </button>
         </div>
       </div>

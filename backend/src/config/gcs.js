@@ -32,7 +32,9 @@ async function buildObjectName(recordId, originalName) {
 
       if (projectId === '3') {
         folder = 'TGPL-IMAGES';
-        if (entityType === 'pole') {
+        if (entityType === 'installation') {
+          folder = 'tgpl_istallation';
+        } else if (entityType === 'pole') {
           try {
             const poleRes = await tgplPool.query('SELECT survey_type FROM poles WHERE id = $1', [Number(entityId)]);
             if (poleRes.rows.length > 0 && poleRes.rows[0].survey_type === 'installation') {

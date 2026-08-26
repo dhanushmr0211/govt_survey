@@ -141,6 +141,80 @@ async function createPoleHandler(req, res) {
       return res.status(403).json({ error: 'Access denied to this project' });
     }
 
+    if (Number(projectId) === 3 && data.survey_type === 'installation') {
+      if (offlineSubmissionId) {
+        const existingOffline = await query(
+          `SELECT * FROM tgpl_installations WHERE offline_submission_id = $1 LIMIT 1`,
+          [offlineSubmissionId]
+        );
+        if (existingOffline.rows.length > 0) {
+          return res.status(200).json(existingOffline.rows[0]);
+        }
+      }
+
+      if (!data.ccms_number) {
+        return res.status(400).json({ error: 'ccms_number is required' });
+      }
+      if (!data.pole_number) {
+        return res.status(400).json({ error: 'pole_number is required' });
+      }
+
+      const ccmsClean = String(data.ccms_number).trim();
+      const poleClean = String(data.pole_number).trim();
+      const normCcms = normalizeIdentifier(ccmsClean);
+      const normPole = normalizeIdentifier(poleClean);
+
+      const existingInst = await query(
+        `SELECT id, ccms_number, pole_number FROM tgpl_installations 
+         WHERE project_id = $1 
+           AND ward_id = $2 
+           AND is_deleted = FALSE`,
+        [Number(projectId), Number(data.ward_id)]
+      );
+
+      const existingCcmsRow = existingInst.rows.find(row => normalizeIdentifier(row.ccms_number) === normCcms);
+      if (existingCcmsRow) {
+        data.ccms_number = existingCcmsRow.ccms_number;
+      } else {
+        data.ccms_number = ccmsClean;
+      }
+
+      const isDuplicate = existingInst.rows.some(row => {
+        return normalizeIdentifier(row.ccms_number) === normCcms &&
+               normalizeIdentifier(row.pole_number) === normPole;
+      });
+
+      if (isDuplicate) {
+        const dupRow = existingInst.rows.find(row => {
+          return normalizeIdentifier(row.ccms_number) === normCcms &&
+                 normalizeIdentifier(row.pole_number) === normPole;
+        });
+
+        if (offlineSubmissionId && dupRow) {
+          const fullInst = await query(`SELECT * FROM tgpl_installations WHERE id = $1 LIMIT 1`, [dupRow.id]);
+          if (fullInst.rows.length > 0) {
+            const instObj = fullInst.rows[0];
+            if (!instObj.offline_submission_id) {
+              await query(
+                `UPDATE tgpl_installations SET offline_submission_id = $1 WHERE id = $2`,
+                [offlineSubmissionId, instObj.id]
+              );
+              instObj.offline_submission_id = offlineSubmissionId;
+            }
+            return res.status(200).json(instObj);
+          }
+        }
+
+        const errMsg = `Pole No. "${poleClean}" under CCMS "${data.ccms_number}" already has a submitted installation record in this ward.`;
+        return res.status(400).json({ error: errMsg, message: errMsg });
+      }
+
+      data.pole_number = poleClean;
+      const { createInstallation } = require('../modules/tgplSurvey/models/installation.model');
+      const newInst = await createInstallation(Number(projectId), data, req.user?.id);
+      return res.status(201).json(newInst);
+    }
+
     if (offlineSubmissionId) {
       const existingOffline = await query(
         `SELECT * FROM poles WHERE offline_submission_id = $1 LIMIT 1`,
