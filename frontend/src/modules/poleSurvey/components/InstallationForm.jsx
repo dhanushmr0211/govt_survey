@@ -20,7 +20,7 @@ export const InstallationForm = ({ ward, onBack }) => {
     ccms_number: '',
     pole_number: '',
     pole_type: '',
-    how_many_lights: '1',
+    how_many_lights: '0',
     // Light 1
     light_type: '',
     light_wattage: '',
@@ -49,6 +49,7 @@ export const InstallationForm = ({ ward, onBack }) => {
     // Wire & Infra
     dedicated_wire: '',
     infra_gap: 'NA',
+    remarks: '',
   });
 
   const [isCustomCcms, setIsCustomCcms] = useState(false);
@@ -264,6 +265,7 @@ export const InstallationForm = ({ ward, onBack }) => {
       // Wire & Infra
       dedicated_wire: formData.dedicated_wire,
       infra_gap: formData.infra_gap,
+      remarks: formData.remarks || null,
     };
 
     const imageFiles = buildImageFiles();
@@ -692,6 +694,19 @@ export const InstallationForm = ({ ward, onBack }) => {
               )}
             </div>
           ))}
+        </div>
+
+        {/* Remarks */}
+        <div className="pt-2">
+          <label className="block text-gray-700 font-semibold mb-1">Remarks</label>
+          <textarea
+            name="remarks"
+            value={formData.remarks}
+            onChange={handleChange}
+            rows={3}
+            placeholder="Enter any remarks here..."
+            className="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium resize-none"
+          />
         </div>
 
         <button

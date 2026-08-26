@@ -13,6 +13,7 @@ async function createInstallation(projectId, data, createdBy) {
       dedicated_wire, infra_gap,
       latitude, longitude,
       image_url_1, image_url_2, image_url_3,
+      remarks,
       created_by, offline_submission_id
     ) VALUES (
       $1, $2, $3, $4, $5, $6,
@@ -25,7 +26,8 @@ async function createInstallation(projectId, data, createdBy) {
       $28, $29,
       $30, $31,
       $32, $33, $34,
-      $35, $36
+      $35,
+      $36, $37
     ) RETURNING *`,
     [
       projectId,
@@ -62,6 +64,7 @@ async function createInstallation(projectId, data, createdBy) {
       data.image_url_1 || null,
       data.image_url_2 || null,
       data.image_url_3 || null,
+      data.remarks || null,
       createdBy,
       data.offline_submission_id || null
     ]
@@ -92,7 +95,7 @@ async function updateInstallation(id, projectId, data) {
     'light_type_4', 'light_wattage_4', 'light_status_4', 'arm_status_4',
     'light_type_5', 'light_wattage_5', 'light_status_5', 'arm_status_5',
     'dedicated_wire', 'infra_gap', 'latitude', 'longitude',
-    'image_url_1', 'image_url_2', 'image_url_3'
+    'image_url_1', 'image_url_2', 'image_url_3', 'remarks'
   ];
 
   // Map legacy field names if passed

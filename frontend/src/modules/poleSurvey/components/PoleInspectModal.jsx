@@ -104,14 +104,23 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
     const fetchImages = async () => {
       setLoadingImages(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=pole&entity_id=${pole.id}`, {
+        const entityType = pole.survey_type === 'installation' ? 'installation' : 'pole';
+        const response = await fetch(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${entityType}&entity_id=${pole.id}`, {
           headers: {
             'Authorization': `Bearer ${useAuthStore.getState().token}`
           }
         });
         if (!response.ok) throw new Error('Failed to fetch images');
         const data = await response.json();
-        setImages(data.files || []);
+        const fetched = data.files || [];
+        // Fallback to direct image URLs stored on installation record
+        if (fetched.length === 0 && pole.survey_type === 'installation') {
+          const fallback = [pole.image_url_1, pole.image_url_2, pole.image_url_3]
+            .filter(Boolean).map((url, i) => ({ id: `fb-${i}`, url }));
+          setImages(fallback);
+        } else {
+          setImages(fetched);
+        }
       } catch (err) {
         console.error('Error fetching images:', err);
       } finally {

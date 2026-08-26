@@ -156,6 +156,12 @@ function createApp() {
     'CREATE INDEX IF NOT EXISTS idx_tgpl_inst_status ON tgpl_installations(status);',
     'CREATE INDEX IF NOT EXISTS idx_tgpl_inst_created_at ON tgpl_installations(created_at);',
     'CREATE INDEX IF NOT EXISTS idx_tgpl_inst_deleted ON tgpl_installations(is_deleted);',
+    `DO $$ BEGIN
+       IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tgpl_installations' AND column_name='remarks') THEN
+         ALTER TABLE tgpl_installations ADD COLUMN remarks TEXT;
+       END IF;
+     END $$;`,
+
     `INSERT INTO wards (name)
      SELECT w_name FROM (VALUES
        ('15-Kammagondanahalli'),

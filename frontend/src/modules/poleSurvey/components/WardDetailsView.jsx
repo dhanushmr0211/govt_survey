@@ -403,11 +403,23 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
       if (!selectedDetail) return;
       setLoadingImages(true);
       try {
-        const id = selectedDetail.type === 'switch_point' ? selectedDetail.data.id : selectedDetail.data.pole_id;
-        const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${selectedDetail.type}&entity_id=${id}`, {
+        const isInstallation = selectedDetail.data?.survey_type === 'installation';
+        const entityType = isInstallation ? 'installation' : selectedDetail.type;
+        const id = isInstallation
+          ? selectedDetail.data.id
+          : (selectedDetail.type === 'switch_point' ? selectedDetail.data.id : selectedDetail.data.pole_id);
+        const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${entityType}&entity_id=${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setImages(res.data.files || []);
+        const fetched = res.data.files || [];
+        // Fallback to direct image URLs stored on installation record if no files returned
+        if (fetched.length === 0 && isInstallation) {
+          const d = selectedDetail.data;
+          const fallback = [d.image_url_1, d.image_url_2, d.image_url_3].filter(Boolean).map((url, i) => ({ id: `fb-${i}`, url }));
+          setImages(fallback);
+        } else {
+          setImages(fetched);
+        }
       } catch (err) {
         console.error('Error fetching images:', err);
         setImages([]);
@@ -456,11 +468,15 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
       const fileName = file.name.split('.')[0] + '_compressed.jpg';
       const renamedFile = new File([compressedFile], fileName, { type: 'image/jpeg' });
 
-      const id = selectedDetail.type === 'switch_point' ? selectedDetail.data.id : selectedDetail.data.pole_id;
+      const isInstallation = selectedDetail.data?.survey_type === 'installation';
+      const entityType = isInstallation ? 'installation' : selectedDetail.type;
+      const id = isInstallation
+        ? selectedDetail.data.id
+        : (selectedDetail.type === 'switch_point' ? selectedDetail.data.id : selectedDetail.data.pole_id);
       
       const formData = new FormData();
       formData.append('file', renamedFile);
-      formData.append('entity_type', selectedDetail.type);
+      formData.append('entity_type', entityType);
       formData.append('entity_id', id);
 
       await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/files`, formData, {
@@ -468,7 +484,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
       });
 
       // Refetch images to get the signed URL correctly
-      const refreshRes = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${selectedDetail.type}&entity_id=${id}`, {
+      const refreshRes = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${entityType}&entity_id=${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setImages(refreshRes.data.files || []);
@@ -807,18 +823,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                             {!isTgpl && <span className="rounded bg-violet-50 px-2 py-1 font-semibold text-violet-700">Switch Points: {sp.switchPointNumbers?.size || 0}</span>}
                             <span className="rounded bg-emerald-50 px-2 py-1 font-semibold text-emerald-700">Total Poles: {sp.poles.length}</span>
                           </div>
-                          <button 
-                            onClick={() => {
-                              // We use the first pole to get CCMS level data (dtc_number, etc.) since it's duplicated across poles in the join
-                              const ccmsData = sp.poles[0] || {};
-                              setSelectedDetail({ type: 'switch_point', data: { ...ccmsData, id: ccmsData.ccms_id, is_ccms_only: true } });
-                              setFormData({ ...ccmsData, id: ccmsData.ccms_id, ulb_id: ulb?.ulb_id || ulb?.id });
-                              setIsEditing(false);
-                            }}
-                            className="font-semibold text-primary hover:text-primary-dark text-sm border border-primary/20 px-3 py-1.5 rounded-md bg-white shadow-sm transition-colors"
-                          >
-                            View CCMS Details
-                          </button>
+
                         </div>
                       </div>
 

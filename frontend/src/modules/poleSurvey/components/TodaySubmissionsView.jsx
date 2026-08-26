@@ -274,10 +274,19 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
       if (!selectedSubmission) return;
       setLoadingImages(true);
       try {
-        const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${selectedSubmission.type}&entity_id=${selectedSubmission.id}`, {
+        const entityType = selectedSubmission.survey_type === 'installation' ? 'installation' : selectedSubmission.type;
+        const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${entityType}&entity_id=${selectedSubmission.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setImages(res.data.files || []);
+        const fetched = res.data.files || [];
+        // Fallback to direct image URLs stored on installation record
+        if (fetched.length === 0 && selectedSubmission.survey_type === 'installation') {
+          const fallback = [selectedSubmission.image_url_1, selectedSubmission.image_url_2, selectedSubmission.image_url_3]
+            .filter(Boolean).map((url, i) => ({ id: `fb-${i}`, url }));
+          setImages(fallback);
+        } else {
+          setImages(fetched);
+        }
       } catch (err) {
         console.error('Error fetching images:', err);
         setImages([]);
@@ -324,17 +333,18 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
       const renamedFile = new File([compressedFile], fileName, { type: 'image/jpeg' });
 
       const id = selectedSubmission.id;
+      const entityType = selectedSubmission.survey_type === 'installation' ? 'installation' : selectedSubmission.type;
       
       const fd = new FormData();
       fd.append('file', renamedFile);
-      fd.append('entity_type', selectedSubmission.type);
+      fd.append('entity_type', entityType);
       fd.append('entity_id', id);
 
       await axios.post(`${API_BASE_URL}/projects/${projectId}/pole-survey/files`, fd, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const refreshRes = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${selectedSubmission.type}&entity_id=${id}`, {
+      const refreshRes = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${entityType}&entity_id=${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setImages(refreshRes.data.files || []);
