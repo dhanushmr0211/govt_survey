@@ -443,6 +443,7 @@ export const PoleForm = ({ ulb, onBack }) => {
       pole_number: submitForm.pole_number,
       pole_type: submitForm.pole_type,
       pole_height: submitForm.pole_height,
+      pole_condition: submitForm.pole_condition,
       pole_to_pole_distance: toNumberOrNull(submitForm.distance_mtrs),
       arm_type: submitForm.arm_type,
       arm_status: submitForm.arm_status,

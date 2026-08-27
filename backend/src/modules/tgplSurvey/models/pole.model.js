@@ -6,23 +6,26 @@ async function createPole(projectId, data, createdBy) {
       project_id, ward_id, latitude, longitude, ward_number,
       dtc_number, dtc_capacity, ccms_number, meter_type, meter_rr_number,
       meter_serial_number, meter_dimensional_status, conductor_type, pole_number, pole_type,
-      pole_height, pole_to_pole_distance, arm_type, arm_status, present_arm_no,
+      pole_height, pole_condition, pole_to_pole_distance, arm_type, arm_status, present_arm_no,
       present_arm_length, how_many_lights_in_pole, light_mounting_height, light_type, light_capacity,
       light_type_2, light_capacity_2,
       light_working_status, road_category, road_type, road_width_mtrs, pole_earthing_exists,
       image_url_1, image_url_2, req_arm_number, req_arm_length, req_led_lights_no,
       req_led_wattage, req_dedicated_wire, created_by,
-      survey_type, light_type_3, light_capacity_3, light_type_4, light_capacity_4, light_type_5, light_capacity_5
+      survey_type, light_type_3, light_capacity_3, light_type_4, light_capacity_4, light_type_5, light_capacity_5,
+      offline_submission_id
     ) VALUES (
       $1, $2, $3, $4, $5,
       $6, $7, $8, $9, $10,
       $11, $12, $13, $14, $15,
-      $16, $17, $18, $19, $20,
-      $21, $22, $23, $24, $25,
-      $26, $27, $28, $29, $30,
-      $31, $32, $33, $34, $35,
-      $36, $37, $38, $39, $40,
-      $41, $42, $43, $44, $45, $46, $47
+      $16, $17, $18, $19, $20, $21,
+      $22, $23, $24, $25, $26,
+      $27, $28,
+      $29, $30, $31, $32, $33,
+      $34, $35, $36, $37, $38,
+      $39, $40, $41,
+      $42, $43, $44, $45, $46, $47, $48,
+      $49
     ) RETURNING *`,
     [
       projectId,
@@ -41,6 +44,7 @@ async function createPole(projectId, data, createdBy) {
       data.pole_number,
       data.pole_type,
       data.pole_height,
+      data.pole_condition,
       data.pole_to_pole_distance,
       data.arm_type,
       data.arm_status,
@@ -71,7 +75,8 @@ async function createPole(projectId, data, createdBy) {
       data.light_type_4,
       data.light_capacity_4,
       data.light_type_5,
-      data.light_capacity_5
+      data.light_capacity_5,
+      data.offline_submission_id
     ]
   );
   return result.rows[0];

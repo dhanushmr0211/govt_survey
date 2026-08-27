@@ -102,6 +102,7 @@ function createApp() {
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_type_5 TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_capacity_5 TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS offline_submission_id TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS pole_condition TEXT;',
     'ALTER TABLE switch_points ADD COLUMN IF NOT EXISTS offline_submission_id TEXT;',
     `CREATE TABLE IF NOT EXISTS tgpl_installations (
       id SERIAL PRIMARY KEY,

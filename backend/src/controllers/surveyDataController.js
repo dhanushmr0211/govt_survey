@@ -87,25 +87,7 @@ async function createSwitchPointHandler(req, res) {
     );
 
     if (duplicateCheck.rows.length > 0) {
-      const existingRow = duplicateCheck.rows[0];
-      if (offlineSubmissionId) {
-        if (!existingRow.offline_submission_id) {
-          await query(
-            `UPDATE switch_points SET offline_submission_id = $1 WHERE id = $2`,
-            [offlineSubmissionId, existingRow.id]
-          );
-          existingRow.offline_submission_id = offlineSubmissionId;
-        }
-        console.log('[OfflineSync]', JSON.stringify({
-          entity: 'switch_point',
-          state: 'DUPLICATE_CLAIMED_FOR_OFFLINE',
-          projectId: Number(projectId),
-          offlineSubmissionId,
-          entityId: existingRow.id,
-        }));
-        return res.status(200).json(existingRow);
-      }
-      const errMsg = `switch point ${data.switch_point_number} under this ward is already exists`;
+      const errMsg = `Switch Point "${data.switch_point_number}" already exists in this ward.`;
       return res.status(400).json({ error: errMsg, message: errMsg });
     }
 
@@ -185,26 +167,6 @@ async function createPoleHandler(req, res) {
       });
 
       if (isDuplicate) {
-        const dupRow = existingInst.rows.find(row => {
-          return normalizeIdentifier(row.ccms_number) === normCcms &&
-                 normalizeIdentifier(row.pole_number) === normPole;
-        });
-
-        if (offlineSubmissionId && dupRow) {
-          const fullInst = await query(`SELECT * FROM tgpl_installations WHERE id = $1 LIMIT 1`, [dupRow.id]);
-          if (fullInst.rows.length > 0) {
-            const instObj = fullInst.rows[0];
-            if (!instObj.offline_submission_id) {
-              await query(
-                `UPDATE tgpl_installations SET offline_submission_id = $1 WHERE id = $2`,
-                [offlineSubmissionId, instObj.id]
-              );
-              instObj.offline_submission_id = offlineSubmissionId;
-            }
-            return res.status(200).json(instObj);
-          }
-        }
-
         const errMsg = `Pole No. "${poleClean}" under CCMS "${data.ccms_number}" already has a submitted installation record in this ward.`;
         return res.status(400).json({ error: errMsg, message: errMsg });
       }
@@ -283,36 +245,6 @@ async function createPoleHandler(req, res) {
       });
 
       if (isDuplicate) {
-        const dupRow = existingPoles.rows.find(row => {
-          const rowSurveyType = row.survey_type || 'survey';
-          const targetSurveyType = data.survey_type || 'survey';
-          return rowSurveyType === targetSurveyType &&
-                 normalizeIdentifier(row.ccms_number) === normCcms &&
-                 normalizeIdentifier(row.pole_number) === normPole;
-        });
-
-        if (offlineSubmissionId && dupRow) {
-          const fullPole = await query(`SELECT * FROM poles WHERE id = $1 LIMIT 1`, [dupRow.id]);
-          if (fullPole.rows.length > 0) {
-            const poleObj = fullPole.rows[0];
-            if (!poleObj.offline_submission_id) {
-              await query(
-                `UPDATE poles SET offline_submission_id = $1 WHERE id = $2`,
-                [offlineSubmissionId, poleObj.id]
-              );
-              poleObj.offline_submission_id = offlineSubmissionId;
-            }
-            console.log('[OfflineSync]', JSON.stringify({
-              entity: 'pole',
-              state: 'DUPLICATE_CLAIMED_FOR_OFFLINE',
-              projectId: Number(projectId),
-              offlineSubmissionId,
-              entityId: poleObj.id,
-            }));
-            return res.status(200).json(poleObj);
-          }
-        }
-
         const typeStr = (data.survey_type || 'survey') === 'installation' ? 'installation' : 'survey';
         const errMsg = `Pole No. "${poleClean}" under CCMS "${data.ccms_number}" already has a submitted ${typeStr} record in this ward.`;
         return res.status(400).json({ error: errMsg, message: errMsg });
