@@ -12,7 +12,7 @@ async function createEntityFile(projectId, entityType, entityId, url, uploadedBy
 
 async function getFilesForEntity(projectId, entityType, entityId) {
   const result = await query(
-    'SELECT * FROM entity_files WHERE project_id = $1 AND entity_type = $2 AND entity_id = $3 ORDER BY uploaded_at DESC',
+    'SELECT * FROM entity_files WHERE project_id = $1 AND entity_type = $2 AND entity_id = $3 ORDER BY uploaded_at ASC, id ASC',
     [projectId, entityType, entityId]
   );
   return result.rows;

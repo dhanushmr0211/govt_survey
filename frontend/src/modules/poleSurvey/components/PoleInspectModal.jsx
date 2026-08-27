@@ -116,7 +116,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
         // Fallback to direct image URLs stored on installation record
         if (fetched.length === 0 && pole.survey_type === 'installation') {
           const fallback = [pole.image_url_1, pole.image_url_2, pole.image_url_3]
-            .filter(Boolean).map((url, i) => ({ id: `fb-${i}`, url }));
+            .filter(Boolean).map((url, i) => ({ id: `fb-${i}`, url, signed_url: url }));
           setImages(fallback);
         } else {
           setImages(fetched);
@@ -704,7 +704,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                   images.map((img, index) => (
                     <div key={img.id || index} className="border border-gray-100 rounded-lg overflow-hidden relative">
                       <img
-                        src={img.signed_url}
+                        src={img.signed_url || img.url}
                         alt="Survey"
                         className="w-full h-auto object-cover"
                         onError={(e) => {

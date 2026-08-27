@@ -140,8 +140,8 @@ export const InstallationForm = ({ ward, onBack }) => {
       return false;
     }
     const count = Number(formData.how_many_lights);
-    if (isNaN(count) || count < 1) {
-      alert('Please select light count (at least 1).');
+    if (formData.how_many_lights === '' || isNaN(count) || count < 0) {
+      alert('Please select light count.');
       return false;
     }
 
@@ -346,7 +346,7 @@ export const InstallationForm = ({ ward, onBack }) => {
         ccms_number: prev.ccms_number,
         pole_number: '',
         pole_type: '',
-        how_many_lights: '1',
+        how_many_lights: '0',
         light_type: '',
         light_wattage: '',
         light_status: '',
@@ -369,6 +369,7 @@ export const InstallationForm = ({ ward, onBack }) => {
         arm_status_5: '',
         dedicated_wire: '',
         infra_gap: 'NA',
+        remarks: '',
       }));
     } catch (error) {
       console.error('Error submitting installation:', error);
@@ -389,7 +390,7 @@ export const InstallationForm = ({ ward, onBack }) => {
         ccms_number: prev.ccms_number,
         pole_number: '',
         pole_type: '',
-        how_many_lights: '1',
+        how_many_lights: '0',
         light_type: '',
         light_wattage: '',
         light_status: '',
@@ -412,6 +413,7 @@ export const InstallationForm = ({ ward, onBack }) => {
         arm_status_5: '',
         dedicated_wire: '',
         infra_gap: 'NA',
+        remarks: '',
       }));
     } finally {
       setUploading(false);
@@ -611,7 +613,7 @@ export const InstallationForm = ({ ward, onBack }) => {
             className="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
             required
           >
-            {['1', '2', '3', '4', '5'].map((o) => (
+            {['0', '1', '2', '3', '4', '5'].map((o) => (
               <option key={o} value={o}>{o}</option>
             ))}
           </select>

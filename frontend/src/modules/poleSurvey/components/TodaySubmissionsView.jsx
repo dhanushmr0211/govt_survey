@@ -282,7 +282,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
         // Fallback to direct image URLs stored on installation record
         if (fetched.length === 0 && selectedSubmission.survey_type === 'installation') {
           const fallback = [selectedSubmission.image_url_1, selectedSubmission.image_url_2, selectedSubmission.image_url_3]
-            .filter(Boolean).map((url, i) => ({ id: `fb-${i}`, url }));
+            .filter(Boolean).map((url, i) => ({ id: `fb-${i}`, url, signed_url: url }));
           setImages(fallback);
         } else {
           setImages(fetched);

@@ -415,7 +415,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
         // Fallback to direct image URLs stored on installation record if no files returned
         if (fetched.length === 0 && isInstallation) {
           const d = selectedDetail.data;
-          const fallback = [d.image_url_1, d.image_url_2, d.image_url_3].filter(Boolean).map((url, i) => ({ id: `fb-${i}`, url }));
+          const fallback = [d.image_url_1, d.image_url_2, d.image_url_3].filter(Boolean).map((url, i) => ({ id: `fb-${i}`, url, signed_url: url }));
           setImages(fallback);
         } else {
           setImages(fetched);

@@ -75,6 +75,12 @@ export const PoleForm = ({ ulb, onBack }) => {
     light_capacity: '',
     light_type_2: '',
     light_capacity_2: '',
+    light_type_3: '',
+    light_capacity_3: '',
+    light_type_4: '',
+    light_capacity_4: '',
+    light_type_5: '',
+    light_capacity_5: '',
     light_working_status: '',
     road_category: '',
     road_type: '',
@@ -306,12 +312,77 @@ export const PoleForm = ({ ulb, onBack }) => {
 
     setStatusText('Submitting...');
 
-    // Validation: At least one light details must be present (for projects where light info is relevant)
-    // Only enforced if not restricted or if it's the i-deck project where we just added these fields
-    if (!isRestricted) {
+    // TGPL Compulsory Fields Validation
+    if (isTgpl) {
+      const requiredFields = [
+        ['DTC Number', formData.dtc_number],
+        ['DTC Capacity', formData.dtc_capacity],
+        ['CCMS Number', formData.ccms_number],
+        ['Meter Type', formData.meter_type],
+        ['Meter RR Number', formData.meter_rr_number],
+        ['Meter Serial Number', formData.meter_serial_number],
+        ['Meter Dismantal Status', formData.meter_dimensional_status],
+        ['Conductor Type', formData.conductor_type],
+        ['Pole Number', formData.pole_number],
+        ['Pole Type', formData.pole_type],
+        ['Pole Height', formData.pole_height],
+        ['Pole Condition', formData.pole_condition],
+        ['Pole Distance', formData.distance_mtrs],
+        ['ARM Type', formData.arm_type],
+        ['ARM Status', formData.arm_status],
+        ['Present ARM No', formData.present_arm_no],
+        ['Present ARM Length', formData.present_arm_length],
+        ['How Many Lights in Pole', formData.how_many_lights],
+        ['Light Mounting Height', formData.light_mounting_height],
+        ['Light Working Status', formData.light_working_status],
+        ['Road Category', formData.road_category],
+        ['Road Type', formData.road_type],
+        ['Road Width', formData.road_width],
+        ['Pole Earthing Exists', formData.pole_earthing_exists],
+        ['Req ARM No', formData.req_arm_number],
+        ['Req ARM Length', formData.req_arm_length],
+        ['Req LED Lights No', formData.req_led_lights_no],
+        ['Req LED Wattage', formData.req_led_wattage],
+        ['Req Dedicated Wire', formData.req_dedicated_wire],
+      ];
+
+      for (const [label, val] of requiredFields) {
+        if (val === '' || val == null) {
+          alert(`${label} is compulsory.`);
+          setUploading(false);
+          setStatusText('');
+          return;
+        }
+      }
+
+      const lightCount = Number(formData.how_many_lights);
+      for (let i = 1; i <= lightCount; i++) {
+        const typeKey = i === 1 ? 'light_type' : `light_type_${i}`;
+        const capKey = i === 1 ? 'light_capacity' : `light_capacity_${i}`;
+        if (!formData[typeKey]) {
+          alert(`Light ${i} Type is compulsory.`);
+          setUploading(false);
+          setStatusText('');
+          return;
+        }
+        if (!formData[capKey]) {
+          alert(`Light ${i} Capacity is compulsory.`);
+          setUploading(false);
+          setStatusText('');
+          return;
+        }
+      }
+
+      if (!photos.image1 || !photos.image2) {
+        alert('Please capture both Image Slot 1 and Slot 2 (compulsory for TGPL survey).');
+        setUploading(false);
+        setStatusText('');
+        return;
+      }
+    } else if (!isRestricted) {
       const hasLight1 = formData.light_type && formData.light_capacity;
       const hasLight2 = formData.light_type_2 && formData.light_capacity_2;
-      if (!hasLight1 && !hasLight2) {
+      if (!hasLight1 && !hasLight2 && formData.how_many_lights !== '0') {
         alert('Please fill at least one light (Type and Capacity) details.');
         setUploading(false);
         setStatusText('');
@@ -383,6 +454,12 @@ export const PoleForm = ({ ulb, onBack }) => {
       light_capacity: submitForm.light_capacity,
       light_type_2: submitForm.light_type_2,
       light_capacity_2: submitForm.light_capacity_2,
+      light_type_3: submitForm.light_type_3,
+      light_capacity_3: submitForm.light_capacity_3,
+      light_type_4: submitForm.light_type_4,
+      light_capacity_4: submitForm.light_capacity_4,
+      light_type_5: submitForm.light_type_5,
+      light_capacity_5: submitForm.light_capacity_5,
       light_working_status: submitForm.light_working_status,
       road_category: submitForm.road_category,
       road_type: submitForm.road_type,
@@ -547,16 +624,17 @@ export const PoleForm = ({ ulb, onBack }) => {
         {isTgpl && (
           <>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">DTC No#</label>
-              <input type="text" name="dtc_number" value={formData.dtc_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" />
+              <label className="block text-gray-700 font-medium mb-1">DTC No# {isTgpl && '*'}</label>
+              <input type="text" name="dtc_number" value={formData.dtc_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isTgpl} />
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">DTC Capacity</label>
+              <label className="block text-gray-700 font-medium mb-1">DTC Capacity {isTgpl && '*'}</label>
               <select 
                 name="dtc_capacity" 
                 value={formData.dtc_capacity} 
                 onChange={handleChange} 
                 className="w-full p-2 border border-gray-200 rounded"
+                required={isTgpl}
               >
                 <option value="">Select DTC Capacity</option>
                 {['25 KVA', '63 KVA', '100 KVA', '250 KVA', '500 KVA'].map((opt) => (
@@ -565,7 +643,7 @@ export const PoleForm = ({ ulb, onBack }) => {
               </select>
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">CCMS No#</label>
+              <label className="block text-gray-700 font-medium mb-1">CCMS No# {isTgpl && '*'}</label>
               <select 
                 value={isCustomCcms ? 'CUSTOM' : (formData.ccms_number || '')} 
                 onChange={(e) => {
@@ -600,7 +678,7 @@ export const PoleForm = ({ ulb, onBack }) => {
 
               {isCustomCcms && (
                 <div className="mt-2">
-                  <label className="block text-gray-600 text-xs font-medium mb-1">Custom CCMS No#</label>
+                  <label className="block text-gray-600 text-xs font-medium mb-1">Custom CCMS No# *</label>
                   <input 
                     type="text" 
                     placeholder="Type custom CCMS number"
@@ -623,8 +701,8 @@ export const PoleForm = ({ ulb, onBack }) => {
               )}
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Meter Type</label>
-              <select name="meter_type" value={formData.meter_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+              <label className="block text-gray-700 font-medium mb-1">Meter Type {isTgpl && '*'}</label>
+              <select name="meter_type" value={formData.meter_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isTgpl}>
                 <option value="">Select Meter Type</option>
                 <option value="1P">1P</option>
                 <option value="3P">3P</option>
@@ -632,16 +710,16 @@ export const PoleForm = ({ ulb, onBack }) => {
               </select>
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Meter RR Number</label>
-              <input type="text" name="meter_rr_number" value={formData.meter_rr_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" />
+              <label className="block text-gray-700 font-medium mb-1">Meter RR Number {isTgpl && '*'}</label>
+              <input type="text" name="meter_rr_number" value={formData.meter_rr_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isTgpl} />
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Meter Serial Number</label>
-              <input type="text" name="meter_serial_number" value={formData.meter_serial_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" />
+              <label className="block text-gray-700 font-medium mb-1">Meter Serial Number {isTgpl && '*'}</label>
+              <input type="text" name="meter_serial_number" value={formData.meter_serial_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isTgpl} />
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Meter Dismantal Status</label>
-              <select name="meter_dimensional_status" value={formData.meter_dimensional_status} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+              <label className="block text-gray-700 font-medium mb-1">Meter Dismantal Status {isTgpl && '*'}</label>
+              <select name="meter_dimensional_status" value={formData.meter_dimensional_status} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isTgpl}>
                 <option value="">Select Status</option>
                 <option value="YES">YES</option>
                 <option value="NO">NO</option>
@@ -652,8 +730,8 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('conductor_type') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Conductor Type</label>
-            <select name="conductor_type" value={formData.conductor_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={!shouldHide('conductor_type')} disabled={isRestricted}>
+            <label className="block text-gray-700 font-medium mb-1">Conductor Type {isTgpl && '*'}</label>
+            <select name="conductor_type" value={formData.conductor_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isTgpl || !shouldHide('conductor_type')} disabled={isRestricted}>
               <option value="">Select Conductor Type</option>
               <option value="ABC">ABC</option>
               <option value="ACSR">ACSR</option>
@@ -671,8 +749,8 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('pole_type') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Pole Type</label>
-            <select name="pole_type" value={formData.pole_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={!shouldHide('pole_type')} disabled={isRestricted}>
+            <label className="block text-gray-700 font-medium mb-1">Pole Type {isTgpl && '*'}</label>
+            <select name="pole_type" value={formData.pole_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isTgpl || !shouldHide('pole_type')} disabled={isRestricted}>
               <option value="">Select Pole Type</option>
               {['Conical', 'Decorative', 'High Mast', 'Mini Mast', 'Octoganal', 'Post Top', 'PSC', 'RCC', 'Spun', 'Tubular'].map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
@@ -683,8 +761,8 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('pole_height') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Pole Height (mtrs)</label>
-            <select name="pole_height" value={formData.pole_height} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={!shouldHide('pole_height')} disabled={isRestricted}>
+            <label className="block text-gray-700 font-medium mb-1">Pole Height (mtrs) {isTgpl && '*'}</label>
+            <select name="pole_height" value={formData.pole_height} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isTgpl || !shouldHide('pole_height')} disabled={isRestricted}>
               <option value="">Select Height</option>
               {[0, 4, 5, 6, 7, 8, 9, 12, 16, 18, 24, 30].map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
@@ -695,8 +773,8 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('pole_condition') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Pole Condition</label>
-            <select name="pole_condition" value={formData.pole_condition} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={!shouldHide('pole_condition')} disabled={isRestricted}>
+            <label className="block text-gray-700 font-medium mb-1">Pole Condition {isTgpl && '*'}</label>
+            <select name="pole_condition" value={formData.pole_condition} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isTgpl || !shouldHide('pole_condition')} disabled={isRestricted}>
               <option value="">Select Condition</option>
               <option value="Good">Good</option>
               <option value="defective">Defective</option>
@@ -707,8 +785,8 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('distance_mtrs') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Pole To Pole Distance (mtrs)</label>
-            <select name="distance_mtrs" value={formData.distance_mtrs} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+            <label className="block text-gray-700 font-medium mb-1">Pole To Pole Distance (mtrs) {isTgpl && '*'}</label>
+            <select name="distance_mtrs" value={formData.distance_mtrs} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isTgpl || isBallari}>
               <option value="">Select Distance</option>
               {['10', '20', '25', '30', '40', '50'].map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
@@ -719,8 +797,8 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('arm_type') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">ARM Type</label>
-            <select name="arm_type" value={formData.arm_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+            <label className="block text-gray-700 font-medium mb-1">ARM Type {isTgpl && '*'}</label>
+            <select name="arm_type" value={formData.arm_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isTgpl || isBallari}>
               <option value="">Select ARM Type</option>
               {['single', 'double', 'multiple', 'empty/not present'].map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
@@ -731,8 +809,8 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('arm_status') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">ARM Status</label>
-            <select name="arm_status" value={formData.arm_status} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+            <label className="block text-gray-700 font-medium mb-1">ARM Status {isTgpl && '*'}</label>
+            <select name="arm_status" value={formData.arm_status} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isTgpl || isBallari}>
               <option value="">Select ARM Status</option>
               {['new', 'old', 'deteriorated', 'missing', 'empty/not present'].map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
@@ -743,8 +821,8 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('present_arm_no') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Present ARM No#</label>
-            <select name="present_arm_no" value={formData.present_arm_no} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+            <label className="block text-gray-700 font-medium mb-1">Present ARM No# {isTgpl && '*'}</label>
+            <select name="present_arm_no" value={formData.present_arm_no} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isTgpl || isBallari}>
               <option value="">Select ARM No#</option>
               {Array.from({ length: 13 }, (_, i) => i).map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
@@ -755,8 +833,8 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('present_arm_length') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Present ARM Length (mtrs)</label>
-            <select name="present_arm_length" value={formData.present_arm_length} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+            <label className="block text-gray-700 font-medium mb-1">Present ARM Length (mtrs) {isTgpl && '*'}</label>
+            <select name="present_arm_length" value={formData.present_arm_length} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isTgpl || isBallari}>
               <option value="">Select Length</option>
               {[0, 1, 1.5, 2, 2.5].map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
@@ -767,10 +845,10 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('how_many_lights') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">How Many Lights in Pole</label>
-            <select name="how_many_lights" value={formData.how_many_lights} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+            <label className="block text-gray-700 font-medium mb-1">How Many Lights in Pole {isTgpl && '*'}</label>
+            <select name="how_many_lights" value={formData.how_many_lights} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isTgpl || isBallari}>
               <option value="">Select Count</option>
-              {Array.from({ length: 13 }, (_, i) => i).map((opt) => (
+              {(isTgpl ? ['0', '1', '2', '3', '4', '5'] : Array.from({ length: 13 }, (_, i) => String(i))).map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
@@ -779,8 +857,8 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('light_mounting_height') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Light Mounting Height</label>
-            <select name="light_mounting_height" value={formData.light_mounting_height} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+            <label className="block text-gray-700 font-medium mb-1">Light Mounting Height {isTgpl && '*'}</label>
+            <select name="light_mounting_height" value={formData.light_mounting_height} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isTgpl || isBallari}>
               <option value="">Select Height</option>
               {['5', '6-7', '9', 'mini mast', 'high mast'].map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
@@ -789,58 +867,106 @@ export const PoleForm = ({ ulb, onBack }) => {
           </div>
         )}
 
-        {!shouldHide('light_type') && (
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">Light 1 Type</label>
-            <select name="light_type" value={formData.light_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-              <option value="">Select Type</option>
-              {['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'].map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
+        {/* Dynamic Light Fields: When count is selected and > 0 */}
+        {Number(formData.how_many_lights) > 0 ? (
+          <div className="space-y-3 pt-2 border-t border-gray-100">
+            {Array.from({ length: Math.min(Number(formData.how_many_lights), 5) }, (_, i) => i + 1).map((num) => {
+              const suffix = num === 1 ? '' : `_${num}`;
+              return (
+                <div key={num} className="p-3 border border-gray-200 rounded-lg bg-gray-50/50 space-y-2">
+                  <span className="text-xs font-bold text-gray-700">Light {num} Details {isTgpl && '*'}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-gray-700 font-medium text-xs mb-1">Light {num} Type {isTgpl && '*'}</label>
+                      <select
+                        name={`light_type${suffix}`}
+                        value={formData[`light_type${suffix}`] || ''}
+                        onChange={handleChange}
+                        className="w-full p-2 border border-gray-200 rounded text-xs bg-white"
+                        required={isTgpl}
+                      >
+                        <option value="">Select Type</option>
+                        {['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'].map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-medium text-xs mb-1">Light {num} Capacity {isTgpl && '*'}</label>
+                      <select
+                        name={`light_capacity${suffix}`}
+                        value={formData[`light_capacity${suffix}`] || ''}
+                        onChange={handleChange}
+                        className="w-full p-2 border border-gray-200 rounded text-xs bg-white"
+                        required={isTgpl}
+                      >
+                        <option value="">Select Capacity</option>
+                        {['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'].map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
+        ) : (!isTgpl && (formData.how_many_lights === '' || formData.how_many_lights == null)) ? (
+          <>
+            {!shouldHide('light_type') && (
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">Light 1 Type</label>
+                <select name="light_type" value={formData.light_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+                  <option value="">Select Type</option>
+                  {['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'].map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-        {!shouldHide('light_capacity') && (
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">Light 1 Capacity</label>
-            <select name="light_capacity" value={formData.light_capacity} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-              <option value="">Select Capacity</option>
-              {['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'].map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
-        )}
+            {!shouldHide('light_capacity') && (
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">Light 1 Capacity</label>
+                <select name="light_capacity" value={formData.light_capacity} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+                  <option value="">Select Capacity</option>
+                  {['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'].map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-        {!shouldHide('light_type_2') && (
-          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Light 2 Type</label>
-              <select name="light_type_2" value={formData.light_type_2} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-                <option value="">Select Type</option>
-                {['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'].map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
+            {!shouldHide('light_type_2') && (
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                <div>
+                  <label className="block text-gray-700 font-medium mb-1">Light 2 Type</label>
+                  <select name="light_type_2" value={formData.light_type_2} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+                    <option value="">Select Type</option>
+                    {['bulb', 'cfl', 'lamp', 'led', 'tube light', 'mh400', 't5', 'svl', 'empty', 'mini mast', 'high mast'].map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <div>
-              <label className="block text-gray-700 font-medium mb-1">Light 2 Capacity</label>
-              <select name="light_capacity_2" value={formData.light_capacity_2} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
-                <option value="">Select Capacity</option>
-                {['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'].map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
+                <div>
+                  <label className="block text-gray-700 font-medium mb-1">Light 2 Capacity</label>
+                  <select name="light_capacity_2" value={formData.light_capacity_2} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted}>
+                    <option value="">Select Capacity</option>
+                    {['0W', '5W-25W', '40W', '65W', '90W', '120W', '150W', '200W', '250W', '400W'].map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </>
+        ) : null}
 
         {!shouldHide('light_working_status') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Light Working Status</label>
-            <select name="light_working_status" value={formData.light_working_status} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+            <label className="block text-gray-700 font-medium mb-1">Light Working Status {isTgpl && '*'}</label>
+            <select name="light_working_status" value={formData.light_working_status} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isTgpl || isBallari}>
               <option value="">Select Status</option>
               <option value="yes">Yes</option>
               <option value="no">No</option>
@@ -850,8 +976,8 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('road_category') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Road Category</label>
-            <select name="road_category" value={formData.road_category} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+            <label className="block text-gray-700 font-medium mb-1">Road Category {isTgpl && '*'}</label>
+            <select name="road_category" value={formData.road_category} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isTgpl || isBallari}>
               <option value="">Select Category</option>
               {['A1', 'A2', 'B1', 'B2', 'DTC', 'PARKS', 'SP'].map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
@@ -861,8 +987,8 @@ export const PoleForm = ({ ulb, onBack }) => {
         )}
 
         <div>
-          <label className="block text-gray-700 font-medium mb-1">Road Type</label>
-          <select name="road_type" value={formData.road_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isBallari}>
+          <label className="block text-gray-700 font-medium mb-1">Road Type {isTgpl && '*'}</label>
+          <select name="road_type" value={formData.road_type} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isTgpl || isBallari}>
             <option value="">Select Type</option>
             {['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'].map((opt) => (
               <option key={opt} value={opt}>{opt}</option>
@@ -871,8 +997,8 @@ export const PoleForm = ({ ulb, onBack }) => {
         </div>
 
         <div>
-          <label className="block text-gray-700 font-medium mb-1">Road Width (mtrs)</label>
-          <select name="road_width" value={formData.road_width} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isBallari}>
+          <label className="block text-gray-700 font-medium mb-1">Road Width (mtrs) {isTgpl && '*'}</label>
+          <select name="road_width" value={formData.road_width} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required={isTgpl || isBallari}>
             <option value="">Select Width</option>
             {[4, 5, 6, 7, 8, 9, 10, 12, 16, 18, 20, 24, 25, 30].map((opt) => (
               <option key={opt} value={opt}>{opt}</option>
@@ -882,8 +1008,8 @@ export const PoleForm = ({ ulb, onBack }) => {
 
         {!shouldHide('pole_earthing_exists') && (
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Pole Earthing Exists</label>
-            <select name="pole_earthing_exists" value={formData.pole_earthing_exists} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isBallari}>
+            <label className="block text-gray-700 font-medium mb-1">Pole Earthing Exists {isTgpl && '*'}</label>
+            <select name="pole_earthing_exists" value={formData.pole_earthing_exists} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isTgpl || isBallari}>
               <option value="">Select Earthing</option>
               <option value="YES">YES</option>
               <option value="NO">NO</option>
@@ -895,36 +1021,36 @@ export const PoleForm = ({ ulb, onBack }) => {
           <div className="space-y-3 pt-4 border-t border-gray-100">
             <h3 className="font-bold text-primary text-base">Proposal Form</h3>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Req ARM No#</label>
-              <select name="req_arm_number" value={formData.req_arm_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+              <label className="block text-gray-700 font-medium mb-1">Req ARM No# *</label>
+              <select name="req_arm_number" value={formData.req_arm_number} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required>
                 <option value="">Select...</option>
                 {['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'].map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Req ARM Length</label>
-              <select name="req_arm_length" value={formData.req_arm_length} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+              <label className="block text-gray-700 font-medium mb-1">Req ARM Length *</label>
+              <select name="req_arm_length" value={formData.req_arm_length} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required>
                 <option value="">Select...</option>
                 {['0', '1.0', '1.5', '2', '2.5'].map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Req LED Lights No#</label>
-              <select name="req_led_lights_no" value={formData.req_led_lights_no} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+              <label className="block text-gray-700 font-medium mb-1">Req LED Lights No# *</label>
+              <select name="req_led_lights_no" value={formData.req_led_lights_no} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required>
                 <option value="">Select...</option>
                 {['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'].map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Req LED Wattage</label>
-              <select name="req_led_wattage" value={formData.req_led_wattage} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+              <label className="block text-gray-700 font-medium mb-1">Req LED Wattage *</label>
+              <select name="req_led_wattage" value={formData.req_led_wattage} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required>
                 <option value="">Select...</option>
                 {['400W', '250W', '200W', '150W', '120W', '90W', '65W', '40W', '5-25W', '0W'].map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-gray-700 font-medium mb-1">Req Dedicated Wire</label>
-              <select name="req_dedicated_wire" value={formData.req_dedicated_wire} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded">
+              <label className="block text-gray-700 font-medium mb-1">Req Dedicated Wire *</label>
+              <select name="req_dedicated_wire" value={formData.req_dedicated_wire} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" required>
                 <option value="">Select...</option>
                 {['yes', 'no'].map(o => <option key={o} value={o}>{o}</option>)}
               </select>
