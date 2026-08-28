@@ -16,6 +16,7 @@ export function AdminTrackingView({ projectId }) {
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const isTgpl = String(projectId) === '3';
+  const isTgpl2 = String(projectId) === '4';
 
   const [downloading, setDownloading] = useState(false);
 
@@ -23,7 +24,7 @@ export function AdminTrackingView({ projectId }) {
     setDownloading(true);
     try {
       const token = localStorage.getItem('token');
-      const surveyPath = isTgpl ? 'tgpl-survey' : 'pole-survey';
+      const surveyPath = isTgpl2 ? 'tgpl2-survey' : (isTgpl ? 'tgpl-survey' : 'pole-survey');
       let url = `${API_BASE_URL}/projects/${projectId}/${surveyPath}/report/download?confirmedBy=${empId}`;
       if (fromDate) url += `&fromDate=${encodeURIComponent(fromDate)}`;
       if (toDate) url += `&toDate=${encodeURIComponent(toDate)}`;
@@ -32,6 +33,12 @@ export function AdminTrackingView({ projectId }) {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
       });
+
+      if (res.data?.type === 'application/json' || (res.headers && res.headers['content-type'] && res.headers['content-type'].includes('application/json'))) {
+        const text = await res.data.text();
+        const json = JSON.parse(text);
+        throw new Error(json.message || 'Server returned an error');
+      }
 
       const blob = new Blob([res.data], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -47,7 +54,17 @@ export function AdminTrackingView({ projectId }) {
       window.URL.revokeObjectURL(objectUrl);
     } catch (err) {
       console.error('Failed to download report:', err);
-      alert(err.response?.data?.message || 'Failed to download report');
+      let errorMsg = err.message || 'Failed to download report';
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          if (json.message) errorMsg = json.message;
+        } catch (e) {}
+      } else if (err.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      }
+      alert(errorMsg);
     } finally {
       setDownloading(false);
     }
@@ -174,6 +191,7 @@ export function EmployeeTrackingView({ projectId }) {
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const isTgpl = String(projectId) === '3';
+  const isTgpl2 = String(projectId) === '4';
 
   const [downloading, setDownloading] = useState(false);
 
@@ -181,7 +199,7 @@ export function EmployeeTrackingView({ projectId }) {
     setDownloading(true);
     try {
       const token = localStorage.getItem('token');
-      const surveyPath = isTgpl ? 'tgpl-survey' : 'pole-survey';
+      const surveyPath = isTgpl2 ? 'tgpl2-survey' : (isTgpl ? 'tgpl-survey' : 'pole-survey');
       let url = `${API_BASE_URL}/projects/${projectId}/${surveyPath}/report/download?confirmedBy=${empId}`;
       if (fromDate) url += `&fromDate=${encodeURIComponent(fromDate)}`;
       if (toDate) url += `&toDate=${encodeURIComponent(toDate)}`;
@@ -190,6 +208,12 @@ export function EmployeeTrackingView({ projectId }) {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
       });
+
+      if (res.data?.type === 'application/json' || (res.headers && res.headers['content-type'] && res.headers['content-type'].includes('application/json'))) {
+        const text = await res.data.text();
+        const json = JSON.parse(text);
+        throw new Error(json.message || 'Server returned an error');
+      }
 
       const blob = new Blob([res.data], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -205,7 +229,17 @@ export function EmployeeTrackingView({ projectId }) {
       window.URL.revokeObjectURL(objectUrl);
     } catch (err) {
       console.error('Failed to download report:', err);
-      alert(err.response?.data?.message || 'Failed to download report');
+      let errorMsg = err.message || 'Failed to download report';
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          if (json.message) errorMsg = json.message;
+        } catch (e) {}
+      } else if (err.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      }
+      alert(errorMsg);
     } finally {
       setDownloading(false);
     }

@@ -1322,8 +1322,9 @@ async function getReportData(projectId, districtId, tillDate, ulbId, _districtSc
   let poles = [];
   let installations = [];
 
-  const shouldFetchPoles = !reportType || reportType === 'survey' || reportType === 'pole' || reportType === 'all';
-  const shouldFetchInst = !reportType || reportType === 'installation' || reportType === 'all';
+  const normReportType = (reportType || '').toLowerCase().trim();
+  const shouldFetchPoles = !normReportType || ['survey', 'surveys', 'pole', 'poles', 'all'].includes(normReportType);
+  const shouldFetchInst = !normReportType || ['installation', 'installations', 'all'].includes(normReportType);
 
   if (shouldFetchPoles) {
     const pSql = `

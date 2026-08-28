@@ -353,8 +353,14 @@ async function downloadReportHandler(req, res, next) {
       useSharedStrings: true
     });
     
-    const shouldIncludePoles = !reportType || reportType === 'survey' || reportType === 'pole' || reportType === 'all';
-    const shouldIncludeInst = !reportType || reportType === 'installation' || reportType === 'all';
+    const normReportType = (reportType || '').toLowerCase().trim();
+    let shouldIncludePoles = !normReportType || ['survey', 'surveys', 'pole', 'poles', 'all'].includes(normReportType);
+    let shouldIncludeInst = !normReportType || ['installation', 'installations', 'all'].includes(normReportType);
+
+    if (!shouldIncludePoles && !shouldIncludeInst) {
+      shouldIncludePoles = true;
+      shouldIncludeInst = true;
+    }
 
     if (shouldIncludePoles) {
       // Poles Sheet

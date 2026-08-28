@@ -23,7 +23,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
   const { data: summary = [] } = useQuery({
     queryKey: ['report-districts', projectId, token],
     queryFn: async () => {
-      const surveyPath = isTgpl2 ? 'tgpl2-survey' : 'pole-survey';
+      const surveyPath = isTgpl2 ? 'tgpl2-survey' : (isTgpl ? 'tgpl-survey' : 'pole-survey');
       const summaryPath = isTgpl2 ? 'summary/wards' : 'summary/districts';
       const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/${surveyPath}/${summaryPath}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -69,7 +69,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
     setIsDownloading(true);
     setDownloadedBytes(0);
     try {
-      const surveyPath = isTgpl2 ? 'tgpl2-survey' : 'pole-survey';
+      const surveyPath = isTgpl2 ? 'tgpl2-survey' : (isTgpl ? 'tgpl-survey' : 'pole-survey');
       let url = `${API_BASE_URL}/projects/${projectId}/${surveyPath}/report/download`;
       const params = [];
       if (districtId) params.push(`district=${encodeURIComponent(districtId)}`);
@@ -91,6 +91,12 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
         }
       });
 
+      if (res.data?.type === 'application/json' || (res.headers && res.headers['content-type'] && res.headers['content-type'].includes('application/json'))) {
+        const text = await res.data.text();
+        const json = JSON.parse(text);
+        throw new Error(json.message || 'Server returned an error');
+      }
+
       const blob = new Blob([res.data], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
@@ -106,7 +112,17 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
       handleClose();
     } catch (error) {
       console.error('Failed to download report:', error);
-      alert(error.response?.data?.message || 'Failed to download report');
+      let errorMsg = error.message || 'Failed to download report';
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          const json = JSON.parse(text);
+          if (json.message) errorMsg = json.message;
+        } catch (e) {}
+      } else if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      }
+      alert(errorMsg);
     } finally {
       setIsDownloading(false);
     }
