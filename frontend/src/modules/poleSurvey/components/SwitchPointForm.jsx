@@ -21,6 +21,7 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
     meter_rr_number: '',
     meter_serial_number: '',
     meter_condition: '',
+    remarks: '',
   });
   const [photos, setPhotos] = useState({ image1: null, image2: null });
   const [compressing, setCompressing] = useState({ image1: false, image2: false });
@@ -94,6 +95,7 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
       meter_serial_number: isMeterYes ? formData.meter_serial_number : null,
       latitude: coords.latitude,
       longitude: coords.longitude,
+      remarks: formData.remarks || null,
     };
 
     const imageFiles = buildImageFiles();
@@ -266,8 +268,20 @@ export const SwitchPointForm = ({ ulb, onBack }) => {
           </>
         )}
 
-         <div className="space-y-2">
-           <label className="block text-gray-700 font-medium mb-1">Photos {isBallari && '(Compulsory)'}</label>
+        <div>
+          <label className="block text-gray-700 font-medium mb-1">Remarks</label>
+          <textarea
+            name="remarks"
+            value={formData.remarks}
+            onChange={handleChange}
+            placeholder="Enter any remarks or notes..."
+            rows={2}
+            className="w-full p-2 border border-gray-200 rounded focus:ring-1 focus:ring-primary focus:border-primary text-sm"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-gray-700 font-medium mb-1">Photos {isBallari && '(Compulsory)'}</label>
            
            {[1, 2].map((num) => (
              <div key={num} className="border border-gray-200 p-2 rounded flex flex-col gap-1.5">

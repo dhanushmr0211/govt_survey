@@ -916,6 +916,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         {renderField('RR Number', 'meter_rr_number', selectedSubmission.meter_rr_number)}
                         {renderField('Serial Number', 'meter_serial_number', selectedSubmission.meter_serial_number)}
                         {renderField('Meter Condition', 'meter_condition', selectedSubmission.meter_condition, ['working', 'not working', 'missing'])}
+                        {renderField('Remarks', 'remarks', selectedSubmission.remarks)}
                       </>
                     ) : isTgpl2 && selectedSubmission.type === 'pole' ? (
                       <>
@@ -956,6 +957,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         {renderField('Earthing', 'pole_earthing_exists', selectedSubmission.pole_earthing_exists, ['YES', 'NO'])}
                         {renderField('Defective', 'pole_defective', selectedSubmission.pole_defective ? 'Yes' : 'No', ['YES', 'NO'])}
                         {renderField('Arm Deteriorated', 'arm_deteriorated', selectedSubmission.arm_deteriorated ? 'Yes' : 'No', ['YES', 'NO'])}
+                        {renderField('Remarks', 'remarks', selectedSubmission.remarks)}
                         
                         <div className="col-span-3 border-t pt-2 mt-2 font-semibold text-gray-700">Proposal Form</div>
                         {renderField('Req ARM No', 'req_arm_number', selectedSubmission.req_arm_number, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
@@ -1013,12 +1015,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         )}
                         {renderField('Dedicated Wire', 'dedicated_wire', selectedSubmission.dedicated_wire || selectedSubmission.req_dedicated_wire, ['YES', 'NO'])}
                         {renderField('Infra Gap', 'infra_gap', selectedSubmission.infra_gap, ['UG CABLE DAMAGE', 'AB CABLE DAMAGE', 'PC MISSING', 'OPEN JUNCTION BOX', 'POWER CABLE ON GROUND', 'NA'])}
-                        {selectedSubmission.remarks && (
-                          <div className="col-span-3 mt-2">
-                            <p className="text-gray-500 text-xs">Remarks</p>
-                            <p className="font-medium text-sm whitespace-pre-wrap">{selectedSubmission.remarks}</p>
-                          </div>
-                        )}
+                        {renderField('Remarks', 'remarks', selectedSubmission.remarks)}
                       </>
                     ) : isTgpl ? (
                       <>
@@ -1050,6 +1047,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         {renderField('Road Type', 'road_type', selectedSubmission.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
                         {renderField('Road Width', 'road_width_mtrs', selectedSubmission.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '10', '12', '16', '18', '20', '24', '25', '30'])}
                         {renderField('Earthing', 'pole_earthing_exists', selectedSubmission.pole_earthing_exists, ['YES', 'NO'])}
+                        {renderField('Remarks', 'remarks', selectedSubmission.remarks)}
                         
                         <div className="col-span-3 border-t pt-2 mt-2 font-semibold text-gray-700">Proposal Form</div>
                         {renderField('Req ARM No', 'req_arm_number', selectedSubmission.req_arm_number, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
@@ -1083,6 +1081,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         {renderField('Road Type', 'road_type', selectedSubmission.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
                         {renderField('Road Width', 'road_width_mtrs', selectedSubmission.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '10', '12', '16', '18', '20', '24', '25', '30'])}
                         {renderField('Earthing', 'pole_earthing_exists', selectedSubmission.pole_earthing_exists, ['YES', 'NO'])}
+                        {renderField('Remarks', 'remarks', selectedSubmission.remarks)}
                       </>
                     )}
                   </div>

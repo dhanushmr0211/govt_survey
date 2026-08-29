@@ -276,7 +276,8 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', _d
         NULL as light_wattage_4,
         NULL as light_wattage_5,
         NULL as dedicated_wire,
-        NULL as infra_gap
+        NULL as infra_gap,
+        p.remarks as remarks
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
       WHERE p.ward_id = $1 AND p.is_deleted = FALSE ${dateFilterP} ${scopeFilter}
@@ -356,7 +357,8 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', _d
         i.light_wattage_4,
         i.light_wattage_5,
         i.dedicated_wire,
-        i.infra_gap
+        i.infra_gap,
+        i.remarks as remarks
       FROM tgpl_installations i
       JOIN wards w ON i.ward_id = w.id
       WHERE i.ward_id = $1 AND i.is_deleted = FALSE ${dateFilterI} ${scopeFilter}
@@ -391,8 +393,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
     params.push(fromDate, toDate);
   }
 
-  const includeSurvey = !surveyType || surveyType === 'survey';
-  const includeInst = !surveyType || surveyType === 'installation';
+  const includeSurvey = !surveyType || surveyType === 'all' || surveyType === 'survey';
+  const includeInst = !surveyType || surveyType === 'all' || surveyType === 'installation';
 
   const subQueries = [];
 
@@ -414,7 +416,7 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         p.meter_type,
         p.meter_rr_number,
         p.meter_serial_number,
-        NULL::text as meter_condition,
+        p.meter_dimensional_status as meter_condition,
         p.latitude,
         p.longitude,
         p.conductor_type,
@@ -474,7 +476,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         NULL as light_wattage_4,
         NULL as light_wattage_5,
         NULL as dedicated_wire,
-        NULL as infra_gap
+        NULL as infra_gap,
+        p.remarks as remarks
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
       WHERE p.project_id = $1 AND p.status = 'PENDING' AND p.is_deleted = FALSE
@@ -562,7 +565,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         i.light_wattage_4,
         i.light_wattage_5,
         i.dedicated_wire,
-        i.infra_gap
+        i.infra_gap,
+        i.remarks as remarks
       FROM tgpl_installations i
       JOIN wards w ON i.ward_id = w.id
       WHERE i.project_id = $1 AND i.status = 'PENDING' AND i.is_deleted = FALSE
@@ -698,7 +702,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         NULL as light_wattage_4,
         NULL as light_wattage_5,
         NULL as dedicated_wire,
-        NULL as infra_gap
+        NULL as infra_gap,
+        p.remarks as remarks
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
       WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
@@ -790,7 +795,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         i.light_wattage_4,
         i.light_wattage_5,
         i.dedicated_wire,
-        i.infra_gap
+        i.infra_gap,
+        i.remarks as remarks
       FROM tgpl_installations i
       JOIN wards w ON i.ward_id = w.id
       WHERE i.project_id = $1 AND i.status = 'CONFIRMED' AND i.is_deleted = FALSE
@@ -807,7 +813,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
     SELECT *, COUNT(*) OVER() AS total_count FROM (
       ${queryBody}
     ) combined
-    ORDER BY created_at DESC
+    ORDER BY confirmed_at DESC
     LIMIT $2 OFFSET $3
   `;
 
@@ -912,7 +918,8 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         NULL as light_wattage_4,
         NULL as light_wattage_5,
         NULL as dedicated_wire,
-        NULL as infra_gap
+        NULL as infra_gap,
+        p.remarks as remarks
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
       WHERE p.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date = $2 AND p.is_deleted = FALSE
@@ -999,7 +1006,8 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         i.light_wattage_4,
         i.light_wattage_5,
         i.dedicated_wire,
-        i.infra_gap
+        i.infra_gap,
+        i.remarks as remarks
       FROM tgpl_installations i
       JOIN wards w ON i.ward_id = w.id
       WHERE i.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date = $2 AND i.is_deleted = FALSE
@@ -1330,6 +1338,9 @@ async function getReportData(projectId, districtId, tillDate, ulbId, _districtSc
     const pSql = `
       SELECT 
         p.*,
+        COALESCE(p.image_url_1, img1.url_full) as image_url_1,
+        COALESCE(p.image_url_2, img2.url_full) as image_url_2,
+        COALESCE(p.image_url_3, img3.url_full) as image_url_3,
         p.created_by as user_id,
         NULL::text as user_name,
         w.name as ulb_name,
@@ -1337,6 +1348,18 @@ async function getReportData(projectId, districtId, tillDate, ulbId, _districtSc
         p.ccms_number as switch_point_number
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'pole' AND entity_id = p.id ORDER BY id ASC LIMIT 1 OFFSET 0
+      ) img1 ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'pole' AND entity_id = p.id ORDER BY id ASC LIMIT 1 OFFSET 1
+      ) img2 ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'pole' AND entity_id = p.id ORDER BY id ASC LIMIT 1 OFFSET 2
+      ) img3 ON TRUE
       WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
       AND ($2::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $2)
       AND ($3::int IS NULL OR p.ward_id = $3)
@@ -1353,6 +1376,9 @@ async function getReportData(projectId, districtId, tillDate, ulbId, _districtSc
     const iSql = `
       SELECT 
         i.*,
+        COALESCE(i.image_url_1, img1.url_full) as image_url_1,
+        COALESCE(i.image_url_2, img2.url_full) as image_url_2,
+        COALESCE(i.image_url_3, img3.url_full) as image_url_3,
         i.created_by as user_id,
         NULL::text as user_name,
         w.name as ulb_name,
@@ -1360,6 +1386,18 @@ async function getReportData(projectId, districtId, tillDate, ulbId, _districtSc
         i.ccms_number as switch_point_number
       FROM tgpl_installations i
       JOIN wards w ON i.ward_id = w.id
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'installation' AND entity_id = i.id ORDER BY id ASC LIMIT 1 OFFSET 0
+      ) img1 ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'installation' AND entity_id = i.id ORDER BY id ASC LIMIT 1 OFFSET 1
+      ) img2 ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'installation' AND entity_id = i.id ORDER BY id ASC LIMIT 1 OFFSET 2
+      ) img3 ON TRUE
       WHERE i.project_id = $1 AND i.status = 'CONFIRMED' AND i.is_deleted = FALSE
       AND ($2::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date <= $2)
       AND ($3::int IS NULL OR i.ward_id = $3)
@@ -1465,7 +1503,8 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
         NULL as arm_status_2,
         NULL as light_wattage,
         NULL as dedicated_wire,
-        NULL as infra_gap
+        NULL as infra_gap,
+        p.remarks as remarks
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
       LEFT JOIN users u_cre ON p.created_by = u_cre.id
@@ -1535,7 +1574,8 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
         i.arm_status_2,
         i.light_wattage,
         i.dedicated_wire,
-        i.infra_gap
+        i.infra_gap,
+        i.remarks as remarks
       FROM tgpl_installations i
       JOIN wards w ON i.ward_id = w.id
       LEFT JOIN users u_cre ON i.created_by = u_cre.id

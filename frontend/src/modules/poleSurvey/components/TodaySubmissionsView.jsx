@@ -742,47 +742,63 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                         {renderField('RR Number', 'meter_rr_number', selectedSubmission.meter_rr_number)}
                         {renderField('Serial Number', 'meter_serial_number', selectedSubmission.meter_serial_number)}
                         {renderField('Condition', 'meter_condition', selectedSubmission.meter_condition, ['working', 'not working', 'missing'])}
+                        {renderField('Remarks', 'remarks', selectedSubmission.remarks)}
                       </>
                     ) : isTgpl ? (
                       selectedSubmission.survey_type === 'installation' ? (
                         <>
                           {renderField('Ward No', 'ward_number', selectedSubmission.ward_number)}
                           {renderField('CCMS No', 'ccms_number', selectedSubmission.ccms_number)}
-                          {renderField('Pole No', 'pole_number', selectedSubmission.identifier)}
+                          {renderField('Pole No', 'pole_number', selectedSubmission.identifier || selectedSubmission.pole_number)}
+                          {renderField('Pole Type', 'pole_type', selectedSubmission.pole_type, ['RCC', 'TUBULAR', 'HIGH MAST', 'MINI MAST'])}
                           {renderField('Lights Count', 'how_many_lights_in_pole', selectedSubmission.how_many_lights_in_pole, Array.from({length: 6}, (_, i) => String(i)))}
                           {Number(formData.how_many_lights_in_pole || selectedSubmission.how_many_lights_in_pole || 0) >= 1 && (
                             <>
-                              {renderField('Light 1 Type', 'light_type', selectedSubmission.light_type, ['NEW LED', 'OLD LED'])}
-                              {renderField('Light 1 Capacity', 'light_capacity', selectedSubmission.light_capacity, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                              {renderField('Light 1 Type', 'light_type', selectedSubmission.light_type, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                              {renderField('Light 1 Wattage', 'light_wattage', selectedSubmission.light_wattage || selectedSubmission.light_capacity, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                              {renderField('Light 1 Status', 'light_status', selectedSubmission.light_status, ['WORKING', 'NOT WORKING'])}
+                              {renderField('Light 1 ARM Status', 'arm_status', selectedSubmission.arm_status, ['NEW', 'OLD', 'EMPTY'])}
                             </>
                           )}
                           {Number(formData.how_many_lights_in_pole || selectedSubmission.how_many_lights_in_pole || 0) >= 2 && (
                             <>
-                              {renderField('Light 2 Type', 'light_type_2', selectedSubmission.light_type_2, ['NEW LED', 'OLD LED'])}
-                              {renderField('Light 2 Capacity', 'light_capacity_2', selectedSubmission.light_capacity_2, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                              {renderField('Light 2 Type', 'light_type_2', selectedSubmission.light_type_2, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                              {renderField('Light 2 Wattage', 'light_wattage_2', selectedSubmission.light_wattage_2 || selectedSubmission.light_capacity_2, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                              {renderField('Light 2 Status', 'light_status_2', selectedSubmission.light_status_2, ['WORKING', 'NOT WORKING'])}
+                              {renderField('Light 2 ARM Status', 'arm_status_2', selectedSubmission.arm_status_2, ['NEW', 'OLD', 'EMPTY'])}
                             </>
                           )}
                           {Number(formData.how_many_lights_in_pole || selectedSubmission.how_many_lights_in_pole || 0) >= 3 && (
                             <>
-                              {renderField('Light 3 Type', 'light_type_3', selectedSubmission.light_type_3, ['NEW LED', 'OLD LED'])}
-                              {renderField('Light 3 Capacity', 'light_capacity_3', selectedSubmission.light_capacity_3, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                              {renderField('Light 3 Type', 'light_type_3', selectedSubmission.light_type_3, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                              {renderField('Light 3 Wattage', 'light_wattage_3', selectedSubmission.light_wattage_3 || selectedSubmission.light_capacity_3, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                              {renderField('Light 3 Status', 'light_status_3', selectedSubmission.light_status_3, ['WORKING', 'NOT WORKING'])}
+                              {renderField('Light 3 ARM Status', 'arm_status_3', selectedSubmission.arm_status_3, ['NEW', 'OLD', 'EMPTY'])}
                             </>
                           )}
                           {Number(formData.how_many_lights_in_pole || selectedSubmission.how_many_lights_in_pole || 0) >= 4 && (
                             <>
-                              {renderField('Light 4 Type', 'light_type_4', selectedSubmission.light_type_4, ['NEW LED', 'OLD LED'])}
-                              {renderField('Light 4 Capacity', 'light_capacity_4', selectedSubmission.light_capacity_4, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                              {renderField('Light 4 Type', 'light_type_4', selectedSubmission.light_type_4, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                              {renderField('Light 4 Wattage', 'light_wattage_4', selectedSubmission.light_wattage_4 || selectedSubmission.light_capacity_4, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                              {renderField('Light 4 Status', 'light_status_4', selectedSubmission.light_status_4, ['WORKING', 'NOT WORKING'])}
+                              {renderField('Light 4 ARM Status', 'arm_status_4', selectedSubmission.arm_status_4, ['NEW', 'OLD', 'EMPTY'])}
                             </>
                           )}
                           {Number(formData.how_many_lights_in_pole || selectedSubmission.how_many_lights_in_pole || 0) >= 5 && (
                             <>
-                              {renderField('Light 5 Type', 'light_type_5', selectedSubmission.light_type_5, ['NEW LED', 'OLD LED'])}
-                              {renderField('Light 5 Capacity', 'light_capacity_5', selectedSubmission.light_capacity_5, ['40 W', '65 W', '90 W', '100 W', '150 W', '200 W', '240 W'])}
+                              {renderField('Light 5 Type', 'light_type_5', selectedSubmission.light_type_5, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                              {renderField('Light 5 Wattage', 'light_wattage_5', selectedSubmission.light_wattage_5 || selectedSubmission.light_capacity_5, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                              {renderField('Light 5 Status', 'light_status_5', selectedSubmission.light_status_5, ['WORKING', 'NOT WORKING'])}
+                              {renderField('Light 5 ARM Status', 'arm_status_5', selectedSubmission.arm_status_5, ['NEW', 'OLD', 'EMPTY'])}
                             </>
                           )}
+                          {renderField('Dedicated Wire', 'dedicated_wire', selectedSubmission.dedicated_wire || selectedSubmission.req_dedicated_wire, ['YES', 'NO'])}
+                          {renderField('Infra Gap', 'infra_gap', selectedSubmission.infra_gap, ['UG CABLE DAMAGE', 'AB CABLE DAMAGE', 'PC MISSING', 'OPEN JUNCTION BOX', 'POWER CABLE ON GROUND', 'NA'])}
+                          {renderField('Remarks', 'remarks', selectedSubmission.remarks)}
                         </>
                       ) : (
                         <>
+                          {renderField('Ward No', 'ward_number', selectedSubmission.ward_number)}
                           {renderField('DTC No', 'dtc_number', selectedSubmission.dtc_number)}
                           {renderField('DTC Capacity', 'dtc_capacity', selectedSubmission.dtc_capacity)}
                           {renderField('CCMS No', 'ccms_number', selectedSubmission.ccms_number)}
@@ -810,6 +826,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                           {renderField('Road Type', 'road_type', selectedSubmission.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
                           {renderField('Road Width (m)', 'road_width_mtrs', selectedSubmission.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '10', '12', '16', '18', '20', '24', '25', '30'])}
                           {renderField('Earthing', 'pole_earthing_exists', selectedSubmission.pole_earthing_exists, ['YES', 'NO'])}
+                          {renderField('Remarks', 'remarks', selectedSubmission.remarks)}
                           
                           <div className="col-span-2 border-t pt-2 mt-2 font-semibold text-gray-700">Proposal Form</div>
                           {renderField('Req ARM No', 'req_arm_number', selectedSubmission.req_arm_number, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
@@ -821,6 +838,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                       )
                     ) : (
                       <>
+                        {renderField('Ward No', 'ward_number', selectedSubmission.ward_number)}
                         {renderField('Switch Point No', 'switch_point_number', selectedSubmission.switch_point_number)}
                         {renderField('Pole No', 'pole_number', selectedSubmission.identifier)}
                         {renderField('Conductor Type', 'conductor_type', selectedSubmission.conductor_type, ['ABC', 'ACSR', 'UG'])}
@@ -843,6 +861,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                         {renderField('Road Type', 'road_type', selectedSubmission.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
                         {renderField('Road Width (m)', 'road_width_mtrs', selectedSubmission.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '10', '12', '16', '18', '20', '24', '25', '30'])}
                         {renderField('Earthing', 'pole_earthing_exists', selectedSubmission.pole_earthing_exists, ['YES', 'NO'])}
+                        {renderField('Remarks', 'remarks', selectedSubmission.remarks)}
                       </>
                     )}
                   </div>

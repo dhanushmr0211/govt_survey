@@ -55,7 +55,10 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
   const statusLower = (pole?.status || '').toLowerCase();
+  const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
+  const isCreator = pole?.created_by === user?.id;
   const canEdit = user?.role === 'MASTER_ADMIN' || 
+    (isMobileSurveyor && statusLower === 'pending') ||
     (activeProject?.section_i && statusLower === 'pending') || 
     (activeProject?.section_j && statusLower === 'confirmed');
   const [formData, setFormData] = useState({
@@ -173,7 +176,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
     mutationFn: async () => {
       const isBallari = (pole?.district_name || '').toLowerCase().includes('ballari');
       const isRestricted = !isTgpl && !isBallari && isMobileEditRestricted();
-      const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width', 'latitude', 'longitude']);
+      const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'pole_number', 'road_type', 'road_width', 'latitude', 'longitude', 'remarks']);
       
       let sanitized = { ...formData };
       if (isRestricted) {
@@ -575,6 +578,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                     )}
                     {renderField('Dedicated Wire', 'dedicated_wire', pole.dedicated_wire || pole.req_dedicated_wire, ['YES', 'NO'])}
                     {renderField('Infra Gap', 'infra_gap', pole.infra_gap, ['UG CABLE DAMAGE', 'AB CABLE DAMAGE', 'PC MISSING', 'OPEN JUNCTION BOX', 'POWER CABLE ON GROUND', 'NA'])}
+                    {renderField('Remarks', 'remarks', pole.remarks)}
                   </>
                 ) : isTgpl ? (
                   <>
@@ -606,6 +610,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                     {renderField('Road Type', 'road_type', pole.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
                     {renderField('Road Width', 'road_width_mtrs', pole.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '10', '12', '16', '18', '20', '24', '25', '30'])}
                     {renderField('Earthing', 'pole_earthing_exists', pole.pole_earthing_exists, ['YES', 'NO'])}
+                    {renderField('Remarks', 'remarks', pole.remarks)}
                     
                     <div className="col-span-3 border-t pt-2 mt-2 font-semibold text-gray-700">Proposal Form</div>
                     {renderField('Req ARM No', 'req_arm_number', pole.req_arm_number, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
@@ -639,6 +644,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                     {renderField('Road Type', 'road_type', pole.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
                     {renderField('Road Width', 'road_width_mtrs', pole.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '10', '12', '16', '18', '20', '24', '25', '30'])}
                     {renderField('Earthing', 'pole_earthing_exists', pole.pole_earthing_exists, ['YES', 'NO'])}
+                    {renderField('Remarks', 'remarks', pole.remarks)}
                   </>
                 )}
               </div>

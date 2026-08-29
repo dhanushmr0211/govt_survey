@@ -54,6 +54,7 @@ export const PoleForm = ({ ulb, onBack, projectId }) => {
     req_dedicated_wire: '',
     pole_defective: false,
     arm_deteriorated: false,
+    remarks: '',
   });
   const [photos, setPhotos] = useState({ image1: null, image2: null });
   const [cameraTarget, setCameraTarget] = useState(null);
@@ -155,6 +156,7 @@ export const PoleForm = ({ ulb, onBack, projectId }) => {
         pole_to_pole_distance: toNumberOrNull(formData.distance_mtrs),
         road_width_mtrs: toNumberOrNull(formData.road_width),
         present_arm_length: toNumberOrNull(formData.present_arm_length),
+        remarks: formData.remarks || null,
       };
 
       const res = await axios.post(`${API_BASE_URL}/projects/${projectId}/tgpl2-survey/poles`, polePayload, {
@@ -502,6 +504,17 @@ export const PoleForm = ({ ulb, onBack, projectId }) => {
             <option value="no">No</option>
             <option value="yes">Yes</option>
           </select>
+        </div>
+        <div className="pt-2">
+          <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Additional Remarks</label>
+          <textarea
+            name="remarks"
+            value={formData.remarks}
+            onChange={handleChange}
+            placeholder="Enter remarks or notes..."
+            rows={2}
+            className="w-full p-2 border rounded text-sm bg-white focus:ring-1 focus:ring-primary focus:border-primary"
+          />
         </div>
       </div>
 

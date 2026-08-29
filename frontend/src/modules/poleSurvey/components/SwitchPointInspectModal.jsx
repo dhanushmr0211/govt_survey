@@ -135,7 +135,7 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
     mutationFn: async () => {
       const isBallari = (switchPoint?.district_name || '').toLowerCase().includes('ballari');
       const isRestricted = !isTgpl && !isBallari && isMobileEditRestricted();
-      const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'road_type', 'road_width', 'latitude', 'longitude']);
+      const MOBILE_ALLOWED = new Set(['ward_number', 'switch_point_id', 'switch_point_number', 'road_type', 'road_width', 'latitude', 'longitude', 'remarks']);
       
       let sanitized = { ...formData };
       if (isRestricted) {
@@ -335,6 +335,7 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
                     {renderField('RR Number', 'meter_rr_number', switchPoint.meter_rr_number)}
                     {renderField('Serial Number', 'meter_serial_number', switchPoint.meter_serial_number)}
                     {renderField('Meter Dim. Status', 'meter_condition', switchPoint.meter_condition, ['Working', 'not working', 'missing', 'door lock', 'no meter'])}
+                    {renderField('Remarks', 'remarks', switchPoint.remarks)}
                   </>
                 ) : (
                   <>
@@ -346,6 +347,7 @@ export const SwitchPointInspectModal = ({ switchPoint: initialSwitchPoint, onClo
                     {renderField('RR Number', 'meter_rr_number', switchPoint.meter_rr_number)}
                     {renderField('Serial Number', 'meter_serial_number', switchPoint.meter_serial_number)}
                     {renderField('Meter Condition', 'meter_condition', switchPoint.meter_condition, ['working', 'not working', 'missing'])}
+                    {renderField('Remarks', 'remarks', switchPoint.remarks)}
                   </>
                 )}
               </div>

@@ -3,10 +3,10 @@ const { query } = require('../../../config/db');
 async function createSwitchPoint(projectId, data, createdBy) {
   const result = await query(
     `INSERT INTO switch_points
-      (project_id, ulb_id, ward_number, switch_point_number, latitude, longitude, switch_point_type, meter_exists, meter_type, meter_rr_number, meter_serial_number, meter_condition, created_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      (project_id, ulb_id, ward_number, switch_point_number, latitude, longitude, switch_point_type, meter_exists, meter_type, meter_rr_number, meter_serial_number, meter_condition, remarks, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING *`,
-    [projectId, data.ulb_id, data.ward_number, data.switch_point_number, data.latitude, data.longitude, data.switch_point_type, data.meter_exists, data.meter_type, data.meter_rr_number, data.meter_serial_number, data.meter_condition, createdBy]
+    [projectId, data.ulb_id, data.ward_number, data.switch_point_number, data.latitude, data.longitude, data.switch_point_type, data.meter_exists, data.meter_type, data.meter_rr_number, data.meter_serial_number, data.meter_condition, data.remarks || null, createdBy]
   );
   return result.rows[0];
 }
@@ -23,7 +23,7 @@ async function updateSwitchPoint(id, projectId, data) {
   const allowedFields = [
     'ward_number', 'switch_point_number', 'switch_point_type', 'meter_exists',
     'meter_type', 'meter_rr_number', 'meter_serial_number', 'meter_condition',
-    'ulb_id', 'latitude', 'longitude'
+    'ulb_id', 'latitude', 'longitude', 'remarks'
   ];
 
   const setClauses = [];

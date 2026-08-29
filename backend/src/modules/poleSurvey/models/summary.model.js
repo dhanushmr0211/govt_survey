@@ -195,6 +195,9 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', fr
       p.light_capacity_2,
       p.road_width_mtrs,
       p.pole_earthing_exists,
+      sp.remarks as sp_remarks,
+      p.remarks as pole_remarks,
+      p.remarks as remarks,
       p.confirmed_by as pole_confirmed_by,
       p.confirmed_at as pole_confirmed_at,
       u2.name as pole_confirmed_by_name,
@@ -292,7 +295,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         NULL as road_category,
         NULL as road_type,
         NULL as road_width_mtrs,
-        NULL as pole_earthing_exists
+        NULL as pole_earthing_exists,
+        sp.remarks as remarks
       FROM switch_points sp
       JOIN users u ON sp.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
@@ -344,7 +348,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         p.road_category,
         p.road_type,
         p.road_width_mtrs,
-        p.pole_earthing_exists
+        p.pole_earthing_exists,
+        p.remarks as remarks
       FROM poles p
       JOIN switch_points sp ON p.switch_point_id = sp.id
       JOIN users u ON p.created_by = u.id
@@ -393,7 +398,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         NULL as road_category,
         NULL as road_type,
         NULL as road_width_mtrs,
-        NULL as pole_earthing_exists
+        NULL as pole_earthing_exists,
+        sp.remarks as remarks
       FROM switch_points sp
       JOIN users u ON sp.created_by = u.id
       LEFT JOIN ulbs ulb ON sp.ulb_id = ulb.id
@@ -440,7 +446,8 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
         p.road_category,
         p.road_type,
         p.road_width_mtrs,
-        p.pole_earthing_exists
+        p.pole_earthing_exists,
+        p.remarks as remarks
       FROM poles p
       JOIN switch_points sp ON p.switch_point_id = sp.id
       JOIN users u ON p.created_by = u.id
@@ -535,7 +542,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         NULL::text as road_category,
         NULL::text as road_type,
         NULL::numeric as road_width_mtrs,
-        NULL::text as pole_earthing_exists
+        NULL::text as pole_earthing_exists,
+        sp.remarks as remarks
       FROM switch_points sp
       JOIN users u ON sp.created_by = u.id
       LEFT JOIN users u2 ON sp.confirmed_by = u2.id
@@ -587,7 +595,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         p.road_category,
         p.road_type,
         p.road_width_mtrs,
-        p.pole_earthing_exists
+        p.pole_earthing_exists,
+        p.remarks as remarks
       FROM poles p
       JOIN switch_points sp ON p.switch_point_id = sp.id
       JOIN users u ON p.created_by = u.id
@@ -640,7 +649,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         NULL::text as road_category,
         NULL::text as road_type,
         NULL::numeric as road_width_mtrs,
-        NULL::text as pole_earthing_exists
+        NULL::text as pole_earthing_exists,
+        sp.remarks as remarks
       FROM switch_points sp
       JOIN users u ON sp.created_by = u.id
       LEFT JOIN users u2 ON sp.confirmed_by = u2.id
@@ -692,7 +702,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         p.road_category,
         p.road_type,
         p.road_width_mtrs,
-        p.pole_earthing_exists
+        p.pole_earthing_exists,
+        p.remarks as remarks
       FROM poles p
       JOIN switch_points sp ON p.switch_point_id = sp.id
       JOIN users u ON p.created_by = u.id
@@ -780,7 +791,8 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         NULL as road_category,
         NULL as road_type,
         NULL as road_width_mtrs,
-        NULL as pole_earthing_exists
+        NULL as pole_earthing_exists,
+        sp.remarks as remarks
       FROM switch_points sp
       JOIN users u ON sp.created_by = u.id
       LEFT JOIN users uc ON sp.confirmed_by = uc.id
@@ -832,7 +844,8 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
         p.road_category,
         p.road_type,
         p.road_width_mtrs,
-        p.pole_earthing_exists
+        p.pole_earthing_exists,
+        p.remarks as remarks
       FROM poles p
       JOIN switch_points sp ON p.switch_point_id = sp.id
       JOIN users u ON p.created_by = u.id
@@ -1226,7 +1239,8 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
         NULL as road_category,
         NULL as road_type,
         NULL::numeric as road_width_mtrs,
-        NULL as pole_earthing_exists
+        NULL as pole_earthing_exists,
+        sp.remarks as remarks
       FROM switch_points sp
       LEFT JOIN users u_cre ON sp.created_by = u_cre.id
       LEFT JOIN users u_conf ON sp.confirmed_by = u_conf.id
@@ -1282,7 +1296,8 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
         p.road_category,
         p.road_type,
         p.road_width_mtrs,
-        p.pole_earthing_exists
+        p.pole_earthing_exists,
+        p.remarks as remarks
       FROM poles p
       JOIN switch_points sp ON p.switch_point_id = sp.id
       LEFT JOIN users u_cre ON p.created_by = u_cre.id
@@ -1339,7 +1354,8 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
         NULL as road_category,
         NULL as road_type,
         NULL::numeric as road_width_mtrs,
-        NULL as pole_earthing_exists
+        NULL as pole_earthing_exists,
+        sp.remarks as remarks
       FROM switch_points sp
       LEFT JOIN users u_cre ON sp.created_by = u_cre.id
       LEFT JOIN users u_conf ON sp.confirmed_by = u_conf.id
@@ -1395,7 +1411,8 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, districtSc
         p.road_category,
         p.road_type,
         p.road_width_mtrs,
-        p.pole_earthing_exists
+        p.pole_earthing_exists,
+        p.remarks as remarks
       FROM poles p
       JOIN switch_points sp ON p.switch_point_id = sp.id
       LEFT JOIN users u_cre ON p.created_by = u_cre.id

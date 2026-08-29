@@ -1151,6 +1151,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                             {renderField('RR Number', 'meter_rr_number', selectedDetail.data.meter_rr_number || selectedDetail.data.rr_number)}
                             {renderField('Serial Number', 'meter_serial_number', selectedDetail.data.meter_serial_number || selectedDetail.data.serial_number)}
                             {renderField('Meter Dim. Status', 'meter_condition', selectedDetail.data.meter_condition || selectedDetail.data.meter_status, ['Working', 'not working', 'missing', 'door lock', 'no meter'])}
+                            {renderField('Remarks', 'remarks', selectedDetail.data.remarks || selectedDetail.data.sp_remarks)}
                           </>
                         )
                       ) : (
@@ -1163,6 +1164,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                           {renderField('RR Number', 'meter_rr_number', selectedDetail.data.meter_rr_number)}
                           {renderField('Serial Number', 'meter_serial_number', selectedDetail.data.meter_serial_number)}
                           {renderField('Meter Condition', 'meter_condition', selectedDetail.data.meter_condition, ['working', 'not working', 'missing'])}
+                          {renderField('Remarks', 'remarks', selectedDetail.data.remarks || selectedDetail.data.sp_remarks)}
                         </>
                       )
                     ) : isCcmsLayout ? (
@@ -1215,6 +1217,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                           )}
                           {renderField('Dedicated Wire', 'dedicated_wire', selectedDetail.data.dedicated_wire || selectedDetail.data.req_dedicated_wire, ['YES', 'NO'])}
                           {renderField('Infra Gap', 'infra_gap', selectedDetail.data.infra_gap, ['UG CABLE DAMAGE', 'AB CABLE DAMAGE', 'PC MISSING', 'OPEN JUNCTION BOX', 'POWER CABLE ON GROUND', 'NA'])}
+                          {renderField('Remarks', 'remarks', selectedDetail.data.remarks || selectedDetail.data.pole_remarks)}
                         </>
                       ) : (
                         <>
@@ -1246,6 +1249,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                           {renderField('Road Type', 'road_type', selectedDetail.data.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
                           {renderField('Road Width', 'road_width_mtrs', selectedDetail.data.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '10', '12', '16', '18', '20', '24', '25', '30'])}
                           {renderField('Earthing', 'pole_earthing_exists', selectedDetail.data.pole_earthing_exists, ['YES', 'NO'])}
+                          {renderField('Remarks', 'remarks', selectedDetail.data.remarks || selectedDetail.data.pole_remarks)}
                           
                           <div className="col-span-3 border-t pt-2 mt-2 font-semibold text-gray-700">Proposal Form</div>
                           {renderField('Req ARM No', 'req_arm_number', selectedDetail.data.req_arm_number, ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'])}
@@ -1280,6 +1284,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                         {renderField('Road Type', 'road_type', selectedDetail.data.road_type, ['MAIN ROAD', 'SUB MAIN ROAD', 'RESIDENTIAL ROAD', 'GALLI ROAD'])}
                         {renderField('Road Width', 'road_width_mtrs', selectedDetail.data.road_width_mtrs, ['4', '5', '6', '7', '8', '9', '10', '12', '16', '18', '20', '24', '25', '30'])}
                         {renderField('Earthing', 'pole_earthing_exists', selectedDetail.data.pole_earthing_exists, ['YES', 'NO'])}
+                        {renderField('Remarks', 'remarks', selectedDetail.data.remarks || selectedDetail.data.pole_remarks)}
                       </>
                     )}
                   </div>

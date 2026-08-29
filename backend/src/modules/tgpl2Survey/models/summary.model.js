@@ -132,6 +132,8 @@ async function getWardDetails(projectId, wardId) {
       p.status,
       p.image_url_1,
       p.image_url_2,
+      p.remarks,
+      p.remarks AS pole_remarks,
       p.how_many_lights_in_pole,
       p.arm_type,
       p.arm_status,
@@ -572,8 +574,8 @@ async function getReportData(projectId) {
       p.road_width,
       p.pole_defective,
       p.arm_deteriorated,
-      p.image_url_1,
-      p.image_url_2,
+      COALESCE(p.image_url_1, img1.url_full) as image_url_1,
+      COALESCE(p.image_url_2, img2.url_full) as image_url_2,
       p.latitude,
       p.longitude,
       p.status,
@@ -584,6 +586,14 @@ async function getReportData(projectId) {
      LEFT JOIN tgpl2_wards w ON p.ward_id = w.id
      LEFT JOIN tgpl2_ccms_points c ON p.ccms_id = c.id
      LEFT JOIN tgpl2_switch_points sp ON p.switch_point_id = sp.id
+     LEFT JOIN LATERAL (
+       SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+       FROM entity_files WHERE entity_type = 'pole' AND entity_id = p.id ORDER BY id ASC LIMIT 1 OFFSET 0
+     ) img1 ON TRUE
+     LEFT JOIN LATERAL (
+       SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+       FROM entity_files WHERE entity_type = 'pole' AND entity_id = p.id ORDER BY id ASC LIMIT 1 OFFSET 1
+     ) img2 ON TRUE
      WHERE p.project_id = $1 AND p.is_deleted IS NOT TRUE
      ORDER BY w.name ASC, c.ccms_number ASC, sp.switch_point_number ASC, p.pole_number ASC`,
     [projectId]

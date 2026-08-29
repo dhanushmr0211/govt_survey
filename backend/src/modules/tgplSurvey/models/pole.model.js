@@ -13,7 +13,7 @@ async function createPole(projectId, data, createdBy) {
       image_url_1, image_url_2, req_arm_number, req_arm_length, req_led_lights_no,
       req_led_wattage, req_dedicated_wire, created_by,
       survey_type, light_type_3, light_capacity_3, light_type_4, light_capacity_4, light_type_5, light_capacity_5,
-      offline_submission_id
+      offline_submission_id, remarks
     ) VALUES (
       $1, $2, $3, $4, $5,
       $6, $7, $8, $9, $10,
@@ -25,7 +25,7 @@ async function createPole(projectId, data, createdBy) {
       $34, $35, $36, $37, $38,
       $39, $40, $41,
       $42, $43, $44, $45, $46, $47, $48,
-      $49
+      $49, $50
     ) RETURNING *`,
     [
       projectId,
@@ -76,7 +76,8 @@ async function createPole(projectId, data, createdBy) {
       data.light_capacity_4,
       data.light_type_5,
       data.light_capacity_5,
-      data.offline_submission_id
+      data.offline_submission_id,
+      data.remarks || null
     ]
   );
   return result.rows[0];
@@ -114,7 +115,7 @@ async function updatePole(id, projectId, data) {
     'light_working_status', 'road_category', 'road_type', 'road_width_mtrs', 'pole_earthing_exists',
     'req_arm_number', 'req_arm_length', 'req_led_lights_no', 'req_led_wattage', 'req_dedicated_wire',
     'image_url_1', 'image_url_2', 'survey_type', 'light_type_3', 'light_capacity_3',
-    'light_type_4', 'light_capacity_4', 'light_type_5', 'light_capacity_5'
+    'light_type_4', 'light_capacity_4', 'light_type_5', 'light_capacity_5', 'remarks'
   ];
 
   const setClauses = [];

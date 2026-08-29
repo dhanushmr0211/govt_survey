@@ -16,3 +16,5 @@ __pycache__/
 # Environment configs
 .env
 .env.*
+.gemini
+.gemini.*

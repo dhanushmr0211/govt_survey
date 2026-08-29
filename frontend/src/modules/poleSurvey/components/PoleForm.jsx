@@ -99,6 +99,7 @@ export const PoleForm = ({ ulb, onBack }) => {
     req_led_lights_no: '',
     req_led_wattage: '',
     req_dedicated_wire: '',
+    remarks: '',
   });
   const [photos, setPhotos] = useState({ image1: null, image2: null, image3: null });
   const [compressing, setCompressing] = useState({ image1: false, image2: false, image3: false });
@@ -471,6 +472,7 @@ export const PoleForm = ({ ulb, onBack }) => {
       req_led_lights_no: submitForm.req_led_lights_no,
       req_led_wattage: submitForm.req_led_wattage,
       req_dedicated_wire: submitForm.req_dedicated_wire,
+      remarks: submitForm.remarks || null,
     } : {
       ...submitForm,
       pole_height_mtrs: toNumberOrNull(submitForm.pole_height),
@@ -480,7 +482,8 @@ export const PoleForm = ({ ulb, onBack }) => {
       road_width_mtrs: toNumberOrNull(submitForm.road_width),
       latitude: coords.latitude,
       longitude: coords.longitude,
-      ulb_id: ulb.id
+      ulb_id: ulb.id,
+      remarks: submitForm.remarks || null,
     };
 
     const imageFiles = buildImageFiles();
@@ -1059,8 +1062,20 @@ export const PoleForm = ({ ulb, onBack }) => {
           </div>
         )}
 
-         <div className="space-y-2">
-           <label className="block text-gray-700 font-medium mb-1">Photos {isBallari && '(Compulsory)'}</label>
+        <div>
+          <label className="block text-gray-700 font-medium mb-1">Remarks</label>
+          <textarea
+            name="remarks"
+            value={formData.remarks}
+            onChange={handleChange}
+            placeholder="Enter any remarks or notes..."
+            rows={2}
+            className="w-full p-2 border border-gray-200 rounded focus:ring-1 focus:ring-primary focus:border-primary text-sm"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-gray-700 font-medium mb-1">Photos {isBallari && '(Compulsory)'}</label>
            
            {(isTgpl ? [1, 2] : [1, 2, 3]).map((num) => (
              <div key={num} className="border border-gray-200 p-2 rounded flex flex-col gap-1.5">
