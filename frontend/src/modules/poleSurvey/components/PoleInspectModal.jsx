@@ -257,7 +257,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            type: 'pole',
+            type: pole.survey_type === 'installation' ? 'installation' : 'pole',
             id: pole.id,
             ulb_id: targetUlbId,
             ward_number: targetWard,

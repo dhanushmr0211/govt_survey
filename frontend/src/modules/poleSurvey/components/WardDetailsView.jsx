@@ -251,10 +251,11 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     if (locationChanged) {
       try {
         const id = selectedDetail.type === 'switch_point' ? selectedDetail.data.id : selectedDetail.data.pole_id;
+        const recordType = selectedDetail.data?.survey_type === 'installation' ? 'installation' : selectedDetail.type;
         const res = await axios.post(
           `${API_BASE_URL}/projects/${projectId}/pole-survey/validate-move`,
           {
-            type: selectedDetail.type,
+            type: recordType,
             id: id,
             ulb_id: targetUlbId,
             ward_number: targetWard,

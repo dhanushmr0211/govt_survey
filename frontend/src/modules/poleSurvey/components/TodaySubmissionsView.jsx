@@ -239,10 +239,11 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
 
     if (locationChanged) {
       try {
+        const recordType = selectedSubmission.survey_type === 'installation' ? 'installation' : selectedSubmission.type;
         const res = await axios.post(
           `${API_BASE_URL}/projects/${projectId}/pole-survey/validate-move`,
           {
-            type: selectedSubmission.type,
+            type: recordType,
             id: selectedSubmission.id,
             ulb_id: targetUlbId,
             ward_number: targetWard,
