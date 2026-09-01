@@ -1122,6 +1122,9 @@ export const PoleForm = ({ ulb, onBack }) => {
        {cameraTarget && (
          <InAppCamera
            onClose={() => setCameraTarget(null)}
+           poleNumber={isTgpl ? (formData.pole_number || '') : undefined}
+           wardNumber={isTgpl ? (formData.ward_number || '') : undefined}
+           ccmsNumber={isTgpl ? (formData.ccms_number || '') : undefined}
            onCapture={async (file) => {
              const num = cameraTarget;
              setCameraTarget(null);

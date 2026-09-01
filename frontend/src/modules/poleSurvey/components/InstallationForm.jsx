@@ -723,6 +723,9 @@ export const InstallationForm = ({ ward, onBack }) => {
       {cameraTarget && (
         <InAppCamera
           onClose={() => setCameraTarget(null)}
+          poleNumber={formData.pole_number || ''}
+          wardNumber={ward?.name || ''}
+          ccmsNumber={formData.ccms_number || ''}
           onCapture={async (file) => {
             const num = cameraTarget;
             const key = `image${num}`;
