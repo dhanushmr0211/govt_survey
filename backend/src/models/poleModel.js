@@ -20,7 +20,7 @@ async function createPole(rawData) {
         light_working_status, road_category, road_type, road_width_mtrs, pole_earthing_exists,
         image_url_1, image_url_2, req_arm_number, req_arm_length, req_led_lights_no,
         req_led_wattage, req_dedicated_wire, created_by,
-        survey_type, light_type_3, light_capacity_3, light_type_4, light_capacity_4, light_type_5, light_capacity_5,
+        survey_type, light_type_3, light_capacity_3, light_type_4, light_capacity_4, light_type_5, light_capacity_5, light_type_6, light_capacity_6,
         offline_submission_id, remarks
       ) VALUES (
         $1, $2, $3, $4, $5,
@@ -32,8 +32,8 @@ async function createPole(rawData) {
         $29, $30, $31, $32, $33,
         $34, $35, $36, $37, $38,
         $39, $40, $41,
-        $42, $43, $44, $45, $46, $47, $48,
-        $49, $50
+        $42, $43, $44, $45, $46, $47, $48, $49, $50,
+        $51, $52
       ) RETURNING *`,
       [
         data.project_id,
@@ -84,6 +84,8 @@ async function createPole(rawData) {
         data.light_capacity_4,
         data.light_type_5,
         data.light_capacity_5,
+        data.light_type_6,
+        data.light_capacity_6,
         data.offline_submission_id,
         data.remarks || null
       ]

@@ -46,6 +46,11 @@ export const InstallationForm = ({ ward, onBack }) => {
     light_wattage_5: '',
     light_status_5: '',
     arm_status_5: '',
+    // Light 6
+    light_type_6: '',
+    light_wattage_6: '',
+    light_status_6: '',
+    arm_status_6: '',
     // Wire & Infra
     dedicated_wire: '',
     infra_gap: 'NA',
@@ -262,6 +267,12 @@ export const InstallationForm = ({ ward, onBack }) => {
       light_status_5: lightCount >= 5 ? formData.light_status_5 : '',
       arm_status_5: lightCount >= 5 ? formData.arm_status_5 : '',
 
+      // Light 6
+      light_type_6: lightCount >= 6 ? formData.light_type_6 : '',
+      light_wattage_6: lightCount >= 6 ? formData.light_wattage_6 : '',
+      light_status_6: lightCount >= 6 ? formData.light_status_6 : '',
+      arm_status_6: lightCount >= 6 ? formData.arm_status_6 : '',
+
       // Wire & Infra
       dedicated_wire: formData.dedicated_wire,
       infra_gap: formData.infra_gap,
@@ -367,6 +378,10 @@ export const InstallationForm = ({ ward, onBack }) => {
         light_wattage_5: '',
         light_status_5: '',
         arm_status_5: '',
+        light_type_6: '',
+        light_wattage_6: '',
+        light_status_6: '',
+        arm_status_6: '',
         dedicated_wire: '',
         infra_gap: 'NA',
         remarks: '',
@@ -411,6 +426,10 @@ export const InstallationForm = ({ ward, onBack }) => {
         light_wattage_5: '',
         light_status_5: '',
         arm_status_5: '',
+        light_type_6: '',
+        light_wattage_6: '',
+        light_status_6: '',
+        arm_status_6: '',
         dedicated_wire: '',
         infra_gap: 'NA',
         remarks: '',
@@ -421,9 +440,9 @@ export const InstallationForm = ({ ward, onBack }) => {
     }
   };
 
-  const poleTypeOptions = ['RCC', 'TUBULAR', 'HIGH MAST', 'MINI MAST'];
+  const poleTypeOptions = ['RCC', 'TUBULAR', 'HIGH MAST', 'MINI MAST', 'POST OFF'];
   const lightTypeOptions = ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'];
-  const wattageOptions = ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'];
+  const wattageOptions = ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W', '250 W', '300 W', '400 W'];
   const lightStatusOptions = ['WORKING', 'NOT WORKING'];
   const armStatusOptions = ['NEW', 'OLD', 'EMPTY'];
   const dedicatedWireOptions = ['YES', 'NO'];
@@ -613,7 +632,7 @@ export const InstallationForm = ({ ward, onBack }) => {
             className="w-full p-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
             required
           >
-            {['0', '1', '2', '3', '4', '5'].map((o) => (
+            {['0', '1', '2', '3', '4', '5', '6'].map((o) => (
               <option key={o} value={o}>{o}</option>
             ))}
           </select>

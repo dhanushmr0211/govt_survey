@@ -534,8 +534,8 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                     {renderField('Ward No', 'ward_number', pole.ward_number)}
                     {renderField('CCMS No', 'ccms_number', pole.ccms_number)}
                     {renderField('Pole No', 'pole_number', pole.pole_number)}
-                    {renderField('Pole Type', 'pole_type', pole.pole_type, ['RCC', 'TUBULAR', 'HIGH MAST', 'MINI MAST'])}
-                    {renderField('Lights Count', 'how_many_lights_in_pole', pole.how_many_lights_in_pole, Array.from({length: 6}, (_, i) => String(i)))}
+                    {renderField('Pole Type', 'pole_type', pole.pole_type, ['RCC', 'TUBULAR', 'HIGH MAST', 'MINI MAST', 'POST OFF'])}
+                    {renderField('Lights Count', 'how_many_lights_in_pole', pole.how_many_lights_in_pole, Array.from({length: 7}, (_, i) => String(i)))}
                     {Number(formData.how_many_lights_in_pole || pole.how_many_lights_in_pole || 0) >= 1 && (
                       <>
                         {renderField('Light 1 Type', 'light_type', pole.light_type, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
@@ -574,6 +574,14 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
                         {renderField('Light 5 Wattage', 'light_wattage_5', pole.light_wattage_5 || pole.light_capacity_5, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
                         {renderField('Light 5 Status', 'light_status_5', pole.light_status_5, ['WORKING', 'NOT WORKING'])}
                         {renderField('Light 5 ARM Status', 'arm_status_5', pole.arm_status_5, ['NEW', 'OLD', 'EMPTY'])}
+                      </>
+                    )}
+                    {Number(formData.how_many_lights_in_pole || pole.how_many_lights_in_pole || 0) >= 6 && (
+                      <>
+                        {renderField('Light 6 Type', 'light_type_6', pole.light_type_6, ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'])}
+                        {renderField('Light 6 Wattage', 'light_wattage_6', pole.light_wattage_6 || pole.light_capacity_6, ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W'])}
+                        {renderField('Light 6 Status', 'light_status_6', pole.light_status_6, ['WORKING', 'NOT WORKING'])}
+                        {renderField('Light 6 ARM Status', 'arm_status_6', pole.arm_status_6, ['NEW', 'OLD', 'EMPTY'])}
                       </>
                     )}
                     {renderField('Dedicated Wire', 'dedicated_wire', pole.dedicated_wire || pole.req_dedicated_wire, ['YES', 'NO'])}

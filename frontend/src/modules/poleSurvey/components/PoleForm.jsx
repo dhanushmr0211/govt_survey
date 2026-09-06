@@ -81,6 +81,8 @@ export const PoleForm = ({ ulb, onBack }) => {
     light_capacity_4: '',
     light_type_5: '',
     light_capacity_5: '',
+    light_type_6: '',
+    light_capacity_6: '',
     light_working_status: '',
     road_category: '',
     road_type: '',
@@ -462,6 +464,8 @@ export const PoleForm = ({ ulb, onBack }) => {
       light_capacity_4: submitForm.light_capacity_4,
       light_type_5: submitForm.light_type_5,
       light_capacity_5: submitForm.light_capacity_5,
+      light_type_6: submitForm.light_type_6,
+      light_capacity_6: submitForm.light_capacity_6,
       light_working_status: submitForm.light_working_status,
       road_category: submitForm.road_category,
       road_type: submitForm.road_type,
@@ -852,7 +856,7 @@ export const PoleForm = ({ ulb, onBack }) => {
             <label className="block text-gray-700 font-medium mb-1">How Many Lights in Pole {isTgpl && '*'}</label>
             <select name="how_many_lights" value={formData.how_many_lights} onChange={handleChange} className="w-full p-2 border border-gray-200 rounded" disabled={isRestricted} required={isTgpl || isBallari}>
               <option value="">Select Count</option>
-              {(isTgpl ? ['0', '1', '2', '3', '4', '5'] : Array.from({ length: 13 }, (_, i) => String(i))).map((opt) => (
+              {(isTgpl ? ['0', '1', '2', '3', '4', '5', '6'] : Array.from({ length: 13 }, (_, i) => String(i))).map((opt) => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
@@ -874,7 +878,7 @@ export const PoleForm = ({ ulb, onBack }) => {
         {/* Dynamic Light Fields: When count is selected and > 0 */}
         {Number(formData.how_many_lights) > 0 ? (
           <div className="space-y-3 pt-2 border-t border-gray-100">
-            {Array.from({ length: Math.min(Number(formData.how_many_lights), 5) }, (_, i) => i + 1).map((num) => {
+            {Array.from({ length: Math.min(Number(formData.how_many_lights), 6) }, (_, i) => i + 1).map((num) => {
               const suffix = num === 1 ? '' : `_${num}`;
               return (
                 <div key={num} className="p-3 border border-gray-200 rounded-lg bg-gray-50/50 space-y-2">

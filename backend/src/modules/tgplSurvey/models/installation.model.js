@@ -10,6 +10,7 @@ async function createInstallation(projectId, data, createdBy) {
       light_type_3, light_wattage_3, light_status_3, arm_status_3,
       light_type_4, light_wattage_4, light_status_4, arm_status_4,
       light_type_5, light_wattage_5, light_status_5, arm_status_5,
+      light_type_6, light_wattage_6, light_status_6, arm_status_6,
       dedicated_wire, infra_gap,
       latitude, longitude,
       image_url_1, image_url_2, image_url_3,
@@ -23,11 +24,12 @@ async function createInstallation(projectId, data, createdBy) {
       $16, $17, $18, $19,
       $20, $21, $22, $23,
       $24, $25, $26, $27,
-      $28, $29,
-      $30, $31,
-      $32, $33, $34,
-      $35,
-      $36, $37
+      $28, $29, $30, $31,
+      $32, $33,
+      $34, $35,
+      $36, $37, $38,
+      $39,
+      $40, $41
     ) RETURNING *`,
     [
       projectId,
@@ -57,6 +59,10 @@ async function createInstallation(projectId, data, createdBy) {
       data.light_wattage_5 || data.light_capacity_5 || null,
       data.light_status_5 || null,
       data.arm_status_5 || null,
+      data.light_type_6 || null,
+      data.light_wattage_6 || data.light_capacity_6 || null,
+      data.light_status_6 || null,
+      data.arm_status_6 || null,
       data.dedicated_wire || data.req_dedicated_wire || null,
       data.infra_gap || 'NA',
       data.latitude,
@@ -94,6 +100,7 @@ async function updateInstallation(id, projectId, data) {
     'light_type_3', 'light_wattage_3', 'light_status_3', 'arm_status_3',
     'light_type_4', 'light_wattage_4', 'light_status_4', 'arm_status_4',
     'light_type_5', 'light_wattage_5', 'light_status_5', 'arm_status_5',
+    'light_type_6', 'light_wattage_6', 'light_status_6', 'arm_status_6',
     'dedicated_wire', 'infra_gap', 'latitude', 'longitude',
     'image_url_1', 'image_url_2', 'image_url_3', 'remarks'
   ];
@@ -104,6 +111,7 @@ async function updateInstallation(id, projectId, data) {
   if (data.light_capacity_3 !== undefined && data.light_wattage_3 === undefined) data.light_wattage_3 = data.light_capacity_3;
   if (data.light_capacity_4 !== undefined && data.light_wattage_4 === undefined) data.light_wattage_4 = data.light_capacity_4;
   if (data.light_capacity_5 !== undefined && data.light_wattage_5 === undefined) data.light_wattage_5 = data.light_capacity_5;
+  if (data.light_capacity_6 !== undefined && data.light_wattage_6 === undefined) data.light_wattage_6 = data.light_capacity_6;
   if (data.req_dedicated_wire !== undefined && data.dedicated_wire === undefined) data.dedicated_wire = data.req_dedicated_wire;
 
   const setClauses = [];

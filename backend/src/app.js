@@ -104,6 +104,8 @@ function createApp() {
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_capacity_4 TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_type_5 TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_capacity_5 TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_type_6 TEXT;',
+    'ALTER TABLE poles ADD COLUMN IF NOT EXISTS light_capacity_6 TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS offline_submission_id TEXT;',
     'ALTER TABLE poles ADD COLUMN IF NOT EXISTS pole_condition TEXT;',
     'ALTER TABLE switch_points ADD COLUMN IF NOT EXISTS offline_submission_id TEXT;',
@@ -136,6 +138,10 @@ function createApp() {
       light_wattage_5 VARCHAR(50),
       light_status_5 VARCHAR(50),
       arm_status_5 VARCHAR(50),
+      light_type_6 VARCHAR(100),
+      light_wattage_6 VARCHAR(50),
+      light_status_6 VARCHAR(50),
+      arm_status_6 VARCHAR(50),
       dedicated_wire VARCHAR(20),
       infra_gap VARCHAR(100),
       latitude NUMERIC(10, 7),
@@ -160,6 +166,10 @@ function createApp() {
     'CREATE INDEX IF NOT EXISTS idx_tgpl_inst_status ON tgpl_installations(status);',
     'CREATE INDEX IF NOT EXISTS idx_tgpl_inst_created_at ON tgpl_installations(created_at);',
     'CREATE INDEX IF NOT EXISTS idx_tgpl_inst_deleted ON tgpl_installations(is_deleted);',
+    'ALTER TABLE tgpl_installations ADD COLUMN IF NOT EXISTS light_type_6 VARCHAR(100);',
+    'ALTER TABLE tgpl_installations ADD COLUMN IF NOT EXISTS light_wattage_6 VARCHAR(50);',
+    'ALTER TABLE tgpl_installations ADD COLUMN IF NOT EXISTS light_status_6 VARCHAR(50);',
+    'ALTER TABLE tgpl_installations ADD COLUMN IF NOT EXISTS arm_status_6 VARCHAR(50);',
     `DO $$ BEGIN
        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tgpl_installations' AND column_name='remarks') THEN
          ALTER TABLE tgpl_installations ADD COLUMN remarks TEXT;
