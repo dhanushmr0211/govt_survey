@@ -624,8 +624,8 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
     params.push(fromDate, toDate);
   }
 
-  const includeSurvey = !surveyType || surveyType === 'survey';
-  const includeInst = !surveyType || surveyType === 'installation';
+  const includeSurvey = !surveyType || surveyType === 'all' || surveyType === 'survey';
+  const includeInst = !surveyType || surveyType === 'all' || surveyType === 'installation';
 
   const subQueries = [];
 
@@ -716,7 +716,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         p.remarks as remarks
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
-      WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted = FALSE
+      WHERE p.project_id = $1 AND p.status = 'CONFIRMED' AND p.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR p.created_by = $4)
       AND ($5::int IS NULL OR p.confirmed_by = $5)
       ${pDateFilterP}
@@ -811,7 +811,7 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
         i.remarks as remarks
       FROM tgpl_installations i
       JOIN wards w ON i.ward_id = w.id
-      WHERE i.project_id = $1 AND i.status = 'CONFIRMED' AND i.is_deleted = FALSE
+      WHERE i.project_id = $1 AND i.status = 'CONFIRMED' AND i.is_deleted IS NOT TRUE
       AND ($4::int IS NULL OR i.created_by = $4)
       AND ($5::int IS NULL OR i.confirmed_by = $5)
       ${pDateFilterI}
@@ -1456,8 +1456,8 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
     params.push(fromDate, toDate);
   }
 
-  const includeSurvey = !surveyType || surveyType === 'survey';
-  const includeInst = !surveyType || surveyType === 'installation';
+  const includeSurvey = !surveyType || surveyType === 'all' || surveyType === 'survey';
+  const includeInst = !surveyType || surveyType === 'all' || surveyType === 'installation';
 
   const subQueries = [];
 

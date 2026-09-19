@@ -136,7 +136,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
   const showDeleteButton = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'prelectricals01@gmail.com';
 
   const confirmMutation = useMutation({
-    mutationFn: () => confirmPole(projectId, pole.id),
+    mutationFn: () => confirmPole(projectId, pole.id, pole.survey_type || 'survey'),
     onSuccess: () => {
       onSuccess();
     },
@@ -145,7 +145,7 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const endpoint = isTgpl
-        ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/poles/${pole.id}`
+        ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/poles/${pole.id}?survey_type=${pole.survey_type || 'survey'}`
         : `${API_BASE_URL}/projects/${projectId}/pole-survey/submissions/${pole.id}?type=pole`;
       const response = await fetch(endpoint, {
         method: 'DELETE',
@@ -480,12 +480,12 @@ export const PoleInspectModal = ({ pole: initialPole, onClose, onSuccess }) => {
               </div>
               <div>
                 <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Confirmed By</p>
-                <p className="font-semibold text-slate-900">{pole.confirmed_by_name || 'N/A'}</p>
+                <p className="font-semibold text-slate-900">{pole.confirmed_by_name || pole.pole_confirmed_by_name || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-500 text-[10px] uppercase font-bold tracking-wider">Confirmed At</p>
                 <p className="font-semibold text-slate-900 text-xs">
-                  {pole.confirmed_at ? new Date(pole.confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}
+                  {(pole.confirmed_at || pole.pole_confirmed_at) ? new Date(pole.confirmed_at || pole.pole_confirmed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}
                 </p>
               </div>
               <div>

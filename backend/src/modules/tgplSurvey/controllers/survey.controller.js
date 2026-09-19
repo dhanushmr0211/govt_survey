@@ -189,12 +189,47 @@ async function confirmPoleHandler(req, res, next) {
     const { id } = req.params;
     const { projectId } = req.params;
     const userId = req.user.id;
+    const surveyType = req.body?.survey_type || req.query?.survey_type || req.body?.type || req.query?.type;
     
-    // Try confirming in tgpl_installations if not in poles or if requested
-    let confirmed = await confirmPole(id, projectId, userId);
-    if (!confirmed) {
+    let confirmed = null;
+    if (surveyType === 'installation') {
       confirmed = await confirmInstallation(id, projectId, userId);
+      if (!confirmed) {
+        confirmed = await confirmPole(id, projectId, userId);
+      }
+    } else if (surveyType === 'survey' || surveyType === 'pole') {
+      confirmed = await confirmPole(id, projectId, userId);
+      if (!confirmed) {
+        confirmed = await confirmInstallation(id, projectId, userId);
+      }
+    } else {
+      // Check which table has this record in PENDING status first
+      const pendingInst = await query(
+        `SELECT id FROM tgpl_installations WHERE id = $1 AND project_id = $2 AND status = 'PENDING' AND is_deleted IS NOT TRUE`,
+        [id, projectId]
+      );
+      if (pendingInst.rows.length > 0) {
+        confirmed = await confirmInstallation(id, projectId, userId);
+      } else {
+        const pendingPole = await query(
+          `SELECT id FROM poles WHERE id = $1 AND project_id = $2 AND status = 'PENDING' AND is_deleted IS NOT TRUE`,
+          [id, projectId]
+        );
+        if (pendingPole.rows.length > 0) {
+          confirmed = await confirmPole(id, projectId, userId);
+        } else {
+          confirmed = await confirmPole(id, projectId, userId);
+          if (!confirmed) {
+            confirmed = await confirmInstallation(id, projectId, userId);
+          }
+        }
+      }
     }
+
+    if (!confirmed) {
+      return res.status(404).json({ message: 'Submission record not found' });
+    }
+
     res.json({ pole: confirmed, installation: confirmed });
   } catch (error) {
     next(error);
@@ -265,14 +300,21 @@ async function deletePoleHandler(req, res, next) {
     const { id } = req.params;
     const { projectId } = req.params;
     const userId = req.user.id;
+    const surveyType = req.body?.survey_type || req.query?.survey_type || req.body?.type || req.query?.type;
 
     const userEmail = (req.user?.email || '').toLowerCase().trim();
     if (userEmail !== 'pratheekar1997@gmail.com' && userEmail !== 'prelectricals01@gmail.com') {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to delete submissions.' });
     }
 
-    const poleRes = await query(`SELECT id FROM poles WHERE id = $1 AND project_id = $2`, [id, projectId]);
-    if (poleRes.rows.length > 0) {
+    if (surveyType === 'installation') {
+      await query(
+        `UPDATE tgpl_installations 
+         SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $1 
+         WHERE id = $2 AND project_id = $3`,
+        [userId, id, projectId]
+      );
+    } else if (surveyType === 'survey' || surveyType === 'pole') {
       await query(
         `UPDATE poles 
          SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $1 
@@ -280,12 +322,22 @@ async function deletePoleHandler(req, res, next) {
         [userId, id, projectId]
       );
     } else {
-      await query(
-        `UPDATE tgpl_installations 
-         SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $1 
-         WHERE id = $2 AND project_id = $3`,
-        [userId, id, projectId]
-      );
+      const poleRes = await query(`SELECT id FROM poles WHERE id = $1 AND project_id = $2 AND is_deleted IS NOT TRUE`, [id, projectId]);
+      if (poleRes.rows.length > 0) {
+        await query(
+          `UPDATE poles 
+           SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $1 
+           WHERE id = $2 AND project_id = $3`,
+          [userId, id, projectId]
+        );
+      } else {
+        await query(
+          `UPDATE tgpl_installations 
+           SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $1 
+           WHERE id = $2 AND project_id = $3`,
+          [userId, id, projectId]
+        );
+      }
     }
 
     res.json({ message: 'Record successfully deleted.' });

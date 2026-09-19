@@ -143,9 +143,9 @@ export const SubmissionQueueView = ({ projectId }) => {
   const { queue, total } = data;
 
   const deleteMutation = useMutation({
-    mutationFn: async ({ id, type }) => {
+    mutationFn: async ({ id, type, survey_type }) => {
       const endpoint = isTgpl
-        ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/poles/${id}`
+        ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/poles/${id}?survey_type=${survey_type || selectedSubmission?.survey_type || activeSurveyType}`
         : `${API_BASE_URL}/projects/${projectId}/pole-survey/submissions/${id}?type=${type}`;
       const res = await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
@@ -165,16 +165,20 @@ export const SubmissionQueueView = ({ projectId }) => {
   });
 
   const confirmMutation = useMutation({
-    mutationFn: async ({ id, type }) => {
+    mutationFn: async ({ id, type, survey_type }) => {
       const endpoint = type === 'switch_point'
         ? isTgpl2
           ? `${API_BASE_URL}/projects/${projectId}/tgpl2-survey/switch-points/${id}/confirm`
           : `${API_BASE_URL}/projects/${projectId}/pole-survey/switch-points/${id}/confirm`
         : isTgpl2
           ? `${API_BASE_URL}/projects/${projectId}/tgpl2-survey/poles/${id}/confirm`
-          : `${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${id}/confirm`;
+          : isTgpl
+            ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/poles/${id}/confirm`
+            : `${API_BASE_URL}/projects/${projectId}/pole-survey/poles/${id}/confirm`;
       
-      const res = await axios.post(endpoint, {}, {
+      const res = await axios.post(endpoint, {
+        survey_type: survey_type || selectedSubmission?.survey_type || (isTgpl ? activeSurveyType : 'survey')
+      }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.data;
@@ -1222,7 +1226,11 @@ export const SubmissionQueueView = ({ projectId }) => {
                 <button
                   onClick={() => {
                     if (window.confirm('Are you sure you want to delete this submission?')) {
-                      deleteMutation.mutate({ id: selectedSubmission.id, type: selectedSubmission.type });
+                      deleteMutation.mutate({
+                        id: selectedSubmission.id,
+                        type: selectedSubmission.type,
+                        survey_type: selectedSubmission.survey_type || activeSurveyType
+                      });
                     }
                   }}
                   disabled={deleteMutation.isLoading}
@@ -1252,7 +1260,11 @@ export const SubmissionQueueView = ({ projectId }) => {
                   <button
                     onClick={() => {
                       if (window.confirm('Are you sure you want to confirm this submission?')) {
-                        confirmMutation.mutate({ id: selectedSubmission.id, type: selectedSubmission.type });
+                        confirmMutation.mutate({
+                          id: selectedSubmission.id,
+                          type: selectedSubmission.type,
+                          survey_type: selectedSubmission.survey_type || activeSurveyType
+                        });
                       }
                     }}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm font-semibold"

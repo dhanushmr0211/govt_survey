@@ -22,8 +22,12 @@ export const getPoles = async (projectId, status = 'PENDING') => {
   return response.data;
 };
 
-export const confirmPole = async (projectId, poleId) => {
-  const response = await axios.post(`${API_URL}/projects/${projectId}/pole-survey/poles/${poleId}/confirm`, {}, {
+export const confirmPole = async (projectId, poleId, surveyType = 'survey') => {
+  const isTgpl = String(projectId) === '3';
+  const surveyPath = isTgpl ? 'tgpl-survey' : 'pole-survey';
+  const response = await axios.post(`${API_URL}/projects/${projectId}/${surveyPath}/poles/${poleId}/confirm`, {
+    survey_type: surveyType
+  }, {
     headers: getAuthHeaders(),
   });
   return response.data;
