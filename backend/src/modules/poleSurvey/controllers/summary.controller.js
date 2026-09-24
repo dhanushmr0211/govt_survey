@@ -6,7 +6,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const { getLocalDateString } = require('../../../utils/date');
-const { NUMERIC_COLS, formatExcelValue } = require('../../../utils/excelHelper');
+const { NUMERIC_COLS, formatExcelValue, sanitizeExcelRow } = require('../../../utils/excelHelper');
 
 async function getDistrictSummaryHandler(req, res, next) {
   try {
@@ -433,22 +433,16 @@ async function downloadReportHandler(req, res, next) {
       const row = spSheet.addRow({
         ...formattedSp,
         sl_no: idx + 1,
-        sub_div: sp.ulb_name || sp.district_name || '',
+        sub_div: sp.ulb_name || sp.district_name || 'NA',
         meter_exists: sp.meter_exists ? 'Yes' : 'No',
-        address: sp.ulb_name || sp.district_name || '',
-        latitude_longitude: latLong,
-        created_date: dateStr,
-        created_at: dateTimeStr,
+        address: sp.ulb_name || sp.district_name || 'NA',
+        latitude_longitude: latLong || 'NA',
+        created_date: dateStr || 'NA',
+        created_at: dateTimeStr || 'NA',
         status: sp.status || 'PENDING'
       });
 
-      activeSpCols.forEach(key => {
-        const cell = row.getCell(key);
-        if (typeof cell.value === 'number') {
-          cell.numFmt = Number.isInteger(cell.value) ? '0' : '0.##';
-        }
-      });
-
+      sanitizeExcelRow(row, spSheet.columns, activeSpCols);
       row.commit();
     });
     spSheet.commit();
@@ -515,20 +509,14 @@ async function downloadReportHandler(req, res, next) {
       const row = pSheet.addRow({
         ...formattedPole,
         sl_no: idx + 1,
-        sub_div: p.ulb_name || p.district_name || '',
-        latitude_longitude: latLong,
-        created_date: dateStr,
-        created_at: dateTimeStr,
+        sub_div: p.ulb_name || p.district_name || 'NA',
+        latitude_longitude: latLong || 'NA',
+        created_date: dateStr || 'NA',
+        created_at: dateTimeStr || 'NA',
         status: p.status || 'CONFIRMED'
       });
 
-      activePoleCols.forEach(key => {
-        const cell = row.getCell(key);
-        if (typeof cell.value === 'number') {
-          cell.numFmt = Number.isInteger(cell.value) ? '0' : '0.##';
-        }
-      });
-
+      sanitizeExcelRow(row, pSheet.columns, activePoleCols);
       row.commit();
     });
     pSheet.commit();

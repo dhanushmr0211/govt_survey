@@ -20,7 +20,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const { getLocalDateString } = require('../../../utils/date');
-const { NUMERIC_COLS, formatExcelValue } = require('../../../utils/excelHelper');
+const { NUMERIC_COLS, formatExcelValue, sanitizeExcelRow } = require('../../../utils/excelHelper');
 
 async function getDistrictSummaryHandler(req, res, next) {
   try {
@@ -443,18 +443,12 @@ async function downloadReportHandler(req, res, next) {
         const row = pSheet.addRow({
           ...formattedPole,
           sl_no: idx + 1,
-          ward_number: p.ward_number || p.ulb_name || '',
-          latitude_longitude: latLong,
-          created_at: formatDateTime(p.created_at)
+          ward_number: formatExcelValue(p.ward_number || p.ulb_name || ''),
+          latitude_longitude: latLong || 'NA',
+          created_at: formatDateTime(p.created_at) || 'NA'
         });
 
-        activePoleCols.forEach(key => {
-          const cell = row.getCell(key);
-          if (typeof cell.value === 'number') {
-            cell.numFmt = Number.isInteger(cell.value) ? '0' : '0.##';
-          }
-        });
-
+        sanitizeExcelRow(row, pSheet.columns, activePoleCols);
         row.commit();
       });
       pSheet.commit();
@@ -512,16 +506,38 @@ async function downloadReportHandler(req, res, next) {
       });
       iHeaderRow.commit();
 
+      const activeInstCols = NUMERIC_COLS.filter(key => 
+        iSheet.columns.some(col => col.key === key)
+      );
+
       (data.installations || []).forEach((inst, idx) => {
         const latLong = inst.latitude && inst.longitude ? `${inst.latitude}, ${inst.longitude}` : (inst.latitude || inst.longitude || '');
         
-        const row = iSheet.addRow({
+        const instRecord = {
           ...inst,
-          sl_no: idx + 1,
-          ward_number: inst.ward_number || inst.ulb_name || '',
-          latitude_longitude: latLong,
-          created_at: formatDateTime(inst.created_at)
+          light_wattage_6: inst.light_wattage_6 ?? inst.light_capacity_6 ?? '',
+          light_capacity_6: inst.light_capacity_6 ?? inst.light_wattage_6 ?? '',
+          ward_number: inst.ward_number || inst.ulb_name || ''
+        };
+
+        const formattedInst = {};
+        Object.keys(instRecord).forEach(key => {
+          if (activeInstCols.includes(key)) {
+            formattedInst[key] = formatExcelValue(instRecord[key]);
+          } else {
+            formattedInst[key] = instRecord[key];
+          }
         });
+
+        const row = iSheet.addRow({
+          ...formattedInst,
+          sl_no: idx + 1,
+          ward_number: formatExcelValue(inst.ward_number || inst.ulb_name || ''),
+          latitude_longitude: latLong || 'NA',
+          created_at: formatDateTime(inst.created_at) || 'NA'
+        });
+
+        sanitizeExcelRow(row, iSheet.columns, activeInstCols);
         row.commit();
       });
       iSheet.commit();

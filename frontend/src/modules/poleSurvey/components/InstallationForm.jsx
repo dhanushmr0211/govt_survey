@@ -440,7 +440,7 @@ export const InstallationForm = ({ ward, onBack }) => {
     }
   };
 
-  const poleTypeOptions = ['RCC', 'TUBULAR', 'HIGH MAST', 'MINI MAST', 'POST OFF'];
+  const poleTypeOptions = ['RCC', 'TUBULAR', 'HIGH MAST', 'MINI MAST', 'POST OFF', 'SPUN'];
   const lightTypeOptions = ['CGL LED', 'OTHER LED', 'SVL', 'TL', 'FTL', 'CFL'];
   const wattageOptions = ['25 W', '35 W', '40 W', '65 W', '90 W', '100 W', '120 W', '150 W', '200 W', '250 W', '300 W', '400 W'];
   const lightStatusOptions = ['WORKING', 'NOT WORKING'];

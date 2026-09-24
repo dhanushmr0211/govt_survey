@@ -26,6 +26,13 @@ const NUMERIC_COLS = [
   'light_capacity_3',
   'light_capacity_4',
   'light_capacity_5',
+  'light_capacity_6',
+  'light_wattage',
+  'light_wattage_2',
+  'light_wattage_3',
+  'light_wattage_4',
+  'light_wattage_5',
+  'light_wattage_6',
   'req_led_wattage'
 ];
 
@@ -40,24 +47,66 @@ const NUMERIC_COLS = [
  */
 function formatExcelValue(val) {
   if (val === null || val === undefined) {
-    return '';
+    return 'NA';
   }
   
   if (typeof val === 'number') {
-    return val;
+    return isNaN(val) ? 'NA' : val;
   }
   
   const trimmed = String(val).trim();
+  if (trimmed === '' || trimmed.toUpperCase() === 'NULL' || trimmed.toUpperCase() === 'UNDEFINED') {
+    return 'NA';
+  }
   
-  // Matches valid positive integers or decimals
-  if (/^\d+(\.\d+)?$/.test(trimmed)) {
-    return Number(trimmed);
+  // Matches valid positive or negative integers or decimals
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+    const num = Number(trimmed);
+    return isNaN(num) ? 'NA' : num;
   }
   
   return trimmed;
 }
 
+/**
+ * Ensures all empty, null, or undefined cells in an ExcelJS worksheet row are set to "NA".
+ * Also applies proper number formatting ('0' or '0.##') to numeric cells.
+ * 
+ * @param {object} row - ExcelJS row object
+ * @param {Array<{key: string}>} columns - Worksheet columns array
+ * @param {string[]} activeNumericCols - List of keys that are numeric
+ */
+function sanitizeExcelRow(row, columns = [], activeNumericCols = []) {
+  if (activeNumericCols && activeNumericCols.length > 0) {
+    activeNumericCols.forEach(key => {
+      const cell = row.getCell(key);
+      if (typeof cell.value === 'number') {
+        cell.numFmt = Number.isInteger(cell.value) ? '0' : '0.##';
+      }
+    });
+  }
+
+  if (columns && columns.length > 0) {
+    columns.forEach(col => {
+      const cell = row.getCell(col.key);
+      if (
+        cell.value === null ||
+        cell.value === undefined ||
+        cell.value === '' ||
+        (typeof cell.value === 'string' && (
+          cell.value.trim() === '' || 
+          cell.value.trim().toUpperCase() === 'NULL' || 
+          cell.value.trim().toUpperCase() === 'UNDEFINED'
+        ))
+      ) {
+        cell.value = 'NA';
+      }
+    });
+  }
+}
+
 module.exports = {
   NUMERIC_COLS,
-  formatExcelValue
+  formatExcelValue,
+  sanitizeExcelRow
 };
