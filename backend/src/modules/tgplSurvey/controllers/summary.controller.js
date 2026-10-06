@@ -494,7 +494,8 @@ async function downloadReportHandler(req, res, next) {
         { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 },
         { header: 'Created By', key: 'user_name', width: 15 },
         { header: 'Created At', key: 'created_at', width: 20 },
-        { header: 'Confirmed By', key: 'confirmed_by_name', width: 15 }
+        { header: 'Confirmed By', key: 'confirmed_by_name', width: 15 },
+        { header: 'Remarks', key: 'remarks', width: 25 }
       ];
 
       const iHeaderRow = iSheet.getRow(1);
