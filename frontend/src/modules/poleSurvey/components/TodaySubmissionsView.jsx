@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
-import { CheckCircle2, SearchCheck, Edit2, Save, Trash2 } from 'lucide-react';
+import { CheckCircle2, SearchCheck, Edit2, Save, Trash2, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import { useToastStore } from '../../../store/toastStore';
 import imageCompression from 'browser-image-compression';
@@ -1022,7 +1022,9 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
               ) : (
                 canShowConfirm && (
                   <button
+                    disabled={confirmMutation.isPending}
                     onClick={() => {
+                      if (confirmMutation.isPending) return;
                       if (window.confirm('Are you sure you want to confirm this submission?')) {
                         confirmMutation.mutate({
                           id: selectedSubmission.id,
@@ -1031,10 +1033,19 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                         });
                       }
                     }}
-                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 font-medium"
+                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <CheckCircle2 size={18} />
-                    <span>Confirm Submission</span>
+                    {confirmMutation.isPending ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        <span>Confirming...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 size={18} />
+                        <span>Confirm Submission</span>
+                      </>
+                    )}
                   </button>
                 )
               )}

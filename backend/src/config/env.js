@@ -21,7 +21,7 @@ const schema = z.object({
   JWT_EXPIRES_IN: z.string().default('1d'),
   CORS_ORIGIN: z.string().default('*'),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
-  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(3000),
   GCP_PROJECT_ID: z.string().min(1),
   GCS_BUCKET_NAME: z.string().min(1),
   GCS_SIGNED_URL_EXPIRATION_SECONDS: z.coerce.number().int().positive().default(900),

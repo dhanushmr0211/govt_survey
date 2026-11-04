@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import { CheckCircle2, Edit2, Save, SearchCheck } from 'lucide-react';
+import { CheckCircle2, Edit2, Save, SearchCheck, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import API_BASE_URL from '../../../config/api';
 import { useAuthStore } from '../../../store/authStore';
@@ -13,6 +13,7 @@ export const TodaySubmissionsView = ({ projectId }) => {
   const [selectedPole, setSelectedPole] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const canEdit =
     user?.role === 'MASTER_ADMIN' ||
@@ -61,7 +62,8 @@ export const TodaySubmissionsView = ({ projectId }) => {
   };
 
   const handleConfirm = async () => {
-    if (!selectedPole) return;
+    if (!selectedPole || isConfirming) return;
+    setIsConfirming(true);
     try {
       await axios.post(`${API_BASE_URL}/projects/${projectId}/tgpl2-survey/poles/${selectedPole.id}/confirm`, {}, {
         headers: { Authorization: `Bearer ${token}` },
@@ -72,6 +74,8 @@ export const TodaySubmissionsView = ({ projectId }) => {
       alert('Survey confirmed successfully.');
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to confirm survey');
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -186,10 +190,19 @@ export const TodaySubmissionsView = ({ projectId }) => {
                 )}
                 {selectedPole.status !== 'CONFIRMED' && (
                   <button
+                    disabled={isConfirming}
                     onClick={handleConfirm}
-                    className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white"
+                    className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-700"
                   >
-                    <CheckCircle2 size={14} /> Confirm
+                    {isConfirming ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" /> Confirming...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 size={14} /> Confirm
+                      </>
+                    )}
                   </button>
                 )}
                 <button onClick={() => { setSelectedPole(null); setIsEditing(false); }} className="text-sm font-medium text-gray-500">Close</button>

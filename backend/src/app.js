@@ -302,19 +302,7 @@ function createApp() {
       : ':request-id :method :url :status :response-time ms';
   app.use(morgan(logFormat));
 
-  app.use(
-    rateLimit({
-      windowMs: env.rateLimitWindowMs,
-      max: env.rateLimitMax,
-      standardHeaders: true,
-      legacyHeaders: false,
-      message: { 
-        message: 'Too many requests! You have exceeded your limit. Please wait 15 minutes before trying again.' 
-      }
-    })
-  );
-
-  // Serve frontend static files (React app)
+  // Serve frontend static files (React app) - served before rate limiter so assets never count toward API quota
   const frontendDistPath = path.join(__dirname, '../../frontend/dist');
   app.use(
     express.static(frontendDistPath, {
@@ -335,6 +323,32 @@ function createApp() {
       res.json({ status: 'ok', database: 'connected' });
     } catch (error) {
       next(error);
+    }
+  });
+
+  // Rate limiting applied specifically to API routes
+  const apiLimiter = rateLimit({
+    windowMs: env.rateLimitWindowMs,
+    // Authenticated users get a generous quota (5,000 reqs/15m) so reviewers/clients never get locked out during legitimate work
+    max: (req) => {
+      const authHeader = req.headers['authorization'];
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        return Math.max(env.rateLimitMax, 5000);
+      }
+      return env.rateLimitMax;
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    // Key by Bearer token for authenticated users so multiple users on the same office IP don't share limits
+    keyGenerator: (req) => {
+      const authHeader = req.headers['authorization'];
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        return authHeader;
+      }
+      return req.ip;
+    },
+    message: { 
+      message: 'Too many requests! You have temporarily exceeded the limit. Please wait a moment before trying again.' 
     }
   });
 
@@ -367,7 +381,7 @@ function createApp() {
   const { tgpl2SurveyRouter } = require('./modules/tgpl2Survey/routes/tgpl2Survey.routes');
   apiRouter.use('/projects/:projectId/tgpl2-survey', authenticate, requireProjectMember(), tgpl2SurveyRouter);
   apiRouter.use('/projects/:projectId/issues', requireProjectMember(), issueRouter);
-  app.use('/api/v1', apiRouter);
+  app.use('/api/v1', apiLimiter, apiRouter);
 
   // Fallback to index.html for React Router (SPA)
   app.get('*', (req, res) => {

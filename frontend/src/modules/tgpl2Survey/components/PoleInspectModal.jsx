@@ -162,8 +162,15 @@ export const PoleInspectModal = ({ pole, onClose, onRefresh, projectId }) => {
             Save Changes
           </button>
           {pole.status !== 'CONFIRMED' && (
-            <button onClick={handleConfirm} disabled={loading} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-sm font-medium">
-              Confirm Survey
+            <button onClick={handleConfirm} disabled={loading} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5">
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Confirming...</span>
+                </>
+              ) : (
+                <span>Confirm Survey</span>
+              )}
             </button>
           )}
         </footer>
