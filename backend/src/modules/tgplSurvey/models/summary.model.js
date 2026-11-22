@@ -380,9 +380,11 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
   const params = [projectId, limit, offset, userId];
   let pIdx = 5;
 
+  let scopeFilterC = '';
   if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
-    scopeFilterP += ` AND p.ward_id = ANY($${pIdx})`;
-    scopeFilterI += ` AND i.ward_id = ANY($${pIdx})`;
+    scopeFilterP += ` AND p.ward_id = ANY(${pIdx})`;
+    scopeFilterI += ` AND i.ward_id = ANY(${pIdx})`;
+    scopeFilterC += ` AND c.ward_id = ANY(${pIdx})`;
     params.push(ulbScope);
     pIdx++;
   }
@@ -390,15 +392,19 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
   const submissionDateColumn = dateField === 'confirmed_at' ? 'confirmed_at' : 'created_at';
   let pDateFilterP = '';
   let pDateFilterI = '';
+  let pDateFilterC = '';
   if (fromDate && toDate) {
     const startIdx = params.length + 1;
-    pDateFilterP = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.${submissionDateColumn})))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
-    pDateFilterI = ` AND (timezone('Asia/Kolkata', timezone('UTC', i.${submissionDateColumn})))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    pDateFilterP = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.${submissionDateColumn})))::date BETWEEN ${startIdx} AND ${startIdx + 1}`;
+    pDateFilterI = ` AND (timezone('Asia/Kolkata', timezone('UTC', i.${submissionDateColumn})))::date BETWEEN ${startIdx} AND ${startIdx + 1}`;
+    pDateFilterC = ` AND (timezone('Asia/Kolkata', timezone('UTC', c.${submissionDateColumn})))::date BETWEEN ${startIdx} AND ${startIdx + 1}`;
     params.push(fromDate, toDate);
   }
 
-  const includeSurvey = !surveyType || surveyType === 'all' || surveyType === 'survey';
-  const includeInst = !surveyType || surveyType === 'all' || surveyType === 'installation';
+  const isCcms = surveyType === 'ccms';
+  const includeSurvey = (!surveyType || surveyType === 'all' || surveyType === 'survey') && !isCcms;
+  const includeInst = (!surveyType || surveyType === 'all' || surveyType === 'installation') && !isCcms;
+  const includeCcms = surveyType === 'ccms' || surveyType === 'all';
 
   const subQueries = [];
 
@@ -607,9 +613,11 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
   const params = [projectId, limit, offset, userId, confirmedBy];
   let pIdx = 6;
 
+  let scopeFilterC = '';
   if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
-    scopeFilterP += ` AND p.ward_id = ANY($${pIdx})`;
-    scopeFilterI += ` AND i.ward_id = ANY($${pIdx})`;
+    scopeFilterP += ` AND p.ward_id = ANY(${pIdx})`;
+    scopeFilterI += ` AND i.ward_id = ANY(${pIdx})`;
+    scopeFilterC += ` AND c.ward_id = ANY(${pIdx})`;
     params.push(ulbScope);
     pIdx++;
   }
@@ -617,15 +625,19 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
   const submissionDateColumn = dateField === 'confirmed_at' ? 'confirmed_at' : 'created_at';
   let pDateFilterP = '';
   let pDateFilterI = '';
+  let pDateFilterC = '';
   if (fromDate && toDate) {
     const startIdx = params.length + 1;
-    pDateFilterP = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.${submissionDateColumn})))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
-    pDateFilterI = ` AND (timezone('Asia/Kolkata', timezone('UTC', i.${submissionDateColumn})))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    pDateFilterP = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.${submissionDateColumn})))::date BETWEEN ${startIdx} AND ${startIdx + 1}`;
+    pDateFilterI = ` AND (timezone('Asia/Kolkata', timezone('UTC', i.${submissionDateColumn})))::date BETWEEN ${startIdx} AND ${startIdx + 1}`;
+    pDateFilterC = ` AND (timezone('Asia/Kolkata', timezone('UTC', c.${submissionDateColumn})))::date BETWEEN ${startIdx} AND ${startIdx + 1}`;
     params.push(fromDate, toDate);
   }
 
-  const includeSurvey = !surveyType || surveyType === 'all' || surveyType === 'survey';
-  const includeInst = !surveyType || surveyType === 'all' || surveyType === 'installation';
+  const isCcms = surveyType === 'ccms';
+  const includeSurvey = (!surveyType || surveyType === 'all' || surveyType === 'survey') && !isCcms;
+  const includeInst = (!surveyType || surveyType === 'all' || surveyType === 'installation') && !isCcms;
+  const includeCcms = surveyType === 'ccms' || surveyType === 'all';
 
   const subQueries = [];
 
@@ -1074,32 +1086,51 @@ async function getMyStats(projectId, userId, date = null) {
     [projectId, userId, targetDate]
   );
 
+  const totalCcms = await query(
+    `SELECT COUNT(id) as count FROM tgpl_ccms WHERE project_id = $1 AND created_by = $2 AND is_deleted = FALSE`,
+    [projectId, userId]
+  );
+  const todayCcms = await query(
+    `SELECT COUNT(id) as count FROM tgpl_ccms WHERE project_id = $1 AND created_by = $2 AND is_deleted = FALSE AND (timezone('Asia/Kolkata', timezone('UTC', created_at)))::date = $3`,
+    [projectId, userId, todayStr]
+  );
+  const dateCcms = await query(
+    `SELECT COUNT(id) as count FROM tgpl_ccms WHERE project_id = $1 AND created_by = $2 AND is_deleted = FALSE AND (timezone('Asia/Kolkata', timezone('UTC', created_at)))::date = $3`,
+    [projectId, userId, targetDate]
+  );
+
   const tSurvey = parseInt(totalSurvey.rows[0]?.count || 0, 10);
   const tInst = parseInt(totalInst.rows[0]?.count || 0, 10);
+  const tCcms = parseInt(totalCcms.rows[0]?.count || 0, 10);
   const tdSurvey = parseInt(todaySurvey.rows[0]?.count || 0, 10);
   const tdInst = parseInt(todayInst.rows[0]?.count || 0, 10);
+  const tdCcms = parseInt(todayCcms.rows[0]?.count || 0, 10);
   const dwSurvey = parseInt(dateSurvey.rows[0]?.count || 0, 10);
   const dwInst = parseInt(dateInst.rows[0]?.count || 0, 10);
+  const dwCcms = parseInt(dateCcms.rows[0]?.count || 0, 10);
 
   return {
     total: {
       switch_points: 0,
       poles: tSurvey + tInst,
       survey_poles: tSurvey,
-      installation_poles: tInst
+      installation_poles: tInst,
+      ccms_survey: tCcms
     },
     today: {
       switch_points: 0,
       poles: tdSurvey + tdInst,
       survey_poles: tdSurvey,
-      installation_poles: tdInst
+      installation_poles: tdInst,
+      ccms_survey: tdCcms
     },
     dateWise: {
       date: targetDate,
       switch_points: 0,
       poles: dwSurvey + dwInst,
       survey_poles: dwSurvey,
-      installation_poles: dwInst
+      installation_poles: dwInst,
+      ccms_survey: dwCcms
     }
   };
 }
@@ -1138,21 +1169,37 @@ async function getEmployeeTracking(projectId) {
      GROUP BY i.confirmed_by`,
     [userIds, projectId]
   );
+
+  const statsCcms = await query(
+    `SELECT 
+      c.confirmed_by as id,
+      COUNT(c.id) as total_ccms_resolved,
+      COUNT(CASE WHEN (timezone('Asia/Kolkata', timezone('UTC', c.confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN c.id END) as today_ccms_resolved
+     FROM tgpl_ccms c
+     WHERE c.confirmed_by = ANY($1) AND c.project_id = $2 AND c.is_deleted = FALSE
+     GROUP BY c.confirmed_by`,
+    [userIds, projectId]
+  );
   
   const statsMap = {};
   statsSurvey.rows.forEach(r => {
-    if (!statsMap[r.id]) statsMap[r.id] = { total_survey_resolved: 0, today_survey_resolved: 0, total_inst_resolved: 0, today_inst_resolved: 0 };
+    if (!statsMap[r.id]) statsMap[r.id] = { total_survey_resolved: 0, today_survey_resolved: 0, total_inst_resolved: 0, today_inst_resolved: 0, total_ccms_resolved: 0, today_ccms_resolved: 0 };
     statsMap[r.id].total_survey_resolved = parseInt(r.total_survey_resolved, 10);
     statsMap[r.id].today_survey_resolved = parseInt(r.today_survey_resolved, 10);
   });
   statsInst.rows.forEach(r => {
-    if (!statsMap[r.id]) statsMap[r.id] = { total_survey_resolved: 0, today_survey_resolved: 0, total_inst_resolved: 0, today_inst_resolved: 0 };
+    if (!statsMap[r.id]) statsMap[r.id] = { total_survey_resolved: 0, today_survey_resolved: 0, total_inst_resolved: 0, today_inst_resolved: 0, total_ccms_resolved: 0, today_ccms_resolved: 0 };
     statsMap[r.id].total_inst_resolved = parseInt(r.total_inst_resolved, 10);
     statsMap[r.id].today_inst_resolved = parseInt(r.today_inst_resolved, 10);
   });
+  statsCcms.rows.forEach(r => {
+    if (!statsMap[r.id]) statsMap[r.id] = { total_survey_resolved: 0, today_survey_resolved: 0, total_inst_resolved: 0, today_inst_resolved: 0, total_ccms_resolved: 0, today_ccms_resolved: 0 };
+    statsMap[r.id].total_ccms_resolved = parseInt(r.total_ccms_resolved, 10);
+    statsMap[r.id].today_ccms_resolved = parseInt(r.today_ccms_resolved, 10);
+  });
 
   const result = users.map(u => {
-    const s = statsMap[u.id] || { total_survey_resolved: 0, today_survey_resolved: 0, total_inst_resolved: 0, today_inst_resolved: 0 };
+    const s = statsMap[u.id] || { total_survey_resolved: 0, today_survey_resolved: 0, total_inst_resolved: 0, today_inst_resolved: 0, total_ccms_resolved: 0, today_ccms_resolved: 0 };
     return {
       id: u.id,
       email: u.email,
@@ -1161,10 +1208,12 @@ async function getEmployeeTracking(projectId) {
       total_poles_resolved: s.total_survey_resolved + s.total_inst_resolved,
       total_survey_resolved: s.total_survey_resolved,
       total_inst_resolved: s.total_inst_resolved,
+      total_ccms_resolved: s.total_ccms_resolved,
       today_sp_resolved: 0,
       today_poles_resolved: s.today_survey_resolved + s.today_inst_resolved,
       today_survey_resolved: s.today_survey_resolved,
-      today_inst_resolved: s.today_inst_resolved
+      today_inst_resolved: s.today_inst_resolved,
+      today_ccms_resolved: s.today_ccms_resolved
     };
   });
 
@@ -1274,21 +1323,37 @@ async function getMobileUserTracking(projectId) {
      GROUP BY i.created_by`,
     [userIds, projectId]
   );
+
+  const statsCcms = await query(
+    `SELECT 
+      c.created_by as id,
+      COUNT(c.id) as total_ccms,
+      COUNT(CASE WHEN (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN c.id END) as today_ccms
+     FROM tgpl_ccms c
+     WHERE c.created_by = ANY($1) AND c.project_id = $2 AND c.is_deleted = FALSE
+     GROUP BY c.created_by`,
+    [userIds, projectId]
+  );
   
   const statsMap = {};
   statsSurvey.rows.forEach(r => {
-    if (!statsMap[r.id]) statsMap[r.id] = { total_survey: 0, today_survey: 0, total_inst: 0, today_inst: 0 };
+    if (!statsMap[r.id]) statsMap[r.id] = { total_survey: 0, today_survey: 0, total_inst: 0, today_inst: 0, total_ccms: 0, today_ccms: 0 };
     statsMap[r.id].total_survey = parseInt(r.total_survey, 10);
     statsMap[r.id].today_survey = parseInt(r.today_survey, 10);
   });
   statsInst.rows.forEach(r => {
-    if (!statsMap[r.id]) statsMap[r.id] = { total_survey: 0, today_survey: 0, total_inst: 0, today_inst: 0 };
+    if (!statsMap[r.id]) statsMap[r.id] = { total_survey: 0, today_survey: 0, total_inst: 0, today_inst: 0, total_ccms: 0, today_ccms: 0 };
     statsMap[r.id].total_inst = parseInt(r.total_inst, 10);
     statsMap[r.id].today_inst = parseInt(r.today_inst, 10);
   });
+  statsCcms.rows.forEach(r => {
+    if (!statsMap[r.id]) statsMap[r.id] = { total_survey: 0, today_survey: 0, total_inst: 0, today_inst: 0, total_ccms: 0, today_ccms: 0 };
+    statsMap[r.id].total_ccms = parseInt(r.total_ccms, 10);
+    statsMap[r.id].today_ccms = parseInt(r.today_ccms, 10);
+  });
 
   const result = users.map(u => {
-    const s = statsMap[u.id] || { total_survey: 0, today_survey: 0, total_inst: 0, today_inst: 0 };
+    const s = statsMap[u.id] || { total_survey: 0, today_survey: 0, total_inst: 0, today_inst: 0, total_ccms: 0, today_ccms: 0 };
     return {
       id: u.id,
       email: u.email,
@@ -1297,10 +1362,12 @@ async function getMobileUserTracking(projectId) {
       total_poles: s.total_survey + s.total_inst,
       total_survey: s.total_survey,
       total_inst: s.total_inst,
+      total_ccms: s.total_ccms,
       today_sp: 0,
       today_poles: s.today_survey + s.today_inst,
       today_survey: s.today_survey,
-      today_inst: s.today_inst
+      today_inst: s.today_inst,
+      today_ccms: s.today_ccms
     };
   });
 

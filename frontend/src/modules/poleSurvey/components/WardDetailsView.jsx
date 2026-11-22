@@ -6,6 +6,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useToastStore } from '../../../store/toastStore';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
+import { CcmsInspectModal } from './CcmsInspectModal';
 import { isMobileEditRestricted } from '../utils/mobileRestrictions';
 import { isTgpl2Project, isTgplProject } from '../../../shared/utils/projectType';
 
@@ -41,6 +42,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const [selectedWard, setSelectedWard] = useState(null);
   const [selectedDetail, setSelectedDetail] = useState(null); // { type: 'switch_point' | 'pole', data: ... }
   const [selectedCcms, setSelectedCcms] = useState({ id: null, type: 'survey' });
+  const [selectedCcmsPoint, setSelectedCcmsPoint] = useState(null);
   const queryClient = useQueryClient();
   const addToast = useToastStore((state) => state.addToast);
 
@@ -133,6 +135,20 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     },
     enabled: !!selectedWard,
   });
+
+  const { data: ccmsPointsData = { allCcms: [] }, isLoading: isLoadingCcmsPoints } = useQuery({
+    queryKey: ['ccmsPoints', effectiveProjectId, selectedWard],
+    queryFn: async () => {
+      if (!isTgpl || !selectedWard) return { allCcms: [] };
+      const res = await axios.get(
+        `${API_BASE_URL}/projects/${effectiveProjectId}/tgpl-survey/ccms/by-ward/${encodeURIComponent(selectedWard)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return res.data;
+    },
+    enabled: !!selectedWard && isTgpl,
+  });
+  const ccmsPoints = ccmsPointsData?.allCcms || [];
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -748,6 +764,42 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                   </div>
                 )}
               </div>
+
+              {/* CCMS Survey Points Section */}
+              {isTgpl && (
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1.5">
+                    ⚡ CCMS Points
+                    {ccmsPoints.length > 0 && (
+                      <span className="ml-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{ccmsPoints.length}</span>
+                    )}
+                  </h4>
+                  {isLoadingCcmsPoints ? (
+                    <div className="flex gap-2">{[...Array(3)].map((_,i) => <div key={i} className="h-14 w-20 animate-pulse rounded-lg bg-white" />)}</div>
+                  ) : ccmsPoints.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic pl-2">No CCMS survey points recorded for this ward.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                      {ccmsPoints.map((cp) => (
+                        <button
+                          key={cp.id}
+                          onClick={() => setSelectedCcmsPoint(cp)}
+                          className={`rounded-lg border p-3 text-center transition ${selectedCcmsPoint?.id === cp.id ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50'}`}
+                        >
+                          <p className="text-[10px] text-slate-400 font-semibold uppercase">CCMS</p>
+                          <p className="text-sm font-bold truncate max-w-full" title={cp.ccms_number || 'N/A'}>{cp.ccms_number || 'N/A'}</p>
+                          <p className="text-[10px] text-slate-500 mt-1 truncate">{cp.installed_pole_number ? `Pole: ${cp.installed_pole_number}` : ''}</p>
+                          <div className="mt-1">
+                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${cp.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                              {cp.status || 'PENDING'}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )
         ) : (
@@ -1461,6 +1513,19 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
             </div>
           </div>
         </div>
+      )}
+      {selectedCcmsPoint && (
+        <CcmsInspectModal
+          submission={selectedCcmsPoint}
+          onClose={() => setSelectedCcmsPoint(null)}
+          onConfirm={null}
+          onDelete={null}
+          canConfirm={false}
+          canDelete={false}
+          isConfirming={false}
+          isDeleting={false}
+          projectId={effectiveProjectId}
+        />
       )}
     </div>
   );

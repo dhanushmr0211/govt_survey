@@ -522,7 +522,8 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
   const { data, isLoading } = useQuery({
     queryKey: ['user-submissions', projectId, userId, confirmedBy, status, fromDate, toDate, dateField, activeType, activeSurveyType, page],
     queryFn: async () => {
-      let url = `${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}`;
+      const isTgplSurveyPath = String(projectId) === '3';
+  let url = isTgplSurveyPath ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/${endpoint}` : `${API_BASE_URL}/projects/${projectId}/pole-survey/${endpoint}`;
       let params = [];
       if (userId) params.push(`userId=${userId}`);
       if (confirmedBy) params.push(`confirmedBy=${confirmedBy}`);

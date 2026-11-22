@@ -92,19 +92,26 @@ export const OfflineQueueView = () => {
         <div className="space-y-3">
           {submissions.map((sub) => {
             const isInstallation = sub.data?.survey_type === 'installation';
-            const badgeText = isInstallation 
-              ? 'INSTALLATION' 
-              : (sub.type === 'pole' ? 'SURVEY POLE' : 'SWITCH POINT');
-            const badgeClass = isInstallation
-              ? 'bg-orange-100 text-orange-700'
-              : (sub.type === 'pole' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700');
+            const isCcms = sub.type === 'ccms' || sub.data?.survey_type === 'ccms';
+            const badgeText = isCcms
+              ? 'CCMS SURVEY'
+              : (isInstallation 
+                  ? 'INSTALLATION' 
+                  : (sub.type === 'pole' ? 'SURVEY POLE' : 'SWITCH POINT'));
+            const badgeClass = isCcms
+              ? 'bg-emerald-100 text-emerald-700'
+              : (isInstallation
+                  ? 'bg-orange-100 text-orange-700'
+                  : (sub.type === 'pole' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'));
             const imageCount = Array.isArray(sub.images) ? sub.images.length : 0;
             
-            const displayTitle = isInstallation
-              ? `Ward ${sub.wardNumber} - CCMS ${sub.data?.ccms_number || 'N/A'} (Pole ${sub.data?.pole_number || 'N/A'})`
-              : (sub.type === 'pole' 
-                  ? `Ward ${sub.wardNumber} - Pole ${sub.data?.pole_number || 'N/A'}` 
-                  : `Ward ${sub.wardNumber} - Switch Point ${sub.data?.switch_point_number || 'N/A'}`);
+            const displayTitle = isCcms
+              ? `Ward ${sub.wardNumber} - CCMS Point ${sub.data?.ccms_number || 'N/A'} (Pole ${sub.data?.installed_pole_number || 'N/A'})`
+              : (isInstallation
+                  ? `Ward ${sub.wardNumber} - CCMS ${sub.data?.ccms_number || 'N/A'} (Pole ${sub.data?.pole_number || 'N/A'})`
+                  : (sub.type === 'pole' 
+                      ? `Ward ${sub.wardNumber} - Pole ${sub.data?.pole_number || 'N/A'}` 
+                      : `Ward ${sub.wardNumber} - Switch Point ${sub.data?.switch_point_number || 'N/A'}`));
 
             return (
               <div key={sub.id} className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm flex justify-between items-center">

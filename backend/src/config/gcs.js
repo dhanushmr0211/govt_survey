@@ -34,6 +34,8 @@ async function buildObjectName(recordId, originalName) {
         folder = 'TGPL-IMAGES';
         if (entityType === 'installation') {
           folder = 'tgpl_istallation';
+        } else if (entityType === 'ccms' || entityType === 'tgpl_ccms') {
+          folder = 'tgpl_ccms_images';
         } else if (entityType === 'pole') {
           try {
             const poleRes = await tgplPool.query('SELECT survey_type FROM poles WHERE id = $1', [Number(entityId)]);

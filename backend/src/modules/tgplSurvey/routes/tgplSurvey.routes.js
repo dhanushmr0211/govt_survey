@@ -8,7 +8,13 @@ const {
   updatePoleHandler,
   confirmPoleHandler,
   validateMoveHandler,
-  deletePoleHandler
+  deletePoleHandler,
+  createCcmsHandler,
+  getCcmsByWardHandler,
+  getCcmsByIdHandler,
+  updateCcmsHandler,
+  confirmCcmsHandler,
+  deleteCcmsHandler
 } = require('../controllers/survey.controller');
 
 const { 
@@ -48,6 +54,14 @@ tgplSurveyRouter.get('/poles', getPolesHandler);
 tgplSurveyRouter.patch('/poles/:id', updatePoleHandler);
 tgplSurveyRouter.post('/poles/:id/confirm', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.EMPLOYEE, ROLES.CLIENT), confirmPoleHandler);
 tgplSurveyRouter.delete('/poles/:id', deletePoleHandler);
+// CCMS Survey Endpoints (Project 3)
+tgplSurveyRouter.post('/ccms', createCcmsHandler);
+tgplSurveyRouter.get('/ccms/by-ward/:wardId', getCcmsByWardHandler);
+tgplSurveyRouter.get('/ccms/:id', getCcmsByIdHandler);
+tgplSurveyRouter.patch('/ccms/:id', updateCcmsHandler);
+tgplSurveyRouter.post('/ccms/:id/confirm', requireRole(ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.EMPLOYEE, ROLES.CLIENT), confirmCcmsHandler);
+tgplSurveyRouter.delete('/ccms/:id', deleteCcmsHandler);
+
 tgplSurveyRouter.post('/validate-move', validateMoveHandler);
 
 // Reports / Summary

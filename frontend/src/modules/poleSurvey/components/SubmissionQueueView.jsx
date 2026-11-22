@@ -6,6 +6,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useToastStore } from '../../../store/toastStore';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
+import { CcmsInspectModal } from './CcmsInspectModal';
 
 const getAutoRoadCategory = (roadType, roadWidthStr) => {
   const normalizedRoadType = typeof roadType === 'string' ? roadType : (roadType ? String(roadType) : '');
@@ -578,7 +579,7 @@ export const SubmissionQueueView = ({ projectId }) => {
           <div>
             <h2 className="text-lg font-bold text-slate-950">Submission Queue</h2>
             <p className="text-sm text-slate-500">
-              {total} {isTgpl ? (activeSurveyType === 'installation' ? 'installation poles' : 'survey poles') : (activeType === 'all' ? 'records' : activeType === 'switch_point' ? 'switch points' : 'poles')} in the {activeTab} queue
+              {total} {isTgpl ? (activeSurveyType === 'installation' ? 'installation poles' : activeSurveyType === 'ccms' ? 'CCMS points' : 'survey poles') : (activeType === 'all' ? 'records' : activeType === 'switch_point' ? 'switch points' : 'poles')} in the {activeTab} queue
             </p>
           </div>
         
@@ -754,7 +755,7 @@ export const SubmissionQueueView = ({ projectId }) => {
                         onClick={() => {
                           if (confirmMutation.isPending) return;
                           if (window.confirm('Are you sure you want to confirm this submission?')) {
-                            confirmMutation.mutate({ id: item.id, type: item.type });
+                            confirmMutation.mutate({ id: item.id, type: item.type, survey_type: item.survey_type || activeSurveyType });
                           }
                         }}
                         className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:text-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -806,7 +807,27 @@ export const SubmissionQueueView = ({ projectId }) => {
       )}
 
       {/* Inspect Modal */}
-      {selectedSubmission && (
+      {(selectedSubmission?.survey_type === 'ccms' || (selectedSubmission && activeSurveyType === 'ccms')) ? (
+        <CcmsInspectModal
+          submission={selectedSubmission}
+          onClose={() => { setSelectedSubmission(null); setIsEditing(false); }}
+          onConfirm={(sub) => {
+            if (confirmMutation.isPending) return;
+            confirmMutation.mutate({ id: sub.id, type: 'ccms', survey_type: 'ccms' });
+          }}
+          onDelete={(sub) => {
+            if (deleteMutation.isPending) return;
+            if (window.confirm('Are you sure you want to delete this CCMS submission?')) {
+              deleteMutation.mutate({ id: sub.id, type: 'ccms', survey_type: 'ccms' });
+            }
+          }}
+          canConfirm={canShowEdit}
+          canDelete={showDeletedTab}
+          isConfirming={confirmMutation.isPending}
+          isDeleting={deleteMutation.isPending}
+          projectId={projectId}
+        />
+      ) : selectedSubmission && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
           <div className="w-full max-w-5xl rounded-lg bg-white p-6 shadow-2xl max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center mb-4">

@@ -4,10 +4,11 @@ import axios from 'axios';
 import { SwitchPointForm } from '../components/SwitchPointForm';
 import { PoleForm } from '../components/PoleForm';
 import { InstallationForm } from '../components/InstallationForm';
+import { TgplCcmsForm } from '../components/TgplCcmsForm';
 import { TodaySubmissionsView } from '../components/TodaySubmissionsView';
 import { useAuthStore } from '../../../store/authStore';
 import { useUserStats } from '../../../shared/hooks/useUserStats';
-import { BarChart3, ClipboardList, FileCheck, WifiOff, ArrowLeft, Wrench } from 'lucide-react';
+import { BarChart3, ClipboardList, FileCheck, WifiOff, ArrowLeft, Wrench, Zap } from 'lucide-react';
 import API_BASE_URL from '../../../config/api';
 import { OfflineQueueView } from '../components/OfflineQueueView';
 import { offlineSyncService } from '../services/offlineSyncService';
@@ -24,6 +25,8 @@ export default function MobileSurvey() {
   const [selectedDate, setSelectedDate] = useState(() => getLocalDateString());
   const [selectedInstallationWard, setSelectedInstallationWard] = useState(null);
   const [installationSearchTerm, setInstallationSearchTerm] = useState('');
+  const [selectedCcmsWard, setSelectedCcmsWard] = useState(null);
+  const [ccmsSearchTerm, setCcmsSearchTerm] = useState('');
 
   const projectId = activeProject?.id;
   const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3';
@@ -72,6 +75,19 @@ export default function MobileSurvey() {
       return res.data.ulbs || [];
     },
     enabled: installationSearchTerm.length >= 2,
+  });
+
+  const { data: ccmsWards = [] } = useQuery({
+    queryKey: ['ccmsWards', ccmsSearchTerm],
+    queryFn: async () => {
+      if (ccmsSearchTerm.length < 2) return [];
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API_BASE_URL}/projects/${projectId}/pole-survey/ulbs/search?q=${ccmsSearchTerm}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.data.ulbs || [];
+    },
+    enabled: ccmsSearchTerm.length >= 2,
   });
 
   const { data: stats = {
@@ -132,6 +148,10 @@ export default function MobileSurvey() {
                         <span className="text-xs font-semibold text-gray-400">Installation Poles</span>
                         <span className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.installation_poles ?? 0}</span>
                       </div>
+                      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-emerald-100 col-span-2">
+                        <span className="text-xs font-semibold text-emerald-700">⚡ CCMS Points</span>
+                        <span className="text-2xl font-black text-emerald-600 mt-1">{stats?.today?.ccms_survey ?? 0}</span>
+                      </div>
                     </>
                   )}
                 </div>
@@ -164,6 +184,10 @@ export default function MobileSurvey() {
                       <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-blue-100">
                         <span className="text-xs font-semibold text-gray-400">Installation Poles</span>
                         <span className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.installation_poles ?? 0}</span>
+                      </div>
+                      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-blue-100 col-span-2">
+                        <span className="text-xs font-semibold text-blue-700">⚡ CCMS Points</span>
+                        <span className="text-2xl font-black text-blue-600 mt-1">{stats?.total?.ccms_survey ?? 0}</span>
                       </div>
                     </>
                   )}
@@ -362,6 +386,49 @@ export default function MobileSurvey() {
           </>
         )}
 
+        {activeTab === 'ccms' && isTgpl && (
+          <>
+            {!selectedCcmsWard ? (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Enter Ward</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={ccmsSearchTerm}
+                    onChange={(e) => setCcmsSearchTerm(e.target.value)}
+                    placeholder="e.g. Ward 15"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  />
+                  {ccmsWards.length > 0 && (
+                    <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg max-h-48 overflow-y-auto">
+                      {ccmsWards.map((ward) => (
+                        <div
+                          key={ward.id}
+                          onClick={() => {
+                            setSelectedCcmsWard(ward);
+                            setCcmsSearchTerm(ward.name);
+                          }}
+                          className="p-3 hover:bg-gray-50 cursor-pointer text-sm"
+                        >
+                          {ward.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <TgplCcmsForm
+                ward={selectedCcmsWard}
+                onBack={() => {
+                  setSelectedCcmsWard(null);
+                  setCcmsSearchTerm('');
+                }}
+              />
+            )}
+          </>
+        )}
+
         {activeTab === 'submissions' && (
           <TodaySubmissionsView projectId={projectId} />
         )}
@@ -394,6 +461,15 @@ export default function MobileSurvey() {
           >
             <Wrench size={20} className="mb-1" />
             <span>Installation</span>
+          </button>
+        )}
+        {isTgpl && (
+          <button
+            onClick={() => setActiveTab('ccms')}
+            className={`flex flex-col items-center p-2 text-xs font-medium transition-colors ${activeTab === 'ccms' ? 'text-primary' : 'text-gray-500'}`}
+          >
+            <Zap size={20} className="mb-1" />
+            <span>CCMS</span>
           </button>
         )}
         <button

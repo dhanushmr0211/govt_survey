@@ -28,7 +28,23 @@ async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
 
     // Sync to respective tables regardless of entity_files insert outcome
     try {
-      if (String(projectId) === '4' && entityType === 'pole') {
+      if (String(projectId) === '3' && (entityType === 'ccms' || entityType === 'tgpl_ccms')) {
+        const ccmsRes = await query(
+          'SELECT bescom_meter_image_url, ccms_meter_image_url, ccms_box_image_url FROM tgpl_ccms WHERE id = $1',
+          [entityId]
+        );
+        if (ccmsRes.rows.length > 0) {
+          const row = ccmsRes.rows[0];
+          let updateCol = null;
+          if (!row.bescom_meter_image_url) updateCol = 'bescom_meter_image_url';
+          else if (!row.ccms_meter_image_url) updateCol = 'ccms_meter_image_url';
+          else if (!row.ccms_box_image_url) updateCol = 'ccms_box_image_url';
+
+          if (updateCol) {
+            await query(`UPDATE tgpl_ccms SET ${updateCol} = $1, updated_at = NOW() WHERE id = $2`, [publicUrl, entityId]);
+          }
+        }
+      } else if (String(projectId) === '4' && entityType === 'pole') {
         const poleRes = await query(
           'SELECT image_url_1, image_url_2 FROM tgpl2_poles WHERE id = $1 AND project_id = $2',
           [entityId, Number(projectId)]

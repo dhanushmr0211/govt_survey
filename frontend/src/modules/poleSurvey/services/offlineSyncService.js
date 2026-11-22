@@ -179,8 +179,15 @@ class OfflineSyncService {
     console.log(`📡 Starting background upload for ${sub.type} (ID: ${sub.id})...`);
     
     const startTotal = performance.now();
-    const endpoint = sub.type === 'switch_point' ? 'switch-point' : 'pole';
-    const recordUrl = `${API_BASE_URL}/projects/${sub.projectId}/pole-survey/${endpoint}`;
+    const isTgpl = String(sub.projectId) === '3';
+    let recordUrl = `${API_BASE_URL}/projects/${sub.projectId}/pole-survey/pole`;
+    if (sub.type === 'switch_point') {
+      recordUrl = `${API_BASE_URL}/projects/${sub.projectId}/pole-survey/switch-point`;
+    } else if (sub.type === 'ccms') {
+      recordUrl = isTgpl
+        ? `${API_BASE_URL}/projects/${sub.projectId}/tgpl-survey/ccms`
+        : `${API_BASE_URL}/projects/${sub.projectId}/pole-survey/pole`;
+    }
 
     const current = await offlineDb.submissions.get(sub.id) || sub;
     const offlineSubmissionId = current.offlineSubmissionId || createOfflineSubmissionId();

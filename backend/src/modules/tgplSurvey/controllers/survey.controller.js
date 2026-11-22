@@ -1,5 +1,15 @@
 const { getPoles, updatePole, confirmPole } = require('../models/pole.model');
 const { getInstallations, updateInstallation, confirmInstallation } = require('../models/installation.model');
+const {
+  createCcmsRecord,
+  getCcmsByWard,
+  getLastCcmsByWard,
+  getAllCcmsRecordsByWard,
+  getCcmsById,
+  confirmCcmsRecord,
+  deleteCcmsRecord,
+  updateCcmsRecord
+} = require('../models/ccms.model');
 const { query } = require('../../../config/db');
 const { ROLES } = require('../../../constants/roles');
 
@@ -192,7 +202,9 @@ async function confirmPoleHandler(req, res, next) {
     const surveyType = req.body?.survey_type || req.query?.survey_type || req.body?.type || req.query?.type;
     
     let confirmed = null;
-    if (surveyType === 'installation') {
+    if (surveyType === 'ccms') {
+      confirmed = await confirmCcmsRecord(id, projectId, userId);
+    } else if (surveyType === 'installation') {
       confirmed = await confirmInstallation(id, projectId, userId);
       if (!confirmed) {
         confirmed = await confirmPole(id, projectId, userId);
@@ -307,7 +319,10 @@ async function deletePoleHandler(req, res, next) {
       return res.status(403).json({ message: 'Forbidden: You do not have permission to delete submissions.' });
     }
 
-    if (surveyType === 'installation') {
+    if (surveyType === 'ccms') {
+      await deleteCcmsRecord(id, projectId, userId);
+      return res.json({ message: 'CCMS record successfully deleted.' });
+    } else if (surveyType === 'installation') {
       await query(
         `UPDATE tgpl_installations 
          SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $1 
@@ -346,6 +361,125 @@ async function deletePoleHandler(req, res, next) {
   }
 }
 
+
+async function createCcmsHandler(req, res, next) {
+  try {
+    const { projectId } = req.params;
+    const data = req.body;
+    const userId = req.user.id;
+
+    if (!data.ward_id) {
+      return res.status(400).json({ error: 'ward_id is required', message: 'Ward is required' });
+    }
+
+    const trimStr = (val) => (val !== undefined && val !== null ? String(val).trim() : '');
+    
+    // Installed Pole Number must be numeric only
+    const poleNum = trimStr(data.installed_pole_number);
+    if (!poleNum || !/^\d+$/.test(poleNum)) {
+      return res.status(400).json({ 
+        error: 'installed_pole_number must be numbers only', 
+        message: 'Installed Pole Number must contain numbers only' 
+      });
+    }
+
+    // Required fields check
+    const requiredFields = [
+      'ccms_number', 'installed_pole_number', 'supply_input', 'ccms_phase',
+      'dtc_number', 'rr_number', 'bescom_meter_sl_number', 'is_ct_meter',
+      'bescom_meter_status', 'ccms_uid_no', 'ccms_meter_no', 'ccms_imei_no',
+      'earthing_completed', 'ccms_landmark', 'ccms_meter_voltage',
+      'ccms_meter_current', 'ccms_meter_pf', 'ccms_meter_power_kw',
+      'bescom_meter_reading_no', 'bescom_meter_voltage', 'bescom_meter_current',
+      'bescom_meter_pf', 'bescom_meter_power_kw'
+    ];
+
+    for (const f of requiredFields) {
+      if (!trimStr(data[f])) {
+        return res.status(400).json({ 
+          error: `${f} is required`, 
+          message: `Field "${f.replace(/_/g, ' ')}" is compulsory` 
+        });
+      }
+    }
+
+    // Check images
+    if (!trimStr(data.bescom_meter_image_url) || !trimStr(data.ccms_meter_image_url) || !trimStr(data.ccms_box_image_url)) {
+      return res.status(400).json({ 
+        error: 'All 3 images are compulsory', 
+        message: 'All 3 images (BESCOM meter, CCMS meter, CCMS box) are compulsory' 
+      });
+    }
+
+    const ccmsRecord = await createCcmsRecord(projectId, data, userId);
+    res.status(201).json({ ccms: ccmsRecord });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getCcmsByWardHandler(req, res, next) {
+  try {
+    const { projectId, wardId } = req.params;
+    const ccmsList = await getCcmsByWard(projectId, wardId);
+    const lastCcms = await getLastCcmsByWard(projectId, wardId);
+    const allCcmsRecords = await getAllCcmsRecordsByWard(projectId, wardId);
+    res.json({ ccms: ccmsList, lastCcms, allCcms: allCcmsRecords });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getCcmsByIdHandler(req, res, next) {
+  try {
+    const { projectId, id } = req.params;
+    const ccms = await getCcmsById(id, projectId);
+    if (!ccms) {
+      return res.status(404).json({ message: 'CCMS record not found' });
+    }
+    res.json({ ccms });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateCcmsHandler(req, res, next) {
+  try {
+    const { projectId, id } = req.params;
+    const data = req.body;
+    const updated = await updateCcmsRecord(id, projectId, data);
+    res.json({ ccms: updated });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function confirmCcmsHandler(req, res, next) {
+  try {
+    const { projectId, id } = req.params;
+    const userId = req.user.id;
+    const confirmed = await confirmCcmsRecord(id, projectId, userId);
+    res.json({ ccms: confirmed });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function deleteCcmsHandler(req, res, next) {
+  try {
+    const { projectId, id } = req.params;
+    const userId = req.user.id;
+    const userEmail = (req.user?.email || '').toLowerCase().trim();
+    if (userEmail !== 'pratheekar1997@gmail.com' && userEmail !== 'prelectricals01@gmail.com') {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to delete submissions.' });
+    }
+    await deleteCcmsRecord(id, projectId, userId);
+    res.json({ message: 'CCMS record successfully deleted.' });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getPolesHandler,
   getInstallationsHandler,
@@ -353,6 +487,12 @@ module.exports = {
   updatePoleHandler,
   confirmPoleHandler,
   validateMoveHandler,
-  deletePoleHandler
+  deletePoleHandler,
+  createCcmsHandler,
+  getCcmsByWardHandler,
+  getCcmsByIdHandler,
+  updateCcmsHandler,
+  confirmCcmsHandler,
+  deleteCcmsHandler
 };
 

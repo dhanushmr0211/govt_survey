@@ -6,6 +6,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { useToastStore } from '../../../store/toastStore';
 import imageCompression from 'browser-image-compression';
 import API_BASE_URL from '../../../config/api';
+import { CcmsInspectModal } from './CcmsInspectModal';
 
 const getAutoRoadCategory = (roadType, roadWidthStr) => {
   const normalizedRoadType = typeof roadType === 'string' ? roadType : (roadType ? String(roadType) : '');
@@ -46,7 +47,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = propProjectId || activeProject?.id;
   const isTgpl2 = activeProject?.project_type === 'TGPL2_SURVEY' || String(activeProject?.id) === '4' || String(projectId) === '4';
-  const surveyPath = isTgpl2 ? 'tgpl2-survey' : 'pole-survey';
+  const surveyPath = isTgpl2 ? 'tgpl2-survey' : isTgpl ? 'tgpl-survey' : 'pole-survey';
 
   useEffect(() => {
     const fetchUlbs = async () => {
@@ -130,7 +131,9 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   const deleteMutation = useMutation({
     mutationFn: async ({ id, type, survey_type }) => {
       const endpoint = isTgpl
-        ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/poles/${id}?survey_type=${survey_type || selectedSubmission?.survey_type || activeSurveyType}`
+        ? (survey_type === 'ccms' || selectedSubmission?.survey_type === 'ccms'
+          ? `${API_BASE_URL}/projects/${projectId}/tgpl-survey/ccms/${id}`
+          : `${API_BASE_URL}/projects/${projectId}/tgpl-survey/poles/${id}?survey_type=${survey_type || selectedSubmission?.survey_type || activeSurveyType}`)
         : `${API_BASE_URL}/projects/${projectId}/pole-survey/submissions/${id}?type=${type}`;
       const res = await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
@@ -600,7 +603,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
                     </td>
                   )}
                   <td className="px-4 py-2">{item.ward_number}</td>
-                  <td className="px-4 py-2">{isTgpl ? (item.ccms_number || item.switch_point_number || 'N/A') : (item.ulb_name || 'N/A')}</td>
+                  <td className="px-4 py-2">{isTgpl ? (activeSurveyType === 'ccms' ? (item.ccms_number || item.identifier || 'N/A') : (item.ccms_number || item.switch_point_number || 'N/A')) : (item.ulb_name || 'N/A')}</td>
                   <td className="px-4 py-2">{date ? date.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'}</td>
                   <td className="px-4 py-2">
                     <button
