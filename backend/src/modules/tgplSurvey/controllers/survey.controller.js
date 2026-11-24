@@ -406,20 +406,28 @@ async function createCcmsHandler(req, res, next) {
     // Check offline idempotency to prevent duplicate CCMS submissions on sync retries
     const offlineSubmissionId = data.offline_submission_id ? String(data.offline_submission_id).trim() : null;
     if (offlineSubmissionId) {
-      const existingOffline = await query(
-        `SELECT * FROM tgpl_ccms WHERE offline_submission_id = $1 AND is_deleted = FALSE LIMIT 1`,
-        [offlineSubmissionId]
-      );
-      if (existingOffline.rows.length > 0) {
-        const existing = existingOffline.rows[0];
-        return res.status(200).json({ ccms: existing, id: existing.id, ...existing });
+      try {
+        const existingOffline = await query(
+          `SELECT * FROM tgpl_ccms WHERE offline_submission_id = $1 AND is_deleted = FALSE LIMIT 1`,
+          [offlineSubmissionId]
+        );
+        if (existingOffline.rows.length > 0) {
+          const existing = existingOffline.rows[0];
+          return res.status(200).json({ ccms: existing, id: existing.id, ...existing });
+        }
+      } catch (err) {
+        console.warn('[CCMS] Offline check ignored if column migrating:', err.message);
       }
     }
 
     const ccmsRecord = await createCcmsRecord(projectId, data, userId);
     return res.status(201).json({ ccms: ccmsRecord, id: ccmsRecord.id, ...ccmsRecord });
   } catch (error) {
-    next(error);
+    console.error('[createCcmsHandler Error]', error);
+    return res.status(500).json({
+      error: 'Failed to create CCMS record',
+      message: error.message || 'Internal server error while saving CCMS Survey'
+    });
   }
 }
 

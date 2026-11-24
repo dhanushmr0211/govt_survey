@@ -7,65 +7,137 @@ const { query } = require('../../../config/db');
 async function createCcmsRecord(projectId, data, createdBy) {
   const trimStr = (val) => (val !== undefined && val !== null ? String(val).trim() : '');
 
-  const result = await query(
-    `INSERT INTO tgpl_ccms (
-      project_id, ward_id, ward_number, ccms_number, installed_pole_number,
-      supply_input, ccms_phase, dtc_number, rr_number, bescom_meter_sl_number,
-      is_ct_meter, bescom_meter_status, ccms_uid_no, ccms_meter_no, ccms_imei_no,
-      latitude, longitude, earthing_completed, ccms_landmark,
-      ccms_meter_voltage, ccms_meter_current, ccms_meter_pf, ccms_meter_power_kw,
-      bescom_meter_reading_no, bescom_meter_voltage, bescom_meter_current,
-      bescom_meter_pf, bescom_meter_power_kw,
-      bescom_meter_image_url, ccms_meter_image_url, ccms_box_image_url,
-      created_by, offline_submission_id
-    ) VALUES (
-      $1, $2, $3, $4, $5,
-      $6, $7, $8, $9, $10,
-      $11, $12, $13, $14, $15,
-      $16, $17, $18, $19,
-      $20, $21, $22, $23,
-      $24, $25, $26,
-      $27, $28,
-      $29, $30, $31,
-      $32, $33
-    ) RETURNING *`,
-    [
-      Number(projectId) || 3,
-      Number(data.ward_id) || null,
-      trimStr(data.ward_number),
-      trimStr(data.ccms_number),
-      trimStr(data.installed_pole_number),
-      trimStr(data.supply_input),
-      trimStr(data.ccms_phase),
-      trimStr(data.dtc_number),
-      trimStr(data.rr_number),
-      trimStr(data.bescom_meter_sl_number),
-      trimStr(data.is_ct_meter),
-      trimStr(data.bescom_meter_status),
-      trimStr(data.ccms_uid_no),
-      trimStr(data.ccms_meter_no),
-      trimStr(data.ccms_imei_no),
-      data.latitude != null ? Number(data.latitude) : null,
-      data.longitude != null ? Number(data.longitude) : null,
-      trimStr(data.earthing_completed),
-      trimStr(data.ccms_landmark),
-      data.ccms_meter_voltage != null ? Number(data.ccms_meter_voltage) : null,
-      data.ccms_meter_current != null ? Number(data.ccms_meter_current) : null,
-      data.ccms_meter_pf != null ? Number(data.ccms_meter_pf) : null,
-      data.ccms_meter_power_kw != null ? Number(data.ccms_meter_power_kw) : null,
-      data.bescom_meter_reading_no != null ? Number(data.bescom_meter_reading_no) : null,
-      data.bescom_meter_voltage != null ? Number(data.bescom_meter_voltage) : null,
-      data.bescom_meter_current != null ? Number(data.bescom_meter_current) : null,
-      data.bescom_meter_pf != null ? Number(data.bescom_meter_pf) : null,
-      data.bescom_meter_power_kw != null ? Number(data.bescom_meter_power_kw) : null,
-      trimStr(data.bescom_meter_image_url) || null,
-      trimStr(data.ccms_meter_image_url) || null,
-      trimStr(data.ccms_box_image_url) || null,
-      createdBy || null,
-      trimStr(data.offline_submission_id) || null,
-    ]
-  );
-  return result.rows[0];
+  const bescomImg = trimStr(data.bescom_meter_image_url);
+  const ccmsMeterImg = trimStr(data.ccms_meter_image_url);
+  const ccmsBoxImg = trimStr(data.ccms_box_image_url);
+
+  const lat = data.latitude != null && !isNaN(Number(data.latitude)) ? Number(data.latitude) : 0;
+  const lng = data.longitude != null && !isNaN(Number(data.longitude)) ? Number(data.longitude) : 0;
+  const offlineSubId = trimStr(data.offline_submission_id) || null;
+
+  try {
+    const result = await query(
+      `INSERT INTO tgpl_ccms (
+        project_id, ward_id, ward_number, ccms_number, installed_pole_number,
+        supply_input, ccms_phase, dtc_number, rr_number, bescom_meter_sl_number,
+        is_ct_meter, bescom_meter_status, ccms_uid_no, ccms_meter_no, ccms_imei_no,
+        latitude, longitude, earthing_completed, ccms_landmark,
+        ccms_meter_voltage, ccms_meter_current, ccms_meter_pf, ccms_meter_power_kw,
+        bescom_meter_reading_no, bescom_meter_voltage, bescom_meter_current,
+        bescom_meter_pf, bescom_meter_power_kw,
+        bescom_meter_image_url, ccms_meter_image_url, ccms_box_image_url,
+        created_by, offline_submission_id
+      ) VALUES (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15,
+        $16, $17, $18, $19,
+        $20, $21, $22, $23,
+        $24, $25, $26,
+        $27, $28,
+        $29, $30, $31,
+        $32, $33
+      ) RETURNING *`,
+      [
+        Number(projectId) || 3,
+        Number(data.ward_id) || null,
+        trimStr(data.ward_number),
+        trimStr(data.ccms_number),
+        trimStr(data.installed_pole_number),
+        trimStr(data.supply_input),
+        trimStr(data.ccms_phase),
+        trimStr(data.dtc_number),
+        trimStr(data.rr_number),
+        trimStr(data.bescom_meter_sl_number),
+        trimStr(data.is_ct_meter),
+        trimStr(data.bescom_meter_status),
+        trimStr(data.ccms_uid_no),
+        trimStr(data.ccms_meter_no),
+        trimStr(data.ccms_imei_no),
+        lat,
+        lng,
+        trimStr(data.earthing_completed),
+        trimStr(data.ccms_landmark),
+        trimStr(data.ccms_meter_voltage),
+        trimStr(data.ccms_meter_current),
+        trimStr(data.ccms_meter_pf),
+        trimStr(data.ccms_meter_power_kw),
+        trimStr(data.bescom_meter_reading_no),
+        trimStr(data.bescom_meter_voltage),
+        trimStr(data.bescom_meter_current),
+        trimStr(data.bescom_meter_pf),
+        trimStr(data.bescom_meter_power_kw),
+        bescomImg,
+        ccmsMeterImg,
+        ccmsBoxImg,
+        createdBy || null,
+        offlineSubId,
+      ]
+    );
+    return result.rows[0];
+  } catch (err) {
+    if (err.message && err.message.includes('offline_submission_id')) {
+      const fallbackResult = await query(
+        `INSERT INTO tgpl_ccms (
+          project_id, ward_id, ward_number, ccms_number, installed_pole_number,
+          supply_input, ccms_phase, dtc_number, rr_number, bescom_meter_sl_number,
+          is_ct_meter, bescom_meter_status, ccms_uid_no, ccms_meter_no, ccms_imei_no,
+          latitude, longitude, earthing_completed, ccms_landmark,
+          ccms_meter_voltage, ccms_meter_current, ccms_meter_pf, ccms_meter_power_kw,
+          bescom_meter_reading_no, bescom_meter_voltage, bescom_meter_current,
+          bescom_meter_pf, bescom_meter_power_kw,
+          bescom_meter_image_url, ccms_meter_image_url, ccms_box_image_url,
+          created_by
+        ) VALUES (
+          $1, $2, $3, $4, $5,
+          $6, $7, $8, $9, $10,
+          $11, $12, $13, $14, $15,
+          $16, $17, $18, $19,
+          $20, $21, $22, $23,
+          $24, $25, $26,
+          $27, $28,
+          $29, $30, $31,
+          $32
+        ) RETURNING *`,
+        [
+          Number(projectId) || 3,
+          Number(data.ward_id) || null,
+          trimStr(data.ward_number),
+          trimStr(data.ccms_number),
+          trimStr(data.installed_pole_number),
+          trimStr(data.supply_input),
+          trimStr(data.ccms_phase),
+          trimStr(data.dtc_number),
+          trimStr(data.rr_number),
+          trimStr(data.bescom_meter_sl_number),
+          trimStr(data.is_ct_meter),
+          trimStr(data.bescom_meter_status),
+          trimStr(data.ccms_uid_no),
+          trimStr(data.ccms_meter_no),
+          trimStr(data.ccms_imei_no),
+          lat,
+          lng,
+          trimStr(data.earthing_completed),
+          trimStr(data.ccms_landmark),
+          trimStr(data.ccms_meter_voltage),
+          trimStr(data.ccms_meter_current),
+          trimStr(data.ccms_meter_pf),
+          trimStr(data.ccms_meter_power_kw),
+          trimStr(data.bescom_meter_reading_no),
+          trimStr(data.bescom_meter_voltage),
+          trimStr(data.bescom_meter_current),
+          trimStr(data.bescom_meter_pf),
+          trimStr(data.bescom_meter_power_kw),
+          bescomImg,
+          ccmsMeterImg,
+          ccmsBoxImg,
+          createdBy || null,
+        ]
+      );
+      return fallbackResult.rows[0];
+    }
+    throw err;
+  }
 }
 
 /**
@@ -210,12 +282,7 @@ async function updateCcmsRecord(id, projectId, data) {
     'bescom_meter_image_url', 'ccms_meter_image_url', 'ccms_box_image_url'
   ];
 
-  const numericFields = new Set([
-    'ward_id', 'latitude', 'longitude',
-    'ccms_meter_voltage', 'ccms_meter_current', 'ccms_meter_pf', 'ccms_meter_power_kw',
-    'bescom_meter_reading_no', 'bescom_meter_voltage', 'bescom_meter_current',
-    'bescom_meter_pf', 'bescom_meter_power_kw'
-  ]);
+  const numericFields = new Set(['ward_id', 'latitude', 'longitude']);
 
   const setClauses = [];
   const values = [Number(id), Number(projectId) || 3];
