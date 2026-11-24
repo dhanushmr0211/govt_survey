@@ -175,8 +175,8 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
             </div>
             <div className="premium-panel flex items-center justify-between p-5">
               <div>
-                <p className="text-sm font-medium text-slate-500">Total Poles</p>
-                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalPoles}</p>
+                <p className="text-sm font-medium text-slate-500">Total Survey Poles</p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalSurveyPoles}</p>
               </div>
               <div className="rounded-lg bg-amber-50 p-3 text-amber-700">
                 <Lightbulb size={26} />
@@ -206,8 +206,8 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
                     <p className="text-xl font-bold text-violet-900">{district.total_switch_points}</p>
                   </div>
                   <div className="min-w-[130px] rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-center">
-                    <p className="text-xs font-semibold text-amber-700">Total Poles</p>
-                    <p className="text-xl font-bold text-amber-900">{district.total_poles}</p>
+                    <p className="text-xs font-semibold text-amber-700">Survey Poles</p>
+                    <p className="text-xl font-bold text-amber-900">{district.total_survey_poles}</p>
                   </div>
                 </>
               ) : !isTgpl ? (
@@ -280,7 +280,7 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
                     ) : (
                       <>
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">INSTALLATION COUNT</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">TOTAL POLES</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">TOTAL SURVEY POLES</th>
                       </>
                     )}
                     <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">ACTIONS</th>
@@ -299,7 +299,7 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
                       ) : (
                         <>
                           <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_inst_poles || 0)}</td>
-                          <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_poles || 0)}</td>
+                          <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_survey_poles || 0)}</td>
                         </>
                       )}
                       <td className="px-4 py-4 text-sm">

@@ -47,6 +47,7 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
   const activeProject = useAuthStore((state) => state.activeProject);
   const projectId = propProjectId || activeProject?.id;
   const isTgpl2 = activeProject?.project_type === 'TGPL2_SURVEY' || String(activeProject?.id) === '4' || String(projectId) === '4';
+  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
   const surveyPath = isTgpl2 ? 'tgpl2-survey' : isTgpl ? 'tgpl-survey' : 'pole-survey';
 
   useEffect(() => {
@@ -78,7 +79,6 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
     'cmchaya37@gmail.com',
     'prajnatm29@gmail.com'
   ]).has((user?.email || '').toLowerCase());
-  const isTgpl = activeProject?.project_type === 'TGPL_SURVEY' || String(activeProject?.id) === '3' || String(projectId) === '3';
   const isIdeck = String(projectId) === '2' || activeProject?.project_type === 'IDECK_SURVEY';
   const canEditGPS = isEditing && isAutofillUser && isIdeck;
   const showDeleteButton = (user?.email || '').toLowerCase() === 'pratheekar1997@gmail.com' || (user?.email || '').toLowerCase() === 'prelectricals01@gmail.com';

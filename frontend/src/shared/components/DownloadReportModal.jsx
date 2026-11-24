@@ -144,7 +144,7 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
         {isTgpl && (
           <div className="mb-4">
             <label className="mb-1.5 block text-xs font-bold text-gray-600 uppercase tracking-wider">Report Category</label>
-            <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+            <div className="grid grid-cols-3 gap-2 rounded-xl bg-slate-100 p-1">
               <button
                 type="button"
                 onClick={() => setReportType('poles')}
@@ -166,6 +166,13 @@ export function DownloadReportModal({ isOpen, onClose, projectId }) {
                 }`}
               >
                 ⚙️ Installation Form
+              </button>
+              <button
+                type="button"
+                onClick={() => setReportType('ccms')}
+                className={`py-2 px-3 text-xs font-bold rounded-lg transition-all ${reportType === 'ccms' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                ⚡ CCMS Survey
               </button>
             </div>
           </div>

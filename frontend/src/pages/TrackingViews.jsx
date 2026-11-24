@@ -136,8 +136,10 @@ export function AdminTrackingView({ projectId }) {
                 <>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Survey</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Inst</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's CCMS</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Survey</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Inst</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total CCMS</th>
                 </>
               )}
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
@@ -159,8 +161,10 @@ export function AdminTrackingView({ projectId }) {
                   <>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_survey_resolved}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_inst_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_ccms_resolved ?? 0}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_survey_resolved}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_inst_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_ccms_resolved ?? 0}</td>
                   </>
                 )}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -452,8 +456,10 @@ export function MobileUserTrackingView({ projectId }) {
                 <>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Survey</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Inst</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's CCMS</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Survey</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Inst</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Overall CCMS</th>
                 </>
               )}
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
@@ -475,8 +481,10 @@ export function MobileUserTrackingView({ projectId }) {
                   <>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_survey}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_inst}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.today_ccms ?? 0}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total_survey}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total_inst}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.total_ccms ?? 0}</td>
                   </>
                 )}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -624,6 +632,12 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
               onClick={() => setActiveSurveyType('installation')}
             >
               Installation
+            </button>
+            <button
+              className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeSurveyType === 'ccms' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              onClick={() => setActiveSurveyType('ccms')}
+            >
+              ⚡ CCMS
             </button>
           </div>
         )}

@@ -356,10 +356,12 @@ async function downloadReportHandler(req, res, next) {
     const normReportType = (reportType || '').toLowerCase().trim();
     let shouldIncludePoles = !normReportType || ['survey', 'surveys', 'pole', 'poles', 'all'].includes(normReportType);
     let shouldIncludeInst = !normReportType || ['installation', 'installations', 'all'].includes(normReportType);
+    let shouldIncludeCcms = !normReportType || ['ccms', 'all'].includes(normReportType);
 
-    if (!shouldIncludePoles && !shouldIncludeInst) {
+    if (!shouldIncludePoles && !shouldIncludeInst && !shouldIncludeCcms) {
       shouldIncludePoles = true;
       shouldIncludeInst = true;
+      shouldIncludeCcms = true;
     }
 
     if (shouldIncludePoles) {
@@ -542,6 +544,83 @@ async function downloadReportHandler(req, res, next) {
         row.commit();
       });
       iSheet.commit();
+    }
+
+    if (shouldIncludeCcms) {
+      // CCMS Sheet
+      const cSheet = workbook.addWorksheet('CCMS');
+      cSheet.columns = [
+        { header: 'Sl#', key: 'sl_no', width: 10 },
+        { header: 'Ward No#', key: 'ward_number', width: 15 },
+        { header: 'CCMS No#', key: 'ccms_number', width: 15 },
+        { header: 'Installed Pole No#', key: 'installed_pole_number', width: 18 },
+        { header: 'Supply Input', key: 'supply_input', width: 15 },
+        { header: 'CCMS - 1Ph/3Ph', key: 'ccms_phase', width: 15 },
+        { header: 'DTC No#', key: 'dtc_number', width: 15 },
+        { header: 'RR Number', key: 'rr_number', width: 15 },
+        { header: 'BESCOM Meter Sl#', key: 'bescom_meter_sl_number', width: 20 },
+        { header: 'Is it CT Meter', key: 'is_ct_meter', width: 15 },
+        { header: 'BESCOM Meter Status', key: 'bescom_meter_status', width: 18 },
+        { header: 'CCMS UID No#', key: 'ccms_uid_no', width: 18 },
+        { header: 'CCMS Meter No#', key: 'ccms_meter_no', width: 18 },
+        { header: 'CCMS IMEI No#', key: 'ccms_imei_no', width: 18 },
+        { header: 'Latitude longitude', key: 'latitude_longitude', width: 25 },
+        { header: 'Earthing Completed', key: 'earthing_completed', width: 18 },
+        { header: 'CCMS Landmark', key: 'ccms_landmark', width: 25 },
+        { header: 'CCMS Meter - Voltage', key: 'ccms_meter_voltage', width: 20 },
+        { header: 'CCMS Meter - Current', key: 'ccms_meter_current', width: 20 },
+        { header: 'CCMS Meter - PF', key: 'ccms_meter_pf', width: 18 },
+        { header: 'CCMS Meter - Power (kW)', key: 'ccms_meter_power_kw', width: 22 },
+        { header: 'BESCOM Meter Reading No#', key: 'bescom_meter_reading_no', width: 22 },
+        { header: 'BESCOM Meter - Voltage', key: 'bescom_meter_voltage', width: 22 },
+        { header: 'BESCOM Meter - Current', key: 'bescom_meter_current', width: 22 },
+        { header: 'BESCOM Meter - PF', key: 'bescom_meter_pf', width: 18 },
+        { header: 'BESCOM Meter - Power (kW)', key: 'bescom_meter_power_kw', width: 22 },
+        { header: 'BESCOM Meter Serial Image', key: 'bescom_meter_image_url', width: 40 },
+        { header: 'CCMS Meter Serial Image', key: 'ccms_meter_image_url', width: 40 },
+        { header: 'CCMS Box Image', key: 'ccms_box_image_url', width: 40 },
+        { header: 'Created By', key: 'user_name', width: 15 },
+        { header: 'Created At', key: 'created_at', width: 20 },
+        { header: 'Confirmed By', key: 'confirmed_by_name', width: 15 }
+      ];
+
+      const cHeaderRow = cSheet.getRow(1);
+      cHeaderRow.height = 24;
+      cHeaderRow.eachCell((cell) => {
+        cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D5C75' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      });
+      cHeaderRow.commit();
+
+      const activeCcmsCols = NUMERIC_COLS.filter(key => 
+        cSheet.columns.some(col => col.key === key)
+      );
+
+      (data.ccms || []).forEach((cItem, idx) => {
+        const latLong = cItem.latitude && cItem.longitude ? `${cItem.latitude}, ${cItem.longitude}` : (cItem.latitude || cItem.longitude || '');
+        
+        let formattedCcms = {};
+        Object.keys(cItem).forEach(key => {
+          if (activeCcmsCols.includes(key)) {
+            formattedCcms[key] = formatExcelValue(cItem[key]);
+          } else {
+            formattedCcms[key] = cItem[key];
+          }
+        });
+
+        const row = cSheet.addRow({
+          ...formattedCcms,
+          sl_no: idx + 1,
+          ward_number: formatExcelValue(cItem.ward_number || cItem.ulb_name || ''),
+          latitude_longitude: latLong || 'NA',
+          created_at: formatDateTime(cItem.created_at) || 'NA'
+        });
+
+        sanitizeExcelRow(row, cSheet.columns, activeCcmsCols);
+        row.commit();
+      });
+      cSheet.commit();
     }
     
     await workbook.commit();
