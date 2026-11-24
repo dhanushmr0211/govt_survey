@@ -14,12 +14,15 @@ const getImageKeys = (sub) => {
     return sub.images.map((image, index) => image?.fieldName || image?.slot || `image_url_${index + 1}`);
   }
 
-  const isInstallation = sub?.data?.survey_type === 'installation';
+  if (sub?.type === 'ccms') {
+    return ['bescom_meter_image_url', 'ccms_meter_image_url', 'ccms_box_image_url'];
+  }
+  const isInstallation = sub?.data?.survey_type === 'installation' || sub?.type === 'installation';
   if (sub?.type === 'switch_point') {
     return ['image_url_1', 'image_url_2'];
   }
   if (isInstallation) {
-    return ['image_url_1', 'image_url_2'];
+    return ['image_url_1', 'image_url_2', 'image_url_3'];
   }
   return ['image_url_1', 'image_url_2', 'image_url_3'];
 };
@@ -28,7 +31,8 @@ const normalizeImages = (sub) => {
   if (!Array.isArray(sub?.images) || sub.images.length === 0) return [];
   const keys = getImageKeys(sub);
   return sub.images.map((image, index) => ({
-    fieldName: image?.fieldName || image?.slot || keys[index] || `image_url_${index + 1}`,
+    fieldName: image?.fieldName || keys[index] || `image_url_${index + 1}`,
+    slot: image?.slot || (index + 1),
     file: image.file,
     type: image.type || sub.type,
   }));
@@ -210,7 +214,7 @@ class OfflineSyncService {
       }, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      entityId = res.data.id;
+      entityId = res.data?.id || res.data?.ccms?.id || res.data?.pole?.id;
       await offlineDb.submissions.update(sub.id, {
         serverEntityId: entityId,
         offlineSubmissionId,
@@ -256,6 +260,8 @@ class OfflineSyncService {
         formDataUpload.append('file', img.file);
         formDataUpload.append('entity_type', sub.type);
         formDataUpload.append('entity_id', entityId);
+        formDataUpload.append('field_name', img.fieldName || '');
+        formDataUpload.append('slot', img.slot || (i + 1));
 
         await axios.post(
           `${API_BASE_URL}/projects/${sub.projectId}/pole-survey/files`,

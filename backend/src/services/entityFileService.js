@@ -3,7 +3,7 @@ const { buildObjectName, uploadBuffer, deleteObject } = require('../config/gcs')
 const { pool, tgplPool, dbStorage, query } = require('../config/db');
 const { env } = require('../config/env');
 
-async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
+async function uploadFile(projectId, entityType, entityId, file, uploadedBy, fieldName = null, slot = null) {
   const isTgplDatabase = ['3', '4'].includes(String(projectId));
   const activePool = isTgplDatabase ? tgplPool : pool;
   return dbStorage.run(activePool, async () => {
@@ -26,61 +26,57 @@ async function uploadFile(projectId, entityType, entityId, file, uploadedBy) {
       console.error('Error inserting into entity_files (table may not exist):', efErr.message);
     }
 
-    // Sync to respective tables regardless of entity_files insert outcome
+    // Sync to respective tables targeting exact slot/column to prevent image loss or accidental overwriting
     try {
+      const slotNum = slot ? Number(slot) : null;
       if (String(projectId) === '3' && (entityType === 'ccms' || entityType === 'tgpl_ccms')) {
-        const ccmsRes = await query(
-          'SELECT bescom_meter_image_url, ccms_meter_image_url, ccms_box_image_url FROM tgpl_ccms WHERE id = $1',
-          [entityId]
-        );
-        if (ccmsRes.rows.length > 0) {
-          const row = ccmsRes.rows[0];
-          let updateCol = null;
-          if (!row.bescom_meter_image_url) updateCol = 'bescom_meter_image_url';
-          else if (!row.ccms_meter_image_url) updateCol = 'ccms_meter_image_url';
-          else if (!row.ccms_box_image_url) updateCol = 'ccms_box_image_url';
-
-          if (updateCol) {
-            await query(`UPDATE tgpl_ccms SET ${updateCol} = $1, updated_at = NOW() WHERE id = $2`, [publicUrl, entityId]);
+        let updateCol = null;
+        if (fieldName === 'bescom_meter_image_url' || slotNum === 1) updateCol = 'bescom_meter_image_url';
+        else if (fieldName === 'ccms_meter_image_url' || slotNum === 2) updateCol = 'ccms_meter_image_url';
+        else if (fieldName === 'ccms_box_image_url' || slotNum === 3) updateCol = 'ccms_box_image_url';
+        else {
+          const ccmsRes = await query(
+            'SELECT bescom_meter_image_url, ccms_meter_image_url, ccms_box_image_url FROM tgpl_ccms WHERE id = $1',
+            [entityId]
+          );
+          if (ccmsRes.rows.length > 0) {
+            const row = ccmsRes.rows[0];
+            if (!row.bescom_meter_image_url) updateCol = 'bescom_meter_image_url';
+            else if (!row.ccms_meter_image_url) updateCol = 'ccms_meter_image_url';
+            else if (!row.ccms_box_image_url) updateCol = 'ccms_box_image_url';
           }
+        }
+        if (updateCol) {
+          await query(`UPDATE tgpl_ccms SET ${updateCol} = $1, updated_at = NOW() WHERE id = $2`, [publicUrl, entityId]);
         }
       } else if (String(projectId) === '4' && entityType === 'pole') {
-        const poleRes = await query(
-          'SELECT image_url_1, image_url_2 FROM tgpl2_poles WHERE id = $1 AND project_id = $2',
-          [entityId, Number(projectId)]
-        );
-        if (poleRes.rows.length > 0) {
-          const updateCol = !poleRes.rows[0].image_url_1 ? 'image_url_1' : !poleRes.rows[0].image_url_2 ? 'image_url_2' : null;
-          if (updateCol) await query(`UPDATE tgpl2_poles SET ${updateCol} = $1, updated_at = NOW() WHERE id = $2 AND project_id = $3`, [publicUrl, entityId, Number(projectId)]);
-        }
-      } else if (entityType === 'installation' || (String(projectId) === '3' && entityType === 'pole')) {
-        let instRes = null;
-        if (entityType === 'installation') {
-          instRes = await query('SELECT image_url_1, image_url_2, image_url_3 FROM tgpl_installations WHERE id = $1', [entityId]);
-        }
-        if (instRes && instRes.rows.length > 0) {
-          const inst = instRes.rows[0];
-          let updateCol = null;
-          if (!inst.image_url_1) updateCol = 'image_url_1';
-          else if (!inst.image_url_2) updateCol = 'image_url_2';
-          else if (!inst.image_url_3) updateCol = 'image_url_3';
-
-          if (updateCol) {
-            await query(`UPDATE tgpl_installations SET ${updateCol} = $1 WHERE id = $2`, [publicUrl, entityId]);
-          }
-        } else {
-          const poleRes = await query('SELECT image_url_1, image_url_2, image_url_3 FROM poles WHERE id = $1', [entityId]);
+        let updateCol = slotNum === 1 ? 'image_url_1' : slotNum === 2 ? 'image_url_2' : null;
+        if (!updateCol) {
+          const poleRes = await query(
+            'SELECT image_url_1, image_url_2 FROM tgpl2_poles WHERE id = $1 AND project_id = $2',
+            [entityId, Number(projectId)]
+          );
           if (poleRes.rows.length > 0) {
-            const pole = poleRes.rows[0];
-            let updateCol = null;
-            if (!pole.image_url_1) updateCol = 'image_url_1';
-            else if (!pole.image_url_2) updateCol = 'image_url_2';
-            else if (!pole.image_url_3) updateCol = 'image_url_3';
-
-            if (updateCol) {
-              await query(`UPDATE poles SET ${updateCol} = $1 WHERE id = $2`, [publicUrl, entityId]);
-            }
+            updateCol = !poleRes.rows[0].image_url_1 ? 'image_url_1' : !poleRes.rows[0].image_url_2 ? 'image_url_2' : null;
           }
+        }
+        if (updateCol) await query(`UPDATE tgpl2_poles SET ${updateCol} = $1, updated_at = NOW() WHERE id = $2 AND project_id = $3`, [publicUrl, entityId, Number(projectId)]);
+      } else if (entityType === 'installation' || (String(projectId) === '3' && entityType === 'pole')) {
+        let updateCol = slotNum === 1 || fieldName === 'image_url_1' ? 'image_url_1' :
+                        slotNum === 2 || fieldName === 'image_url_2' ? 'image_url_2' :
+                        slotNum === 3 || fieldName === 'image_url_3' ? 'image_url_3' : null;
+        const table = entityType === 'installation' ? 'tgpl_installations' : 'poles';
+        if (!updateCol) {
+          const rowRes = await query(`SELECT image_url_1, image_url_2, image_url_3 FROM ${table} WHERE id = $1`, [entityId]);
+          if (rowRes.rows.length > 0) {
+            const r = rowRes.rows[0];
+            if (!r.image_url_1) updateCol = 'image_url_1';
+            else if (!r.image_url_2) updateCol = 'image_url_2';
+            else if (!r.image_url_3) updateCol = 'image_url_3';
+          }
+        }
+        if (updateCol) {
+          await query(`UPDATE ${table} SET ${updateCol} = $1 WHERE id = $2`, [publicUrl, entityId]);
         }
       } else if (entityType === 'pole') {
         const poleRes = await query('SELECT image_url_1, image_url_2, image_url_3 FROM poles WHERE id = $1', [entityId]);
@@ -138,9 +134,59 @@ async function getFilesForEntity(projectId, entityType, entityId) {
       console.error('Error querying entity_files (table may not exist):', dbErr.message);
     }
 
-    // Fallback for TGPL-family poles & installations where images are stored directly on the record
+    // Fallback for TGPL-family poles, installations, & CCMS where images are stored directly on the record
     if (['3', '4'].includes(String(projectId))) {
       try {
+        if (String(projectId) === '3' && (entityType === 'ccms' || entityType === 'tgpl_ccms')) {
+          const ccmsRes = await query(`SELECT bescom_meter_image_url, ccms_meter_image_url, ccms_box_image_url, created_at FROM tgpl_ccms WHERE id = $1`, [entityId]);
+          if (ccmsRes.rows.length > 0) {
+            const row = ccmsRes.rows[0];
+            const extraFiles = [];
+            if (row.bescom_meter_image_url) {
+              extraFiles.push({
+                id: `fallback-tgpl-ccms-${entityId}-1`,
+                project_id: Number(projectId),
+                entity_type: 'ccms',
+                entity_id: entityId,
+                file_name: 'bescom_meter_image_url',
+                url: row.bescom_meter_image_url,
+                signed_url: row.bescom_meter_image_url,
+                uploaded_at: row.created_at || new Date()
+              });
+            }
+            if (row.ccms_meter_image_url) {
+              extraFiles.push({
+                id: `fallback-tgpl-ccms-${entityId}-2`,
+                project_id: Number(projectId),
+                entity_type: 'ccms',
+                entity_id: entityId,
+                file_name: 'ccms_meter_image_url',
+                url: row.ccms_meter_image_url,
+                signed_url: row.ccms_meter_image_url,
+                uploaded_at: row.created_at || new Date()
+              });
+            }
+            if (row.ccms_box_image_url) {
+              extraFiles.push({
+                id: `fallback-tgpl-ccms-${entityId}-3`,
+                project_id: Number(projectId),
+                entity_type: 'ccms',
+                entity_id: entityId,
+                file_name: 'ccms_box_image_url',
+                url: row.ccms_box_image_url,
+                signed_url: row.ccms_box_image_url,
+                uploaded_at: row.created_at || new Date()
+              });
+            }
+            const existingUrls = new Set(filesWithUrls.map(f => f.signed_url));
+            extraFiles.forEach(f => {
+              if (!existingUrls.has(f.signed_url)) {
+                filesWithUrls.push(f);
+              }
+            });
+          }
+        }
+
         const isTgpl2 = String(projectId) === '4';
         let table = isTgpl2 ? 'tgpl2_poles' : 'poles';
         if (String(projectId) === '3' && entityType === 'installation') {

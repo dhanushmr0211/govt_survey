@@ -339,6 +339,8 @@ export const TgplCcmsForm = ({ ward, onBack }) => {
           formDataUpload.append('file', img.file);
           formDataUpload.append('entity_type', 'ccms');
           formDataUpload.append('entity_id', ccmsId);
+          formDataUpload.append('field_name', img.fieldName);
+          formDataUpload.append('slot', img.slot || (i + 1));
 
           await axios.post(
             `${API_BASE_URL}/projects/${projectId}/tgpl-survey/files`,
@@ -401,6 +403,15 @@ export const TgplCcmsForm = ({ ward, onBack }) => {
       }));
     } catch (error) {
       console.error('CCMS submit error:', error);
+      const isClientError = error.response && error.response.status >= 400 && error.response.status < 500;
+      // If server returned a 4xx validation error while online, clean up this offline attempt so it doesn't linger as duplicate
+      if (isClientError && offlineRowId) {
+        try {
+          await offlineDb.submissions.delete(offlineRowId);
+        } catch (delErr) {
+          console.warn('Could not delete failed offline row:', delErr);
+        }
+      }
       const errMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'Error submitting CCMS record';
       if (!navigator.onLine) {
         alert('Offline: CCMS Survey saved to offline queue. It will automatically upload when network reconnects.');

@@ -403,16 +403,21 @@ async function createCcmsHandler(req, res, next) {
       }
     }
 
-    // Check images
-    if (!trimStr(data.bescom_meter_image_url) || !trimStr(data.ccms_meter_image_url) || !trimStr(data.ccms_box_image_url)) {
-      return res.status(400).json({ 
-        error: 'All 3 images are compulsory', 
-        message: 'All 3 images (BESCOM meter, CCMS meter, CCMS box) are compulsory' 
-      });
+    // Check offline idempotency to prevent duplicate CCMS submissions on sync retries
+    const offlineSubmissionId = data.offline_submission_id ? String(data.offline_submission_id).trim() : null;
+    if (offlineSubmissionId) {
+      const existingOffline = await query(
+        `SELECT * FROM tgpl_ccms WHERE offline_submission_id = $1 AND is_deleted = FALSE LIMIT 1`,
+        [offlineSubmissionId]
+      );
+      if (existingOffline.rows.length > 0) {
+        const existing = existingOffline.rows[0];
+        return res.status(200).json({ ccms: existing, id: existing.id, ...existing });
+      }
     }
 
     const ccmsRecord = await createCcmsRecord(projectId, data, userId);
-    res.status(201).json({ ccms: ccmsRecord });
+    return res.status(201).json({ ccms: ccmsRecord, id: ccmsRecord.id, ...ccmsRecord });
   } catch (error) {
     next(error);
   }

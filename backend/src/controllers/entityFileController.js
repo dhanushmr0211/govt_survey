@@ -4,6 +4,8 @@ const entityFileService = require('../services/entityFileService');
 const fileUploadSchema = z.object({
   entity_type: z.string().min(1),
   entity_id: z.number().int().positive(),
+  slot: z.union([z.number(), z.string()]).optional(),
+  field_name: z.string().optional(),
 });
 
 async function uploadFileHandler(req, res, next) {
@@ -12,6 +14,8 @@ async function uploadFileHandler(req, res, next) {
     const data = fileUploadSchema.parse({
       entity_type: req.body.entity_type,
       entity_id: Number(req.body.entity_id),
+      slot: req.body.slot,
+      field_name: req.body.field_name,
     });
 
     if (!req.file) {
@@ -23,7 +27,9 @@ async function uploadFileHandler(req, res, next) {
       data.entity_type,
       data.entity_id,
       req.file,
-      Number(req.user.sub)
+      Number(req.user.sub),
+      data.field_name,
+      data.slot
     );
 
     return res.status(201).json({ file: fileRecord });
