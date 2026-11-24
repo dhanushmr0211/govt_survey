@@ -50,9 +50,9 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', _distr
   let pIdx = 1;
   
   if (fromDate && toDate) {
-    dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date BETWEEN ${pIdx} AND ${pIdx + 1}`;
-    dateFilterI = `AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date BETWEEN ${pIdx} AND ${pIdx + 1}`;
-    dateFilterC = `AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date BETWEEN ${pIdx} AND ${pIdx + 1}`;
+    dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date BETWEEN $${pIdx} AND $${pIdx + 1}`;
+    dateFilterI = `AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date BETWEEN $${pIdx} AND $${pIdx + 1}`;
+    dateFilterC = `AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date BETWEEN $${pIdx} AND $${pIdx + 1}`;
     tgplParams.push(fromDate, toDate);
     pIdx += 2;
   } else if (date) {
@@ -60,15 +60,15 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', _distr
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = getLocalDateString(yesterday);
-      dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= ${pIdx}`;
-      dateFilterI = `AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date <= ${pIdx}`;
-      dateFilterC = `AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date <= ${pIdx}`;
+      dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $${pIdx}`;
+      dateFilterI = `AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date <= $${pIdx}`;
+      dateFilterC = `AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date <= $${pIdx}`;
       tgplParams.push(yesterdayStr);
     } else {
       const operator = mode === 'cumulative' ? '<=' : '=';
-      dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date ${operator} ${pIdx}`;
-      dateFilterI = `AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date ${operator} ${pIdx}`;
-      dateFilterC = `AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date ${operator} ${pIdx}`;
+      dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date ${operator} $${pIdx}`;
+      dateFilterI = `AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date ${operator} $${pIdx}`;
+      dateFilterC = `AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date ${operator} $${pIdx}`;
       tgplParams.push(date);
     }
     pIdx++;
@@ -88,13 +88,8 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', _distr
       w.id as ulb_id,
       w.name as ulb_name,
       COALESCE((
-        SELECT COUNT(DISTINCT ccms_number) FROM (
-          SELECT p.ccms_number FROM poles p WHERE p.ward_id = w.id AND p.is_deleted = FALSE AND p.ccms_number IS NOT NULL AND p.ccms_number != '' ${dateFilterP}
-          UNION
-          SELECT i.ccms_number FROM tgpl_installations i WHERE i.ward_id = w.id AND i.is_deleted = FALSE AND i.ccms_number IS NOT NULL AND i.ccms_number != '' ${dateFilterI}
-          UNION
-          SELECT c.ccms_number FROM tgpl_ccms c WHERE c.ward_id = w.id AND c.is_deleted = FALSE AND c.ccms_number IS NOT NULL AND c.ccms_number != '' ${dateFilterC}
-        ) u_ccms
+        SELECT COUNT(c.id) FROM tgpl_ccms c
+        WHERE c.ward_id = w.id AND c.is_deleted = FALSE ${dateFilterC}
       ), 0) as total_ccms,
       (
         COALESCE((SELECT COUNT(p.id) FROM poles p WHERE p.ward_id = w.id AND p.is_deleted = FALSE ${dateFilterP}), 0) +
@@ -119,12 +114,14 @@ async function getDistrictSummary(projectId, date = null, mode = 'exact', _distr
 async function getWardSummary(ulbId, date = null, mode = 'exact', _districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
   let dateFilterP = '';
   let dateFilterI = '';
+  let dateFilterC = '';
   const tgplParams = [ulbId];
   let pIdx = 2;
   
   if (fromDate && toDate) {
     dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date BETWEEN $${pIdx} AND $${pIdx + 1}`;
     dateFilterI = `AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date BETWEEN $${pIdx} AND $${pIdx + 1}`;
+    dateFilterC = `AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date BETWEEN $${pIdx} AND $${pIdx + 1}`;
     tgplParams.push(fromDate, toDate);
     pIdx += 2;
   } else if (date) {
@@ -134,11 +131,13 @@ async function getWardSummary(ulbId, date = null, mode = 'exact', _districtScope
       const yesterdayStr = getLocalDateString(yesterday);
       dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $${pIdx}`;
       dateFilterI = `AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date <= $${pIdx}`;
+      dateFilterC = `AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date <= $${pIdx}`;
       tgplParams.push(yesterdayStr);
     } else {
       const operator = mode === 'cumulative' ? '<=' : '=';
       dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date ${operator} $${pIdx}`;
       dateFilterI = `AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date ${operator} $${pIdx}`;
+      dateFilterC = `AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date ${operator} $${pIdx}`;
       tgplParams.push(date);
     }
     pIdx++;
@@ -155,11 +154,8 @@ async function getWardSummary(ulbId, date = null, mode = 'exact', _districtScope
     SELECT 
       w.name as ward_number,
       COALESCE((
-        SELECT COUNT(DISTINCT ccms_number) FROM (
-          SELECT p.ccms_number FROM poles p WHERE p.ward_id = w.id AND p.is_deleted = FALSE AND p.ccms_number IS NOT NULL AND p.ccms_number != '' ${dateFilterP}
-          UNION
-          SELECT i.ccms_number FROM tgpl_installations i WHERE i.ward_id = w.id AND i.is_deleted = FALSE AND i.ccms_number IS NOT NULL AND i.ccms_number != '' ${dateFilterI}
-        ) u_ccms
+        SELECT COUNT(c.id) FROM tgpl_ccms c
+        WHERE c.ward_id = w.id AND c.is_deleted = FALSE ${dateFilterC}
       ), 0) as total_ccms,
       (
         COALESCE((SELECT COUNT(p.id) FROM poles p WHERE p.ward_id = w.id AND p.is_deleted = FALSE ${dateFilterP}), 0) +
