@@ -171,12 +171,14 @@ async function getWardSummary(ulbId, date = null, mode = 'exact', _districtScope
 async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', _districtScope = null, ulbScope = null, fromDate = null, toDate = null) {
   let dateFilterP = '';
   let dateFilterI = '';
+  let dateFilterC = '';
   const tgplParams = [ulbId];
   let pIdx = 2;
   
   if (fromDate && toDate) {
     dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date BETWEEN $${pIdx} AND $${pIdx + 1}`;
     dateFilterI = `AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date BETWEEN $${pIdx} AND $${pIdx + 1}`;
+    dateFilterC = `AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date BETWEEN $${pIdx} AND $${pIdx + 1}`;
     tgplParams.push(fromDate, toDate);
     pIdx += 2;
   } else if (date) {
@@ -186,11 +188,13 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', _d
       const yesterdayStr = getLocalDateString(yesterday);
       dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $${pIdx}`;
       dateFilterI = `AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date <= $${pIdx}`;
+      dateFilterC = `AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date <= $${pIdx}`;
       tgplParams.push(yesterdayStr);
     } else {
       const operator = mode === 'cumulative' ? '<=' : '=';
       dateFilterP = `AND (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date ${operator} $${pIdx}`;
       dateFilterI = `AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date ${operator} $${pIdx}`;
+      dateFilterC = `AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date ${operator} $${pIdx}`;
       tgplParams.push(date);
     }
     pIdx++;
@@ -368,6 +372,101 @@ async function getWardDetails(ulbId, wardNumber, date = null, mode = 'exact', _d
       FROM tgpl_installations i
       JOIN wards w ON i.ward_id = w.id
       WHERE i.ward_id = $1 AND i.is_deleted = FALSE ${dateFilterI} ${scopeFilter}
+
+      UNION ALL
+
+      SELECT 
+        w.name as ward_number,
+        COALESCE(c.ccms_number, 'NO_CCMS') as ccms_id,
+        c.ccms_number,
+        c.is_ct_meter as meter_type,
+        c.bescom_meter_status as meter_condition,
+        c.rr_number as meter_rr_number,
+        c.bescom_meter_sl_number as meter_serial_number,
+        c.id as pole_id,
+        c.created_by as user_id,
+        c.created_at,
+        c.installed_pole_number as pole_number,
+        'CCMS Unit' as pole_type,
+        c.status as pole_condition,
+        c.supply_input as light_type,
+        c.ccms_phase as light_working_status,
+        NULL as pole_height,
+        NULL as pole_height_mtrs,
+        NULL as arm_type,
+        c.earthing_completed as arm_status,
+        c.ccms_landmark as road_category,
+        NULL as road_type,
+        NULL as conductor_type,
+        NULL as pole_to_pole_distance,
+        NULL as pole_to_pole_distance_mtrs,
+        NULL as present_arm_no,
+        NULL as present_arm_length,
+        NULL as present_arm_length_mtrs,
+        '0' as how_many_lights_in_pole,
+        NULL as light_mounting_height,
+        c.ccms_meter_power_kw as light_capacity,
+        c.ccms_meter_no as light_type_2,
+        c.bescom_meter_power_kw as light_capacity_2,
+        NULL as road_width_mtrs,
+        c.earthing_completed as pole_earthing_exists,
+        c.confirmed_by as pole_confirmed_by,
+        c.confirmed_at as pole_confirmed_at,
+        NULL::text as pole_confirmed_by_name,
+        c.latitude as pole_latitude,
+        c.longitude as pole_longitude,
+        COALESCE(c.bescom_meter_image_url, img1.url_full) as image_url_1,
+        COALESCE(c.ccms_meter_image_url, img2.url_full) as image_url_2,
+        COALESCE(c.ccms_box_image_url, img3.url_full) as image_url_3,
+        c.dtc_number,
+        NULL as dtc_capacity,
+        c.bescom_meter_status as meter_dimensional_status,
+        NULL as req_arm_number,
+        NULL as req_arm_length,
+        NULL as req_led_lights_no,
+        NULL as req_led_wattage,
+        NULL as req_dedicated_wire,
+        'ccms' as survey_type,
+        c.ccms_meter_voltage as light_type_3,
+        c.ccms_meter_current as light_capacity_3,
+        c.ccms_meter_pf as light_type_4,
+        c.bescom_meter_voltage as light_capacity_4,
+        c.bescom_meter_current as light_type_5,
+        c.bescom_meter_pf as light_capacity_5,
+        c.bescom_meter_reading_no as light_type_6,
+        NULL as light_capacity_6,
+        NULL as light_status,
+        NULL as light_status_2,
+        NULL as light_status_3,
+        NULL as light_status_4,
+        NULL as light_status_5,
+        NULL as arm_status_2,
+        NULL as arm_status_3,
+        NULL as arm_status_4,
+        NULL as arm_status_5,
+        NULL as light_wattage,
+        NULL as light_wattage_2,
+        NULL as light_wattage_3,
+        NULL as light_wattage_4,
+        NULL as light_wattage_5,
+        NULL as dedicated_wire,
+        NULL as infra_gap,
+        c.ccms_landmark as remarks
+      FROM tgpl_ccms c
+      JOIN wards w ON c.ward_id = w.id
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'ccms' AND entity_id = c.id ORDER BY id ASC LIMIT 1 OFFSET 0
+      ) img1 ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'ccms' AND entity_id = c.id ORDER BY id ASC LIMIT 1 OFFSET 1
+      ) img2 ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'ccms' AND entity_id = c.id ORDER BY id ASC LIMIT 1 OFFSET 2
+      ) img3 ON TRUE
+      WHERE c.ward_id = $1 AND c.is_deleted = FALSE ${dateFilterC} ${scopeFilter}
     ) all_records
     ORDER BY created_at DESC;
   `;
@@ -379,14 +478,14 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
   const offset = (page - 1) * limit;
   let scopeFilterP = '';
   let scopeFilterI = '';
+  let scopeFilterC = '';
   const params = [projectId, limit, offset, userId];
   let pIdx = 5;
 
-  let scopeFilterC = '';
   if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
-    scopeFilterP += ` AND p.ward_id = ANY(${pIdx})`;
-    scopeFilterI += ` AND i.ward_id = ANY(${pIdx})`;
-    scopeFilterC += ` AND c.ward_id = ANY(${pIdx})`;
+    scopeFilterP += ` AND p.ward_id = ANY($${pIdx})`;
+    scopeFilterI += ` AND i.ward_id = ANY($${pIdx})`;
+    scopeFilterC += ` AND c.ward_id = ANY($${pIdx})`;
     params.push(ulbScope);
     pIdx++;
   }
@@ -397,9 +496,9 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
   let pDateFilterC = '';
   if (fromDate && toDate) {
     const startIdx = params.length + 1;
-    pDateFilterP = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.${submissionDateColumn})))::date BETWEEN ${startIdx} AND ${startIdx + 1}`;
-    pDateFilterI = ` AND (timezone('Asia/Kolkata', timezone('UTC', i.${submissionDateColumn})))::date BETWEEN ${startIdx} AND ${startIdx + 1}`;
-    pDateFilterC = ` AND (timezone('Asia/Kolkata', timezone('UTC', c.${submissionDateColumn})))::date BETWEEN ${startIdx} AND ${startIdx + 1}`;
+    pDateFilterP = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.${submissionDateColumn})))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    pDateFilterI = ` AND (timezone('Asia/Kolkata', timezone('UTC', i.${submissionDateColumn})))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    pDateFilterC = ` AND (timezone('Asia/Kolkata', timezone('UTC', c.${submissionDateColumn})))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
     params.push(fromDate, toDate);
   }
 
@@ -592,7 +691,110 @@ async function getPendingSubmissions(projectId, page = 1, limit = 50, userId = n
     `);
   }
 
-  const queryBody = subQueries.join(' UNION ALL ');
+  if (includeCcms) {
+    subQueries.push(`
+      SELECT 
+        'ccms' as type,
+        c.id,
+        c.ward_id as ulb_id,
+        c.created_by as user_id,
+        NULL::text as user_name,
+        c.created_at,
+        w.name as ward_number,
+        c.installed_pole_number::text as identifier,
+        w.name as ulb_name,
+        c.ccms_number::text as switch_point_number,
+        'CCMS' as switch_point_type,
+        TRUE as meter_exists,
+        c.is_ct_meter as meter_type,
+        c.rr_number as meter_rr_number,
+        c.bescom_meter_sl_number as meter_serial_number,
+        c.bescom_meter_status as meter_condition,
+        c.latitude,
+        c.longitude,
+        c.supply_input as conductor_type,
+        'CCMS Point' as pole_type,
+        NULL as pole_height,
+        NULL as pole_height_mtrs,
+        c.status as pole_condition,
+        NULL as pole_to_pole_distance,
+        NULL as pole_to_pole_distance_mtrs,
+        c.ccms_phase as arm_type,
+        c.earthing_completed as arm_status,
+        NULL as present_arm_no,
+        NULL as present_arm_length,
+        NULL as present_arm_length_mtrs,
+        '0' as how_many_lights_in_pole,
+        NULL as light_mounting_height,
+        c.ccms_uid_no as light_type,
+        c.ccms_meter_power_kw as light_capacity,
+        c.ccms_meter_no as light_type_2,
+        c.bescom_meter_power_kw as light_capacity_2,
+        c.ccms_imei_no as light_working_status,
+        c.ccms_landmark as road_category,
+        NULL as road_type,
+        NULL as road_width_mtrs,
+        c.earthing_completed as pole_earthing_exists,
+        c.dtc_number,
+        NULL as dtc_capacity,
+        c.ccms_number,
+        c.bescom_meter_status as meter_dimensional_status,
+        NULL as req_arm_number,
+        NULL as req_arm_length,
+        NULL as req_led_lights_no,
+        NULL as req_led_wattage,
+        NULL as req_dedicated_wire,
+        COALESCE(c.bescom_meter_image_url, img1.url_full) as image_url_1,
+        COALESCE(c.ccms_meter_image_url, img2.url_full) as image_url_2,
+        COALESCE(c.ccms_box_image_url, img3.url_full) as image_url_3,
+        'ccms' as survey_type,
+        c.ccms_meter_voltage as light_type_3,
+        c.ccms_meter_current as light_capacity_3,
+        c.ccms_meter_pf as light_type_4,
+        c.bescom_meter_voltage as light_capacity_4,
+        c.bescom_meter_current as light_type_5,
+        c.bescom_meter_pf as light_capacity_5,
+        c.bescom_meter_reading_no as light_type_6,
+        NULL as light_capacity_6,
+        NULL as light_status,
+        NULL as light_status_2,
+        NULL as light_status_3,
+        NULL as light_status_4,
+        NULL as light_status_5,
+        NULL as arm_status_2,
+        NULL as arm_status_3,
+        NULL as arm_status_4,
+        NULL as arm_status_5,
+        NULL as light_wattage,
+        NULL as light_wattage_2,
+        NULL as light_wattage_3,
+        NULL as light_wattage_4,
+        NULL as light_wattage_5,
+        NULL as dedicated_wire,
+        NULL as infra_gap,
+        c.ccms_landmark as remarks
+      FROM tgpl_ccms c
+      JOIN wards w ON c.ward_id = w.id
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'ccms' AND entity_id = c.id ORDER BY id ASC LIMIT 1 OFFSET 0
+      ) img1 ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'ccms' AND entity_id = c.id ORDER BY id ASC LIMIT 1 OFFSET 1
+      ) img2 ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'ccms' AND entity_id = c.id ORDER BY id ASC LIMIT 1 OFFSET 2
+      ) img3 ON TRUE
+      WHERE c.project_id = $1 AND c.status = 'PENDING' AND c.is_deleted = FALSE
+      AND ($4::int IS NULL OR c.created_by = $4)
+      ${pDateFilterC}
+      ${scopeFilterC}
+    `);
+  }
+
+  const queryBody = subQueries.length > 0 ? subQueries.join(' UNION ALL ') : 'SELECT NULL WHERE FALSE';
 
   const sql = `
     SELECT *, COUNT(*) OVER() AS total_count FROM (
@@ -617,9 +819,9 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
 
   let scopeFilterC = '';
   if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
-    scopeFilterP += ` AND p.ward_id = ANY(${pIdx})`;
-    scopeFilterI += ` AND i.ward_id = ANY(${pIdx})`;
-    scopeFilterC += ` AND c.ward_id = ANY(${pIdx})`;
+    scopeFilterP += ` AND p.ward_id = ANY($${pIdx})`;
+    scopeFilterI += ` AND i.ward_id = ANY($${pIdx})`;
+    scopeFilterC += ` AND c.ward_id = ANY($${pIdx})`;
     params.push(ulbScope);
     pIdx++;
   }
@@ -630,9 +832,9 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
   let pDateFilterC = '';
   if (fromDate && toDate) {
     const startIdx = params.length + 1;
-    pDateFilterP = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.${submissionDateColumn})))::date BETWEEN ${startIdx} AND ${startIdx + 1}`;
-    pDateFilterI = ` AND (timezone('Asia/Kolkata', timezone('UTC', i.${submissionDateColumn})))::date BETWEEN ${startIdx} AND ${startIdx + 1}`;
-    pDateFilterC = ` AND (timezone('Asia/Kolkata', timezone('UTC', c.${submissionDateColumn})))::date BETWEEN ${startIdx} AND ${startIdx + 1}`;
+    pDateFilterP = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.${submissionDateColumn})))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    pDateFilterI = ` AND (timezone('Asia/Kolkata', timezone('UTC', i.${submissionDateColumn})))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    pDateFilterC = ` AND (timezone('Asia/Kolkata', timezone('UTC', c.${submissionDateColumn})))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
     params.push(fromDate, toDate);
   }
 
@@ -833,7 +1035,114 @@ async function getConfirmedSubmissions(projectId, page = 1, limit = 50, userId =
     `);
   }
 
-  const queryBody = subQueries.join(' UNION ALL ');
+  if (includeCcms) {
+    subQueries.push(`
+      SELECT 
+        'ccms' as type,
+        c.id,
+        c.ward_id as ulb_id,
+        c.created_by as user_id,
+        NULL::text as user_name,
+        c.created_at,
+        w.name as ward_number,
+        c.installed_pole_number::text as identifier,
+        w.name as ulb_name,
+        c.ccms_number::text as switch_point_number,
+        c.confirmed_by,
+        c.confirmed_at,
+        NULL::text as confirmed_by_name,
+        'CCMS' as switch_point_type,
+        TRUE as meter_exists,
+        c.is_ct_meter as meter_type,
+        c.rr_number as meter_rr_number,
+        c.bescom_meter_sl_number as meter_serial_number,
+        c.bescom_meter_status as meter_condition,
+        c.latitude,
+        c.longitude,
+        c.supply_input as conductor_type,
+        'CCMS Point' as pole_type,
+        NULL as pole_height,
+        NULL as pole_height_mtrs,
+        c.status as pole_condition,
+        NULL as pole_to_pole_distance,
+        NULL as pole_to_pole_distance_mtrs,
+        c.ccms_phase as arm_type,
+        c.earthing_completed as arm_status,
+        NULL as present_arm_no,
+        NULL as present_arm_length,
+        NULL as present_arm_length_mtrs,
+        '0' as how_many_lights_in_pole,
+        NULL as light_mounting_height,
+        c.ccms_uid_no as light_type,
+        c.ccms_meter_power_kw as light_capacity,
+        c.ccms_meter_no as light_type_2,
+        c.bescom_meter_power_kw as light_capacity_2,
+        c.ccms_imei_no as light_working_status,
+        c.ccms_landmark as road_category,
+        NULL as road_type,
+        NULL as road_width_mtrs,
+        c.earthing_completed as pole_earthing_exists,
+        c.dtc_number,
+        NULL as dtc_capacity,
+        c.ccms_number,
+        c.bescom_meter_status as meter_dimensional_status,
+        NULL as req_arm_number,
+        NULL as req_arm_length,
+        NULL as req_led_lights_no,
+        NULL as req_led_wattage,
+        NULL as req_dedicated_wire,
+        COALESCE(c.bescom_meter_image_url, img1.url_full) as image_url_1,
+        COALESCE(c.ccms_meter_image_url, img2.url_full) as image_url_2,
+        COALESCE(c.ccms_box_image_url, img3.url_full) as image_url_3,
+        'ccms' as survey_type,
+        c.ccms_meter_voltage as light_type_3,
+        c.ccms_meter_current as light_capacity_3,
+        c.ccms_meter_pf as light_type_4,
+        c.bescom_meter_voltage as light_capacity_4,
+        c.bescom_meter_current as light_type_5,
+        c.bescom_meter_pf as light_capacity_5,
+        c.bescom_meter_reading_no as light_type_6,
+        NULL as light_capacity_6,
+        NULL as light_status,
+        NULL as light_status_2,
+        NULL as light_status_3,
+        NULL as light_status_4,
+        NULL as light_status_5,
+        NULL as arm_status_2,
+        NULL as arm_status_3,
+        NULL as arm_status_4,
+        NULL as arm_status_5,
+        NULL as light_wattage,
+        NULL as light_wattage_2,
+        NULL as light_wattage_3,
+        NULL as light_wattage_4,
+        NULL as light_wattage_5,
+        NULL as dedicated_wire,
+        NULL as infra_gap,
+        c.ccms_landmark as remarks
+      FROM tgpl_ccms c
+      JOIN wards w ON c.ward_id = w.id
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'ccms' AND entity_id = c.id ORDER BY id ASC LIMIT 1 OFFSET 0
+      ) img1 ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'ccms' AND entity_id = c.id ORDER BY id ASC LIMIT 1 OFFSET 1
+      ) img2 ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'ccms' AND entity_id = c.id ORDER BY id ASC LIMIT 1 OFFSET 2
+      ) img3 ON TRUE
+      WHERE c.project_id = $1 AND c.status = 'CONFIRMED' AND c.is_deleted IS NOT TRUE
+      AND ($4::int IS NULL OR c.created_by = $4)
+      AND ($5::int IS NULL OR c.confirmed_by = $5)
+      ${pDateFilterC}
+      ${scopeFilterC}
+    `);
+  }
+
+  const queryBody = subQueries.length > 0 ? subQueries.join(' UNION ALL ') : 'SELECT NULL WHERE FALSE';
 
   const sql = `
     SELECT *, COUNT(*) OVER() AS total_count FROM (
@@ -859,7 +1168,8 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
 
   if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
     scopeFilterP += ` AND p.ward_id = ANY($${pIdx})`;
-    scopeFilterI += ` AND i.ward_id = ANY($${pIdx})`;
+    scopeFilterI += ` AND i.ward_id = ANY(${pIdx})`;
+    scopeFilterC += ` AND c.ward_id = ANY(${pIdx})`;
     params.push(ulbScope);
     pIdx++;
   }
@@ -1042,6 +1352,108 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
       JOIN wards w ON i.ward_id = w.id
       WHERE i.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date = $2 AND i.is_deleted = FALSE
       AND ($5::int IS NULL OR i.created_by = $5)
+      ${scopeFilterI}
+
+      UNION ALL
+
+      SELECT 
+        'ccms' as type,
+        c.id,
+        c.ward_id as ulb_id,
+        c.created_by as user_id,
+        NULL::text as user_name,
+        c.created_at,
+        w.name as ward_number,
+        c.installed_pole_number::text as identifier,
+        w.name as ulb_name,
+        c.ccms_number::text as switch_point_number,
+        'CCMS' as switch_point_type,
+        TRUE as meter_exists,
+        c.is_ct_meter as meter_type,
+        c.rr_number as meter_rr_number,
+        c.bescom_meter_sl_number as meter_serial_number,
+        NULL::text as meter_condition,
+        c.latitude,
+        c.longitude,
+        c.supply_input as conductor_type,
+        'CCMS Point' as pole_type,
+        NULL as pole_height,
+        NULL as pole_height_mtrs,
+        NULL::text as pole_condition,
+        NULL as pole_to_pole_distance,
+        NULL as pole_to_pole_distance_mtrs,
+        c.ccms_phase as arm_type,
+        c.earthing_completed as arm_status,
+        NULL as present_arm_no,
+        NULL as present_arm_length,
+        NULL as present_arm_length_mtrs,
+        '0' as how_many_lights_in_pole,
+        NULL as light_mounting_height,
+        c.ccms_uid_no as light_type,
+        c.ccms_meter_power_kw as light_capacity,
+        c.ccms_meter_no as light_type_2,
+        c.bescom_meter_power_kw as light_capacity_2,
+        c.ccms_imei_no as light_working_status,
+        c.ccms_landmark as road_category,
+        NULL as road_type,
+        NULL as road_width_mtrs,
+        c.earthing_completed as pole_earthing_exists,
+        c.dtc_number,
+        NULL as dtc_capacity,
+        c.ccms_number,
+        c.bescom_meter_status as meter_dimensional_status,
+        NULL as req_arm_number,
+        NULL as req_arm_length,
+        NULL as req_led_lights_no,
+        NULL as req_led_wattage,
+        NULL as req_dedicated_wire,
+        COALESCE(c.bescom_meter_image_url, img1.url_full) as image_url_1,
+        COALESCE(c.ccms_meter_image_url, img2.url_full) as image_url_2,
+        COALESCE(c.ccms_box_image_url, img3.url_full) as image_url_3,
+        'ccms' as survey_type,
+        c.ccms_meter_voltage as light_type_3,
+        c.ccms_meter_current as light_capacity_3,
+        c.ccms_meter_pf as light_type_4,
+        c.bescom_meter_voltage as light_capacity_4,
+        c.bescom_meter_current as light_type_5,
+        c.bescom_meter_pf as light_capacity_5,
+        c.bescom_meter_reading_no as light_type_6,
+        NULL as light_capacity_6,
+        c.confirmed_by as pole_confirmed_by,
+        c.confirmed_at as pole_confirmed_at,
+        NULL as light_status,
+        NULL as light_status_2,
+        NULL as light_status_3,
+        NULL as light_status_4,
+        NULL as light_status_5,
+        NULL as arm_status_2,
+        NULL as arm_status_3,
+        NULL as arm_status_4,
+        NULL as arm_status_5,
+        NULL as light_wattage,
+        NULL as light_wattage_2,
+        NULL as light_wattage_3,
+        NULL as light_wattage_4,
+        NULL as light_wattage_5,
+        NULL as dedicated_wire,
+        NULL as infra_gap,
+        c.ccms_landmark as remarks
+      FROM tgpl_ccms c
+      JOIN wards w ON c.ward_id = w.id
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'ccms' AND entity_id = c.id ORDER BY id ASC LIMIT 1 OFFSET 0
+      ) img1 ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'ccms' AND entity_id = c.id ORDER BY id ASC LIMIT 1 OFFSET 1
+      ) img2 ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT CASE WHEN url LIKE 'https://%' THEN url ELSE 'https://storage.googleapis.com/govt-survey-images/' || url END AS url_full
+        FROM entity_files WHERE entity_type = 'ccms' AND entity_id = c.id ORDER BY id ASC LIMIT 1 OFFSET 2
+      ) img3 ON TRUE
+      WHERE c.project_id = $1 AND (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date = $2 AND c.is_deleted = FALSE
+      AND ($5::int IS NULL OR c.created_by = $5)
       ${scopeFilterI}
     ) combined
     ORDER BY created_at DESC
@@ -1570,27 +1982,32 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
   const offset = (page - 1) * limit;
   let scopeFilterP = '';
   let scopeFilterI = '';
+  let scopeFilterC = '';
   const params = [projectId, limit, offset];
   let pIdx = 4;
 
   if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
     scopeFilterP += ` AND p.ward_id = ANY($${pIdx})`;
     scopeFilterI += ` AND i.ward_id = ANY($${pIdx})`;
+    scopeFilterC += ` AND c.ward_id = ANY($${pIdx})`;
     params.push(ulbScope);
     pIdx++;
   }
 
   let pDateFilterP = '';
   let pDateFilterI = '';
+  let pDateFilterC = '';
   if (fromDate && toDate) {
     const startIdx = params.length + 1;
     pDateFilterP = ` AND (timezone('Asia/Kolkata', timezone('UTC', p.deleted_at)))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
     pDateFilterI = ` AND (timezone('Asia/Kolkata', timezone('UTC', i.deleted_at)))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
+    pDateFilterC = ` AND (timezone('Asia/Kolkata', timezone('UTC', c.deleted_at)))::date BETWEEN $${startIdx} AND $${startIdx + 1}`;
     params.push(fromDate, toDate);
   }
 
   const includeSurvey = !surveyType || surveyType === 'all' || surveyType === 'survey';
   const includeInst = !surveyType || surveyType === 'all' || surveyType === 'installation';
+  const includeCcms = surveyType === 'ccms' || surveyType === 'all';
 
   const subQueries = [];
 
@@ -1762,7 +2179,94 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
     `);
   }
 
-  const queryBody = subQueries.join(' UNION ALL ');
+  if (includeCcms) {
+    subQueries.push(`
+      SELECT 
+        'ccms' as type,
+        c.id,
+        c.ward_id as ulb_id,
+        c.created_by as user_id,
+        u_cre.name as user_name,
+        c.created_at,
+        w.name as ward_number,
+        c.installed_pole_number::text as identifier,
+        w.name as ulb_name,
+        c.ccms_number::text as switch_point_number,
+        c.confirmed_by,
+        c.confirmed_at,
+        u_conf.name as confirmed_by_name,
+        c.deleted_by,
+        c.deleted_at,
+        u_del.name as deleted_by_name,
+        'CCMS' as switch_point_type,
+        TRUE as meter_exists,
+        c.is_ct_meter as meter_type,
+        c.rr_number as meter_rr_number,
+        c.bescom_meter_sl_number as meter_serial_number,
+        c.bescom_meter_status as meter_condition,
+        c.latitude,
+        c.longitude,
+        c.supply_input as conductor_type,
+        'CCMS Point' as pole_type,
+        NULL as pole_height,
+        NULL as pole_height_mtrs,
+        c.status as pole_condition,
+        NULL as pole_to_pole_distance,
+        NULL as pole_to_pole_distance_mtrs,
+        c.ccms_phase as arm_type,
+        c.earthing_completed as arm_status,
+        NULL as present_arm_no,
+        NULL as present_arm_length,
+        NULL as present_arm_length_mtrs,
+        '0' as how_many_lights_in_pole,
+        NULL as light_mounting_height,
+        c.ccms_uid_no as light_type,
+        c.ccms_meter_power_kw as light_capacity,
+        c.ccms_meter_no as light_type_2,
+        c.bescom_meter_power_kw as light_capacity_2,
+        c.ccms_imei_no as light_working_status,
+        c.ccms_landmark as road_category,
+        NULL as road_type,
+        NULL as road_width_mtrs,
+        c.earthing_completed as pole_earthing_exists,
+        'ccms' as survey_type,
+        c.ccms_meter_voltage as light_type_3,
+        c.ccms_meter_current as light_capacity_3,
+        c.ccms_meter_pf as light_type_4,
+        c.bescom_meter_voltage as light_capacity_4,
+        c.bescom_meter_current as light_type_5,
+        c.bescom_meter_pf as light_capacity_5,
+        c.bescom_meter_reading_no as light_type_6,
+        NULL as light_capacity_6,
+        NULL as light_status,
+        NULL as light_status_2,
+        NULL as light_status_3,
+        NULL as light_status_4,
+        NULL as light_status_5,
+        NULL as arm_status_2,
+        NULL as arm_status_3,
+        NULL as arm_status_4,
+        NULL as arm_status_5,
+        NULL as light_wattage,
+        NULL as light_wattage_2,
+        NULL as light_wattage_3,
+        NULL as light_wattage_4,
+        NULL as light_wattage_5,
+        NULL as dedicated_wire,
+        NULL as infra_gap,
+        c.ccms_landmark as remarks
+      FROM tgpl_ccms c
+      JOIN wards w ON c.ward_id = w.id
+      LEFT JOIN users u_cre ON c.created_by = u_cre.id
+      LEFT JOIN users u_conf ON c.confirmed_by = u_conf.id
+      LEFT JOIN users u_del ON c.deleted_by = u_del.id
+      WHERE c.project_id = $1 AND c.is_deleted = TRUE
+      ${pDateFilterC}
+      ${scopeFilterC}
+    `);
+  }
+
+  const queryBody = subQueries.length > 0 ? subQueries.join(' UNION ALL ') : 'SELECT NULL WHERE FALSE';
 
   const sql = `
     SELECT *, COUNT(*) OVER() AS total_count FROM (

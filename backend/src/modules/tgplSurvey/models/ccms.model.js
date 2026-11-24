@@ -145,28 +145,23 @@ async function createCcmsRecord(projectId, data, createdBy) {
  * wardId can be numeric ID or ward name string.
  */
 async function getCcmsByWard(projectId, wardId) {
-  const isNumeric = /^[0-9]+$/.test(String(wardId));
-  let result;
-  if (isNumeric) {
-    result = await query(
-      `SELECT c.ccms_number, MAX(c.id) as id, MAX(c.created_at) as created_at
-       FROM tgpl_ccms c
-       WHERE c.project_id = $1 AND c.ward_id = $2 AND c.is_deleted = FALSE
-       GROUP BY c.ccms_number
-       ORDER BY MAX(c.created_at) DESC`,
-      [Number(projectId) || 3, Number(wardId)]
-    );
-  } else {
-    result = await query(
-      `SELECT c.ccms_number, MAX(c.id) as id, MAX(c.created_at) as created_at
-       FROM tgpl_ccms c
-       JOIN wards w ON c.ward_id = w.id
-       WHERE c.project_id = $1 AND w.name = $2 AND c.is_deleted = FALSE
-       GROUP BY c.ccms_number
-       ORDER BY MAX(c.created_at) DESC`,
-      [Number(projectId) || 3, String(wardId)]
-    );
-  }
+  const raw = String(wardId || '').trim();
+  const numId = /^[0-9]+$/.test(raw) ? parseInt(raw, 10) : null;
+  const result = await query(
+    `SELECT c.ccms_number, MAX(c.id) as id, MAX(c.created_at) as created_at
+     FROM tgpl_ccms c
+     JOIN wards w ON c.ward_id = w.id
+     WHERE c.project_id = $1 
+       AND (
+         ($2::int IS NOT NULL AND (c.ward_id = $2 OR w.id = $2))
+         OR LOWER(TRIM(w.name)) = LOWER($3)
+         OR LOWER(TRIM(c.ward_number)) = LOWER($3)
+       )
+       AND c.is_deleted = FALSE
+     GROUP BY c.ccms_number
+     ORDER BY MAX(c.created_at) DESC`,
+    [Number(projectId) || 3, numId, raw]
+  );
   return result.rows;
 }
 
@@ -174,24 +169,21 @@ async function getCcmsByWard(projectId, wardId) {
  * Returns the most recently created CCMS record from tgpl_ccms in the ward.
  */
 async function getLastCcmsByWard(projectId, wardId) {
-  const isNumeric = /^[0-9]+$/.test(String(wardId));
-  let result;
-  if (isNumeric) {
-    result = await query(
-      `SELECT * FROM tgpl_ccms
-       WHERE project_id = $1 AND ward_id = $2 AND is_deleted = FALSE
-       ORDER BY created_at DESC LIMIT 1`,
-      [Number(projectId) || 3, Number(wardId)]
-    );
-  } else {
-    result = await query(
-      `SELECT c.* FROM tgpl_ccms c
-       JOIN wards w ON c.ward_id = w.id
-       WHERE c.project_id = $1 AND w.name = $2 AND c.is_deleted = FALSE
-       ORDER BY c.created_at DESC LIMIT 1`,
-      [Number(projectId) || 3, String(wardId)]
-    );
-  }
+  const raw = String(wardId || '').trim();
+  const numId = /^[0-9]+$/.test(raw) ? parseInt(raw, 10) : null;
+  const result = await query(
+    `SELECT c.* FROM tgpl_ccms c
+     JOIN wards w ON c.ward_id = w.id
+     WHERE c.project_id = $1 
+       AND (
+         ($2::int IS NOT NULL AND (c.ward_id = $2 OR w.id = $2))
+         OR LOWER(TRIM(w.name)) = LOWER($3)
+         OR LOWER(TRIM(c.ward_number)) = LOWER($3)
+       )
+       AND c.is_deleted = FALSE
+     ORDER BY c.created_at DESC LIMIT 1`,
+    [Number(projectId) || 3, numId, raw]
+  );
   return result.rows[0] || null;
 }
 
@@ -199,35 +191,26 @@ async function getLastCcmsByWard(projectId, wardId) {
  * Returns all CCMS records for a ward with full details (for the CCMS POINTS view).
  */
 async function getAllCcmsRecordsByWard(projectId, wardId) {
-  const isNumeric = /^[0-9]+$/.test(String(wardId));
-  let result;
-  if (isNumeric) {
-    result = await query(
-      `SELECT c.*, w.name as ulb_name,
-              u_cr.name as created_by_name,
-              u_conf.name as confirmed_by_name
-       FROM tgpl_ccms c
-       JOIN wards w ON c.ward_id = w.id
-       LEFT JOIN users u_cr ON c.created_by = u_cr.id
-       LEFT JOIN users u_conf ON c.confirmed_by = u_conf.id
-       WHERE c.project_id = $1 AND c.ward_id = $2 AND c.is_deleted = FALSE
-       ORDER BY c.created_at DESC`,
-      [Number(projectId) || 3, Number(wardId)]
-    );
-  } else {
-    result = await query(
-      `SELECT c.*, w.name as ulb_name,
-              u_cr.name as created_by_name,
-              u_conf.name as confirmed_by_name
-       FROM tgpl_ccms c
-       JOIN wards w ON c.ward_id = w.id
-       LEFT JOIN users u_cr ON c.created_by = u_cr.id
-       LEFT JOIN users u_conf ON c.confirmed_by = u_conf.id
-       WHERE c.project_id = $1 AND w.name = $2 AND c.is_deleted = FALSE
-       ORDER BY c.created_at DESC`,
-      [Number(projectId) || 3, String(wardId)]
-    );
-  }
+  const raw = String(wardId || '').trim();
+  const numId = /^[0-9]+$/.test(raw) ? parseInt(raw, 10) : null;
+  const result = await query(
+    `SELECT c.*, w.name as ulb_name,
+            u_cr.name as created_by_name,
+            u_conf.name as confirmed_by_name
+     FROM tgpl_ccms c
+     JOIN wards w ON c.ward_id = w.id
+     LEFT JOIN users u_cr ON c.created_by = u_cr.id
+     LEFT JOIN users u_conf ON c.confirmed_by = u_conf.id
+     WHERE c.project_id = $1 
+       AND (
+         ($2::int IS NOT NULL AND (c.ward_id = $2 OR w.id = $2))
+         OR LOWER(TRIM(w.name)) = LOWER($3)
+         OR LOWER(TRIM(c.ward_number)) = LOWER($3)
+       )
+       AND c.is_deleted = FALSE
+     ORDER BY c.created_at DESC`,
+    [Number(projectId) || 3, numId, raw]
+  );
   return result.rows;
 }
 

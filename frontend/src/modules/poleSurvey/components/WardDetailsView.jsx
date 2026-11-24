@@ -867,7 +867,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                       <div className="bg-slate-50 p-4 border-b border-slate-150 flex justify-between items-center gap-3 flex-wrap">
                         <div>
                           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                            {selectedCcms.type === 'installation' ? 'CCMS Unit (Installation)' : 'CCMS Unit (Survey)'}
+                            {selectedCcms.type === 'installation' ? 'CCMS Unit (Installation)' : selectedCcms.type === 'ccms' ? 'CCMS Unit (CCMS Survey)' : 'CCMS Unit (Survey)'}
                           </span>
                           <h3 className="text-base font-bold text-slate-950">CCMS No: {sp.switch_point_number || 'No CCMS'}</h3>
                         </div>
