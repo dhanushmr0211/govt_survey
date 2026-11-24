@@ -315,8 +315,10 @@ export function EmployeeTrackingView({ projectId }) {
                 <>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Survey</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Inst</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Today's CCMS</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Survey</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total Inst</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total CCMS</th>
                 </>
               )}
               <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
@@ -338,8 +340,10 @@ export function EmployeeTrackingView({ projectId }) {
                   <>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_survey_resolved}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_inst_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.today_ccms_resolved ?? 0}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_survey_resolved}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_inst_resolved}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{emp.total_ccms_resolved ?? 0}</td>
                   </>
                 )}
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

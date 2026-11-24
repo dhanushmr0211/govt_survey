@@ -572,6 +572,16 @@ export const SubmissionQueueView = ({ projectId }) => {
           >
             ⚙️ Installation Submissions
           </button>
+          <button
+            onClick={() => { setActiveSurveyType('ccms'); setPage(1); }}
+            className={`flex-1 py-3 px-6 text-sm font-bold border-b-2 transition-all ${
+              activeSurveyType === 'ccms'
+                ? 'border-emerald-600 text-emerald-600 bg-white shadow-sm rounded-t-lg'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'
+            }`}
+          >
+            ⚡ CCMS Submissions
+          </button>
         </div>
       )}
       <div className="flex flex-col gap-4 border-b border-slate-100 p-5">

@@ -110,7 +110,7 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
         </div>
       )}
       {/* Total Stats Card */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-1 gap-4 ${isTgpl ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
         {isTgpl2 ? (
           <>
             <div className="premium-panel flex items-center justify-between p-5">
@@ -182,6 +182,15 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
                 <Lightbulb size={26} />
               </div>
             </div>
+            <div className="premium-panel flex items-center justify-between p-5">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total CCMS Points</p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-950">{totalCCMS}</p>
+              </div>
+              <div className="rounded-lg bg-emerald-50 p-3 text-emerald-700">
+                <Zap size={26} />
+              </div>
+            </div>
           </>
         )}
       </div>
@@ -228,8 +237,12 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
                     <p className="text-xl font-bold text-blue-900">{district.total_inst_poles}</p>
                   </div>
                   <div className="min-w-[130px] rounded-lg border border-amber-100 bg-amber-50 px-4 py-2 text-center">
-                    <p className="text-xs font-semibold text-amber-700">Total Poles</p>
-                    <p className="text-xl font-bold text-amber-900">{district.total_poles}</p>
+                    <p className="text-xs font-semibold text-amber-700">Survey Poles</p>
+                    <p className="text-xl font-bold text-amber-900">{district.total_survey_poles}</p>
+                  </div>
+                  <div className="min-w-[130px] rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-2 text-center">
+                    <p className="text-xs font-semibold text-emerald-700">CCMS Points</p>
+                    <p className="text-xl font-bold text-emerald-900">{district.total_ccms}</p>
                   </div>
                 </>
               )}
@@ -281,6 +294,7 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
                       <>
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">INSTALLATION COUNT</th>
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">TOTAL SURVEY POLES</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">CCMS POINTS</th>
                       </>
                     )}
                     <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">ACTIONS</th>
@@ -300,6 +314,7 @@ export const SummaryView = ({ projectId, date = null, onViewDetails, hideZeroCou
                         <>
                           <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_inst_poles || 0)}</td>
                           <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_survey_poles || 0)}</td>
+                          <td className="px-4 py-4 text-sm text-slate-600">{Number(ulb.total_ccms || 0)}</td>
                         </>
                       )}
                       <td className="px-4 py-4 text-sm">

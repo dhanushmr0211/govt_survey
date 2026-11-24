@@ -575,6 +575,16 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
           >
             Installation
           </button>
+          <button
+            onClick={() => setActiveSurveyType('ccms')}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+              activeSurveyType === 'ccms'
+                ? 'bg-white text-emerald-600 shadow-sm'
+                : 'text-slate-500 hover:text-slate-900'
+            }`}
+          >
+            ⚡ CCMS
+          </button>
         </div>
       )}
       
