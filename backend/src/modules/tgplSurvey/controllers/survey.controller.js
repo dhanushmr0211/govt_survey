@@ -460,6 +460,33 @@ async function updateCcmsHandler(req, res, next) {
   try {
     const { projectId, id } = req.params;
     const data = req.body;
+
+    const currentCcms = await getCcmsById(id, projectId);
+    if (!currentCcms) {
+      return res.status(404).json({ message: 'CCMS record not found' });
+    }
+
+    const isMasterAdmin = req.user?.role === ROLES.MASTER_ADMIN;
+    const permissions = req.projectSections || {};
+    const currentStatus = (currentCcms.status || 'pending').toLowerCase();
+
+    if (!isMasterAdmin) {
+      if (currentStatus === 'pending') {
+        const isMobileSurveyor = req.projectRole === ROLES.MOBILE_USER;
+        const isCreator = Number(currentCcms.created_by) === Number(req.user?.id || req.user?.sub);
+        const canEditPending = permissions.section_i || (isMobileSurveyor && isCreator);
+        if (!canEditPending) {
+          return res.status(403).json({
+            message: 'Forbidden: You are not allowed to edit pending CCMS data (requires section i access or being the creator).'
+          });
+        }
+      } else if (currentStatus === 'confirmed' && !permissions.section_j) {
+        return res.status(403).json({
+          message: 'Forbidden: You are not allowed to edit confirmed submissions.'
+        });
+      }
+    }
+
     const updated = await updateCcmsRecord(id, projectId, data);
     res.json({ ccms: updated });
   } catch (error) {

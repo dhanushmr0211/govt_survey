@@ -667,8 +667,12 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
       {/* Inspect Modal */}
       {(selectedSubmission?.survey_type === 'ccms' || selectedSubmission?.type === 'ccms' || (selectedSubmission && activeSurveyType === 'ccms')) ? (
         <CcmsInspectModal
-          submission={selectedSubmission}
+          submission={{
+            ...selectedSubmission,
+            status: selectedSubmission.status || (activeTab === 'confirmed' ? 'CONFIRMED' : 'PENDING'),
+          }}
           projectId={projectId}
+          canEdit={canShowEdit}
           onClose={() => { setSelectedSubmission(null); setIsEditing(false); }}
           onConfirm={(sub) => {
             confirmMutation.mutate({ id: sub.id, type: 'ccms', survey_type: 'ccms' });

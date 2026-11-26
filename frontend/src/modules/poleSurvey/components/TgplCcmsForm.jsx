@@ -1088,6 +1088,9 @@ export const TgplCcmsForm = ({ ward, onBack }) => {
       {/* In-App Camera modal */}
       {cameraTarget && (
         <InAppCamera
+          poleNumber={formData.installed_pole_number || ''}
+          wardNumber={ward?.name || ''}
+          ccmsNumber={formData.ccms_number || ''}
           onCapture={(file) => handlePhotoSelect(cameraTarget, file)}
           onClose={() => setCameraTarget(null)}
         />

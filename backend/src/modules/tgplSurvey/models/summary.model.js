@@ -1168,8 +1168,8 @@ async function getTodaySubmissions(projectId, page = 1, limit = 50, userId = nul
 
   if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
     scopeFilterP += ` AND p.ward_id = ANY($${pIdx})`;
-    scopeFilterI += ` AND i.ward_id = ANY(${pIdx})`;
-    scopeFilterC += ` AND c.ward_id = ANY(${pIdx})`;
+    scopeFilterI += ` AND i.ward_id = ANY($${pIdx})`;
+    scopeFilterC += ` AND c.ward_id = ANY($${pIdx})`;
     params.push(ulbScope);
     pIdx++;
   }
@@ -1820,32 +1820,33 @@ async function getReportData(projectId, districtId, tillDate, ulbId, _districtSc
     params.push(fromDate);
     const fromIdx = params.length;
     pRangeFilterP += `\n    AND (($${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date >= $${fromIdx}))`;
-    pRangeFilterI += `\n    AND ((${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date >= ${fromIdx}))`;
-    pRangeFilterC += `\n    AND ((${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date >= ${fromIdx}))`;
+    pRangeFilterI += `\n    AND (($${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date >= $${fromIdx}))`;
+    pRangeFilterC += `\n    AND (($${fromIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date >= $${fromIdx}))`;
   }
   if (toDate && toDate.trim() !== '') {
     params.push(toDate);
     const toIdx = params.length;
     pRangeFilterP += `\n    AND (($${toIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', p.created_at)))::date <= $${toIdx}))`;
-    pRangeFilterI += `\n    AND ((${toIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date <= ${toIdx}))`;
-    pRangeFilterC += `\n    AND ((${toIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date <= ${toIdx}))`;
+    pRangeFilterI += `\n    AND (($${toIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', i.created_at)))::date <= $${toIdx}))`;
+    pRangeFilterC += `\n    AND (($${toIdx}::date IS NULL OR (timezone('Asia/Kolkata', timezone('UTC', c.created_at)))::date <= $${toIdx}))`;
   }
 
   if (ulbScope && Array.isArray(ulbScope) && ulbScope.length > 0) {
     params.push(ulbScope);
-    scopeFilterP += ` AND p.ward_id = ANY(${params.length})`;
-    scopeFilterI += ` AND i.ward_id = ANY(${params.length})`;
-    scopeFilterC += ` AND c.ward_id = ANY(${params.length})`;
+    scopeFilterP += ` AND p.ward_id = ANY($${params.length})`;
+    scopeFilterI += ` AND i.ward_id = ANY($${params.length})`;
+    scopeFilterC += ` AND c.ward_id = ANY($${params.length})`;
   }
 
   let pConfirmedFilterP = '';
   let pConfirmedFilterI = '';
+  let pConfirmedFilterC = '';
   if (confirmedBy) {
     params.push(Number(confirmedBy));
     const confIdx = params.length;
-    pConfirmedFilterP = ` AND p.confirmed_by = ${confIdx}`;
-    pConfirmedFilterI = ` AND i.confirmed_by = ${confIdx}`;
-    pConfirmedFilterC = ` AND c.confirmed_by = ${confIdx}`;
+    pConfirmedFilterP = ` AND p.confirmed_by = $${confIdx}`;
+    pConfirmedFilterI = ` AND i.confirmed_by = $${confIdx}`;
+    pConfirmedFilterC = ` AND c.confirmed_by = $${confIdx}`;
   }
 
   let poles = [];

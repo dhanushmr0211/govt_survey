@@ -14,6 +14,7 @@ export const CcmsInspectModal = ({
   onSuccess,
   canConfirm = false,
   canDelete = false,
+  canEdit: canEditProp,
   isConfirming = false,
   isDeleting = false,
   projectId = 3,
@@ -137,15 +138,19 @@ export const CcmsInspectModal = ({
 
   if (!submission) return null;
 
-  const statusLower = String(d.status || 'PENDING').toLowerCase();
+  const resolvedStatus = d.status || (d.confirmed_at ? 'CONFIRMED' : null);
+  const statusLower = String(resolvedStatus || '').toLowerCase();
   const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
   const canEdit =
     !d.is_deleted &&
     statusLower !== 'deleted' &&
-    (user?.role === 'MASTER_ADMIN' ||
-      activeProject?.section_j ||
-      (isMobileSurveyor && statusLower === 'pending') ||
-      (activeProject?.section_i && statusLower === 'pending'));
+    (canEditProp !== undefined
+      ? canEditProp
+      : user?.role === 'MASTER_ADMIN' ||
+        activeProject?.section_j ||
+        (!!resolvedStatus &&
+          statusLower === 'pending' &&
+          (isMobileSurveyor || activeProject?.section_i)));
 
   const handleFieldChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
