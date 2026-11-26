@@ -660,23 +660,45 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
     }, {});
   }, [details, isTgpl]);
 
+  const ccmsPointGroups = useMemo(() => {
+    if (!isTgpl) return {};
+    return ccmsPoints.reduce((acc, cp) => {
+      const ccmsKey = cp.ccms_number || 'NO_CCMS';
+      if (!acc[ccmsKey]) {
+        acc[ccmsKey] = {
+          id: ccmsKey,
+          switch_point_number: cp.ccms_number || 'No CCMS',
+          poles: [],
+        };
+      }
+      acc[ccmsKey].poles.push(cp);
+      return acc;
+    }, {});
+  }, [ccmsPoints, isTgpl]);
+
   useEffect(() => {
     if (isCcmsLayout) {
       const surveyList = Object.values(surveySwitchPoints);
       const instList = Object.values(installationSwitchPoints);
-      if (surveyList.length > 0) {
-        if (!selectedCcms.id || (selectedCcms.type === 'survey' && !surveySwitchPoints[selectedCcms.id]) || (selectedCcms.type === 'installation' && !installationSwitchPoints[selectedCcms.id])) {
+      const ccmsList = Object.values(ccmsPointGroups);
+      const isCurrentValid =
+        (selectedCcms.type === 'survey' && surveySwitchPoints[selectedCcms.id]) ||
+        (selectedCcms.type === 'installation' && installationSwitchPoints[selectedCcms.id]) ||
+        (selectedCcms.type === 'ccms' && ccmsPointGroups[selectedCcms.id]);
+
+      if (!isCurrentValid) {
+        if (surveyList.length > 0) {
           setSelectedCcms({ id: surveyList[0].id, type: 'survey' });
-        }
-      } else if (instList.length > 0) {
-        if (!selectedCcms.id || (selectedCcms.type === 'survey' && !surveySwitchPoints[selectedCcms.id]) || (selectedCcms.type === 'installation' && !installationSwitchPoints[selectedCcms.id])) {
+        } else if (instList.length > 0) {
           setSelectedCcms({ id: instList[0].id, type: 'installation' });
+        } else if (ccmsList.length > 0) {
+          setSelectedCcms({ id: ccmsList[0].id, type: 'ccms' });
+        } else {
+          setSelectedCcms({ id: null, type: 'survey' });
         }
-      } else {
-        setSelectedCcms({ id: null, type: 'survey' });
       }
     }
-  }, [isTgpl, surveySwitchPoints, installationSwitchPoints, selectedCcms]);
+  }, [isTgpl, surveySwitchPoints, installationSwitchPoints, ccmsPointGroups, selectedCcms]);
 
   return (
     <div className="premium-panel overflow-hidden">
@@ -781,18 +803,19 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                     <p className="text-xs text-slate-400 italic pl-2">No CCMS survey points recorded for this ward.</p>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                      {ccmsPoints.map((cp) => (
+                      {Object.values(ccmsPointGroups).map((group) => (
                         <button
-                          key={cp.id}
-                          onClick={() => setSelectedCcmsPoint(cp)}
-                          className={`rounded-lg border p-3 text-center transition ${selectedCcmsPoint?.id === cp.id ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50'}`}
+                          key={group.id}
+                          onClick={() => setSelectedCcms({ id: group.id, type: 'ccms' })}
+                          className={`rounded-lg border p-3 text-center transition ${selectedCcms.id === group.id && selectedCcms.type === 'ccms' ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50'}`}
                         >
-                          <p className="text-[10px] text-slate-400 font-semibold uppercase">CCMS</p>
-                          <p className="text-sm font-bold truncate max-w-full" title={cp.ccms_number || 'N/A'}>{cp.ccms_number || 'N/A'}</p>
-                          <p className="text-[10px] text-slate-500 mt-1 truncate">{cp.installed_pole_number ? `Pole: ${cp.installed_pole_number}` : ''}</p>
-                          <div className="mt-1">
-                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${cp.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                              {cp.status || 'PENDING'}
+                          <p className="text-xs text-slate-500">CCMS</p>
+                          <p className="text-base font-bold truncate max-w-full" title={group.switch_point_number}>
+                            {group.switch_point_number}
+                          </p>
+                          <div className="mt-2 text-[10px]">
+                            <span className="inline-block w-full rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700 font-semibold">
+                              Poles: {group.poles.length}
                             </span>
                           </div>
                         </button>
@@ -854,7 +877,9 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                 (() => {
                   const sp = selectedCcms.type === 'installation' 
                     ? installationSwitchPoints[selectedCcms.id] 
-                    : surveySwitchPoints[selectedCcms.id];
+                    : selectedCcms.type === 'ccms'
+                      ? ccmsPointGroups[selectedCcms.id]
+                      : surveySwitchPoints[selectedCcms.id];
                   if (!sp) {
                     return (
                       <div className="py-20 text-center text-slate-500">
@@ -931,6 +956,16 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                                 <th>Light 3 Type (Capacity)</th>
                                 <th>Action</th>
                               </tr>
+                            ) : selectedCcms.type === 'ccms' ? (
+                              <tr>
+                                <th>Pole No</th>
+                                <th>Supply Input</th>
+                                <th>Phase</th>
+                                <th>DTC No</th>
+                                <th>RR No</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                              </tr>
                             ) : (
                               <tr>
                                 <th>Pole No</th>
@@ -945,14 +980,26 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                           </thead>
                           <tbody>
                             {sp.poles.map((pole) => (
-                              <tr key={pole.pole_id}>
-                                <td className="font-semibold text-slate-950">{pole.pole_number}</td>
+                              <tr key={pole.pole_id || pole.id}>
+                                <td className="font-semibold text-slate-950">{selectedCcms.type === 'ccms' ? (pole.installed_pole_number || 'N/A') : pole.pole_number}</td>
                                 {selectedCcms.type === 'installation' ? (
                                   <>
                                     <td>{pole.how_many_lights_in_pole || '0'}</td>
                                     <td>{pole.light_type ? `${pole.light_type} (${pole.light_capacity || 'N/A'})` : 'N/A'}</td>
                                     <td>{pole.light_type_2 ? `${pole.light_type_2} (${pole.light_capacity_2 || 'N/A'})` : 'N/A'}</td>
                                     <td>{pole.light_type_3 ? `${pole.light_type_3} (${pole.light_capacity_3 || 'N/A'})` : 'N/A'}</td>
+                                  </>
+                                ) : selectedCcms.type === 'ccms' ? (
+                                  <>
+                                    <td>{pole.supply_input || 'N/A'}</td>
+                                    <td>{pole.ccms_phase || 'N/A'}</td>
+                                    <td>{pole.dtc_number || 'N/A'}</td>
+                                    <td>{pole.rr_number || 'N/A'}</td>
+                                    <td>
+                                      <span className={`rounded-full px-2 py-1 text-xs font-semibold ${pole.status === 'CONFIRMED' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                                        {pole.status || 'PENDING'}
+                                      </span>
+                                    </td>
                                   </>
                                 ) : (
                                   <>
@@ -971,6 +1018,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                                   <div className="flex gap-2">
                                     <button 
                                       onClick={() => {
+                                        if (selectedCcms.type === 'ccms') {
+                                          setSelectedCcmsPoint(pole);
+                                          return;
+                                        }
                                         setSelectedDetail({ type: 'pole', data: pole });
                                         setFormData({ 
                                           ...pole,
