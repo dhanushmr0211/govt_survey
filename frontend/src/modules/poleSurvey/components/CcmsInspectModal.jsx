@@ -1,29 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { X, CheckCircle2, Trash2, MapPin, ExternalLink, Eye, AlertCircle, Loader2 } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { CheckCircle2, Trash2, MapPin, ExternalLink, AlertCircle, Loader2, Edit2, Save } from 'lucide-react';
 import API_BASE_URL from '../../../config/api';
+import { useAuthStore } from '../../../store/authStore';
+import { useToastStore } from '../../../store/toastStore';
 
 export const CcmsInspectModal = ({
   submission,
   onClose,
   onConfirm,
   onDelete,
+  onSuccess,
   canConfirm = false,
   canDelete = false,
   isConfirming = false,
   isDeleting = false,
   projectId = 3,
 }) => {
-  const [activePhotoModal, setActivePhotoModal] = useState(null);
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(false);
   const [fullRecord, setFullRecord] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({});
+
   const token = localStorage.getItem('token');
+  const user = useAuthStore((state) => state.user);
+  const activeProject = useAuthStore((state) => state.activeProject);
+  const addToast = useToastStore((state) => state.addToast);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!submission?.id) return;
     let cancelled = false;
     setFullRecord(null);
+    setIsEditing(false);
 
     const fetchData = async () => {
       setLoadingImages(true);
@@ -57,16 +68,87 @@ export const CcmsInspectModal = ({
     return () => { cancelled = true; };
   }, [submission?.id, projectId, token]);
 
-  if (!submission) return null;
-
   // Merge full DB record (when fetched) with passed submission row, supporting both DB column names and summary aliases
-  const d = { ...submission, ...(fullRecord || {}) };
+  const d = { ...(submission || {}), ...(fullRecord || {}) };
   const val = (...keys) => {
     for (const k of keys) {
       const v = d[k];
       if (v !== undefined && v !== null && String(v).trim() !== '') return v;
     }
     return null;
+  };
+
+  useEffect(() => {
+    if (!submission) return;
+    setFormData({
+      ccms_number: val('ccms_number', 'switch_point_number') || '',
+      installed_pole_number: val('installed_pole_number', 'pole_number', 'identifier') || '',
+      supply_input: val('supply_input', 'conductor_type') || '',
+      ccms_phase: val('ccms_phase', 'arm_type') || '',
+      dtc_number: val('dtc_number') || '',
+      rr_number: val('rr_number', 'meter_rr_number') || '',
+      earthing_completed: val('earthing_completed', 'pole_earthing_exists') || '',
+      ccms_landmark: val('ccms_landmark', 'road_category', 'remarks') || '',
+      bescom_meter_sl_number: val('bescom_meter_sl_number', 'meter_serial_number') || '',
+      is_ct_meter: val('is_ct_meter', 'meter_type') || '',
+      bescom_meter_status: val('bescom_meter_status', 'meter_condition') || '',
+      bescom_meter_reading_no: val('bescom_meter_reading_no', 'bescom_meter_reading_number', 'light_type_6') || '',
+      ccms_uid_no: val('ccms_uid_no', 'ccms_uid_number', 'light_type') || '',
+      ccms_meter_no: val('ccms_meter_no', 'ccms_meter_number', 'light_type_2') || '',
+      ccms_imei_no: val('ccms_imei_no', 'ccms_imei_number') || '',
+      ccms_meter_voltage: val('ccms_meter_voltage', 'light_type_3') ?? '',
+      ccms_meter_current: val('ccms_meter_current', 'light_capacity_3') ?? '',
+      ccms_meter_pf: val('ccms_meter_pf', 'light_type_4') ?? '',
+      ccms_meter_power_kw: val('ccms_meter_power_kw', 'light_capacity') ?? '',
+      bescom_meter_voltage: val('bescom_meter_voltage', 'light_capacity_4') ?? '',
+      bescom_meter_current: val('bescom_meter_current', 'light_type_5') ?? '',
+      bescom_meter_pf: val('bescom_meter_pf', 'light_capacity_5') ?? '',
+      bescom_meter_power_kw: val('bescom_meter_power_kw', 'light_capacity_2') ?? '',
+    });
+  }, [submission, fullRecord]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const res = await axios.patch(
+        `${API_BASE_URL}/projects/${projectId}/tgpl-survey/ccms/${submission.id}`,
+        formData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return res.data;
+    },
+    onSuccess: (data) => {
+      if (data?.ccms) {
+        setFullRecord((prev) => ({ ...(prev || {}), ...data.ccms }));
+      }
+      setIsEditing(false);
+      addToast('CCMS submission updated successfully!', 'success');
+      queryClient.invalidateQueries(['ccmsPoints']);
+      queryClient.invalidateQueries(['wardDetails']);
+      queryClient.invalidateQueries(['submissions']);
+      queryClient.invalidateQueries(['todaySubmissions']);
+      queryClient.invalidateQueries(['user-submissions']);
+      queryClient.invalidateQueries(['tgpl-survey-submissions']);
+      if (onSuccess) onSuccess(data?.ccms);
+    },
+    onError: (err) => {
+      addToast(err.response?.data?.message || 'Error updating CCMS submission', 'error');
+    },
+  });
+
+  if (!submission) return null;
+
+  const statusLower = String(d.status || 'PENDING').toLowerCase();
+  const isMobileSurveyor = activeProject?.project_role === 'MOBILE_USER';
+  const canEdit =
+    !d.is_deleted &&
+    statusLower !== 'deleted' &&
+    (user?.role === 'MASTER_ADMIN' ||
+      activeProject?.section_j ||
+      (isMobileSurveyor && statusLower === 'pending') ||
+      (activeProject?.section_i && statusLower === 'pending'));
+
+  const handleFieldChange = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const bescomImg = images.find(f => f.file_name?.toLowerCase().includes('bescom'))?.signed_url ||
@@ -97,6 +179,34 @@ export const CcmsInspectModal = ({
   const earthing = val('earthing_completed', 'pole_earthing_exists');
   const bescomStatus = val('bescom_meter_status', 'meter_condition');
 
+  const inputClass =
+    'mt-1 block w-full rounded-md border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white';
+
+  const renderInput = (name, placeholder = '') => (
+    <input
+      type="text"
+      value={formData[name] ?? ''}
+      onChange={(e) => handleFieldChange(name, e.target.value)}
+      placeholder={placeholder}
+      className={inputClass}
+    />
+  );
+
+  const renderSelect = (name, options) => (
+    <select
+      value={formData[name] ?? ''}
+      onChange={(e) => handleFieldChange(name, e.target.value)}
+      className={inputClass}
+    >
+      <option value="">Select...</option>
+      {options.map((opt) => (
+        <option key={opt} value={opt}>
+          {opt}
+        </option>
+      ))}
+    </select>
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
       <div className="w-full max-w-5xl rounded-lg bg-white p-6 shadow-2xl max-h-[90vh] flex flex-col">
@@ -119,12 +229,23 @@ export const CcmsInspectModal = ({
               </span>
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-sm font-medium"
-          >
-            Close
-          </button>
+          <div className="flex items-center gap-4">
+            {canEdit && !isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-1.5 text-primary hover:text-primary-dark font-medium text-sm"
+              >
+                <Edit2 size={16} />
+                <span>Edit</span>
+              </button>
+            )}
+            <button
+              onClick={() => { setIsEditing(false); onClose(); }}
+              className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+            >
+              Close
+            </button>
+          </div>
         </div>
 
         {/* 2-Column Body matching standard Survey Inspect modal */}
@@ -179,37 +300,53 @@ export const CcmsInspectModal = ({
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">CCMS Number</p>
-                  <p className="font-semibold text-primary">{ccmsNumber}</p>
+                  {isEditing ? renderInput('ccms_number') : (
+                    <p className="font-semibold text-primary">{ccmsNumber}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">Installed Pole Number</p>
-                  <p className="font-medium text-slate-900">{val('installed_pole_number', 'pole_number', 'identifier') || 'N/A'}</p>
+                  {isEditing ? renderInput('installed_pole_number') : (
+                    <p className="font-medium text-slate-900">{val('installed_pole_number', 'pole_number', 'identifier') || 'N/A'}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">Supply Input</p>
-                  <p className="font-medium text-slate-900">{val('supply_input', 'conductor_type') || 'N/A'}</p>
+                  {isEditing ? renderSelect('supply_input', ['OH', 'UG']) : (
+                    <p className="font-medium text-slate-900">{val('supply_input', 'conductor_type') || 'N/A'}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">CCMS Phase</p>
-                  <p className="font-medium text-slate-900">{val('ccms_phase', 'arm_type') || 'N/A'}</p>
+                  {isEditing ? renderSelect('ccms_phase', ['1Ph', '3Ph']) : (
+                    <p className="font-medium text-slate-900">{val('ccms_phase', 'arm_type') || 'N/A'}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">DTC Number</p>
-                  <p className="font-medium text-slate-900">{val('dtc_number') || 'N/A'}</p>
+                  {isEditing ? renderInput('dtc_number') : (
+                    <p className="font-medium text-slate-900">{val('dtc_number') || 'N/A'}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">RR Number</p>
-                  <p className="font-medium text-slate-900">{val('rr_number', 'meter_rr_number') || 'N/A'}</p>
+                  {isEditing ? renderInput('rr_number') : (
+                    <p className="font-medium text-slate-900">{val('rr_number', 'meter_rr_number') || 'N/A'}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">Earthing Completed</p>
-                  <p className={`font-medium ${String(earthing || '').toUpperCase() === 'YES' ? 'text-emerald-600' : 'text-slate-900'}`}>
-                    {earthing || 'N/A'}
-                  </p>
+                  {isEditing ? renderSelect('earthing_completed', ['Yes', 'No']) : (
+                    <p className={`font-medium ${String(earthing || '').toUpperCase() === 'YES' ? 'text-emerald-600' : 'text-slate-900'}`}>
+                      {earthing || 'N/A'}
+                    </p>
+                  )}
                 </div>
                 <div className="col-span-2">
                   <p className="text-gray-500 text-xs">CCMS Landmark (In front of)</p>
-                  <p className="font-medium text-slate-900">{val('ccms_landmark', 'road_category', 'remarks') || 'N/A'}</p>
+                  {isEditing ? renderInput('ccms_landmark') : (
+                    <p className="font-medium text-slate-900">{val('ccms_landmark', 'road_category', 'remarks') || 'N/A'}</p>
+                  )}
                 </div>
                 <div className="col-span-2 flex items-center justify-between pt-1 border-t border-slate-200/70">
                   <div>
@@ -238,33 +375,47 @@ export const CcmsInspectModal = ({
               <div className="grid grid-cols-2 gap-3 bg-slate-50/70 p-3 rounded-lg border border-slate-100">
                 <div>
                   <p className="text-gray-500 text-xs">BESCOM Meter Sl. No</p>
-                  <p className="font-medium text-slate-900">{val('bescom_meter_sl_number', 'meter_serial_number') || 'N/A'}</p>
+                  {isEditing ? renderInput('bescom_meter_sl_number') : (
+                    <p className="font-medium text-slate-900">{val('bescom_meter_sl_number', 'meter_serial_number') || 'N/A'}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">Is it CT Meter?</p>
-                  <p className="font-medium text-slate-900">{val('is_ct_meter', 'meter_type') || 'N/A'}</p>
+                  {isEditing ? renderSelect('is_ct_meter', ['Yes', 'No']) : (
+                    <p className="font-medium text-slate-900">{val('is_ct_meter', 'meter_type') || 'N/A'}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">BESCOM Working Status</p>
-                  <p className={`font-medium ${bescomStatus === 'Working' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                    {bescomStatus || 'N/A'}
-                  </p>
+                  {isEditing ? renderSelect('bescom_meter_status', ['Working', 'Not Working']) : (
+                    <p className={`font-medium ${bescomStatus === 'Working' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      {bescomStatus || 'N/A'}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">BESCOM Reading No</p>
-                  <p className="font-medium text-slate-900">{val('bescom_meter_reading_no', 'bescom_meter_reading_number', 'light_type_6') || 'N/A'}</p>
+                  {isEditing ? renderInput('bescom_meter_reading_no') : (
+                    <p className="font-medium text-slate-900">{val('bescom_meter_reading_no', 'bescom_meter_reading_number', 'light_type_6') || 'N/A'}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">CCMS UID No</p>
-                  <p className="font-medium text-slate-900">{val('ccms_uid_no', 'ccms_uid_number', 'light_type') || 'N/A'}</p>
+                  {isEditing ? renderInput('ccms_uid_no') : (
+                    <p className="font-medium text-slate-900">{val('ccms_uid_no', 'ccms_uid_number', 'light_type') || 'N/A'}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-gray-500 text-xs">CCMS Meter No</p>
-                  <p className="font-medium text-slate-900">{val('ccms_meter_no', 'ccms_meter_number', 'light_type_2') || 'N/A'}</p>
+                  {isEditing ? renderInput('ccms_meter_no') : (
+                    <p className="font-medium text-slate-900">{val('ccms_meter_no', 'ccms_meter_number', 'light_type_2') || 'N/A'}</p>
+                  )}
                 </div>
                 <div className="col-span-2">
                   <p className="text-gray-500 text-xs">CCMS IMEI No</p>
-                  <p className="font-medium font-mono text-slate-900">{val('ccms_imei_no', 'ccms_imei_number') || 'N/A'}</p>
+                  {isEditing ? renderInput('ccms_imei_no') : (
+                    <p className="font-medium font-mono text-slate-900">{val('ccms_imei_no', 'ccms_imei_number') || 'N/A'}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -284,23 +435,39 @@ export const CcmsInspectModal = ({
                   <tbody className="divide-y divide-slate-100">
                     <tr>
                       <td className="py-2 px-3 text-slate-600 font-medium">Voltage (V)</td>
-                      <td className="py-2 px-3 font-semibold text-slate-900">{val('ccms_meter_voltage', 'light_type_3') ?? 'N/A'} V</td>
-                      <td className="py-2 px-3 font-semibold text-slate-900">{val('bescom_meter_voltage', 'light_capacity_4') ?? 'N/A'} V</td>
+                      <td className="py-2 px-3 font-semibold text-slate-900">
+                        {isEditing ? renderInput('ccms_meter_voltage') : `${val('ccms_meter_voltage', 'light_type_3') ?? 'N/A'} V`}
+                      </td>
+                      <td className="py-2 px-3 font-semibold text-slate-900">
+                        {isEditing ? renderInput('bescom_meter_voltage') : `${val('bescom_meter_voltage', 'light_capacity_4') ?? 'N/A'} V`}
+                      </td>
                     </tr>
                     <tr>
                       <td className="py-2 px-3 text-slate-600 font-medium">Current (A)</td>
-                      <td className="py-2 px-3 font-semibold text-slate-900">{val('ccms_meter_current', 'light_capacity_3') ?? 'N/A'} A</td>
-                      <td className="py-2 px-3 font-semibold text-slate-900">{val('bescom_meter_current', 'light_type_5') ?? 'N/A'} A</td>
+                      <td className="py-2 px-3 font-semibold text-slate-900">
+                        {isEditing ? renderInput('ccms_meter_current') : `${val('ccms_meter_current', 'light_capacity_3') ?? 'N/A'} A`}
+                      </td>
+                      <td className="py-2 px-3 font-semibold text-slate-900">
+                        {isEditing ? renderInput('bescom_meter_current') : `${val('bescom_meter_current', 'light_type_5') ?? 'N/A'} A`}
+                      </td>
                     </tr>
                     <tr>
                       <td className="py-2 px-3 text-slate-600 font-medium">Power Factor (PF)</td>
-                      <td className="py-2 px-3 font-semibold text-slate-900">{val('ccms_meter_pf', 'light_type_4') ?? 'N/A'}</td>
-                      <td className="py-2 px-3 font-semibold text-slate-900">{val('bescom_meter_pf', 'light_capacity_5') ?? 'N/A'}</td>
+                      <td className="py-2 px-3 font-semibold text-slate-900">
+                        {isEditing ? renderInput('ccms_meter_pf') : (val('ccms_meter_pf', 'light_type_4') ?? 'N/A')}
+                      </td>
+                      <td className="py-2 px-3 font-semibold text-slate-900">
+                        {isEditing ? renderInput('bescom_meter_pf') : (val('bescom_meter_pf', 'light_capacity_5') ?? 'N/A')}
+                      </td>
                     </tr>
                     <tr>
                       <td className="py-2 px-3 text-slate-600 font-medium">Power (kW)</td>
-                      <td className="py-2 px-3 font-semibold text-slate-900">{val('ccms_meter_power_kw', 'light_capacity') ?? 'N/A'} kW</td>
-                      <td className="py-2 px-3 font-semibold text-slate-900">{val('bescom_meter_power_kw', 'light_capacity_2') ?? 'N/A'} kW</td>
+                      <td className="py-2 px-3 font-semibold text-slate-900">
+                        {isEditing ? renderInput('ccms_meter_power_kw') : `${val('ccms_meter_power_kw', 'light_capacity') ?? 'N/A'} kW`}
+                      </td>
+                      <td className="py-2 px-3 font-semibold text-slate-900">
+                        {isEditing ? renderInput('bescom_meter_power_kw') : `${val('bescom_meter_power_kw', 'light_capacity_2') ?? 'N/A'} kW`}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -308,7 +475,7 @@ export const CcmsInspectModal = ({
             </div>
           </div>
 
-          {/* Right Side: Images (matching standard Survey Inspect modal) */}
+          {/* Right Side: Images (matching standard Survey Inspect modal, no click-to-enlarge) */}
           <div className="space-y-2">
             <p className="font-semibold text-gray-700">Images</p>
             {loadingImages ? (
@@ -323,26 +490,17 @@ export const CcmsInspectModal = ({
                       {photo.label}
                     </div>
                     {photo.url ? (
-                      <div className="relative group">
-                        <img
-                          src={photo.url}
-                          alt={photo.label}
-                          className="w-full h-auto max-h-60 object-cover"
-                          onError={(e) => {
-                            if (!e.target.dataset.errorHandled) {
-                              e.target.dataset.errorHandled = 'true';
-                              e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
-                            }
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setActivePhotoModal({ url: photo.url, title: photo.label })}
-                          className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white gap-1 text-xs font-semibold"
-                        >
-                          <Eye size={16} /> Click to Enlarge
-                        </button>
-                      </div>
+                      <img
+                        src={photo.url}
+                        alt={photo.label}
+                        className="w-full h-auto object-cover"
+                        onError={(e) => {
+                          if (!e.target.dataset.errorHandled) {
+                            e.target.dataset.errorHandled = 'true';
+                            e.target.src = 'https://placehold.co/400x300?text=Failed+to+Load';
+                          }
+                        }}
+                      />
                     ) : (
                       <div className="bg-gray-50 h-32 flex flex-col items-center justify-center text-gray-400">
                         <AlertCircle size={20} className="mb-1 text-gray-300" />
@@ -358,7 +516,7 @@ export const CcmsInspectModal = ({
 
         {/* Footer Actions matching standard Survey Inspect modal */}
         <div className="flex justify-end gap-2 mt-6 border-t pt-4">
-          {canDelete && onDelete && (
+          {canDelete && onDelete && !isEditing && (
             <button
               onClick={() => onDelete(submission)}
               disabled={isDeleting}
@@ -369,43 +527,42 @@ export const CcmsInspectModal = ({
             </button>
           )}
           <button
-            onClick={onClose}
+            onClick={() => {
+              if (isEditing) {
+                setIsEditing(false);
+              } else {
+                onClose();
+              }
+            }}
             className="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-semibold"
           >
-            Close
+            {isEditing ? 'Cancel' : 'Close'}
           </button>
-          {canConfirm && onConfirm && d.status !== 'CONFIRMED' && (
+          {isEditing ? (
             <button
-              onClick={() => onConfirm(submission)}
-              disabled={isConfirming}
-              className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 font-medium disabled:opacity-50"
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 font-medium"
             >
-              {isConfirming ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-              <span>Confirm Submission</span>
+              {saveMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+              <span>{saveMutation.isPending ? 'Saving...' : 'Save Changes'}</span>
             </button>
+          ) : (
+            canConfirm &&
+            onConfirm &&
+            d.status !== 'CONFIRMED' && (
+              <button
+                onClick={() => onConfirm(submission)}
+                disabled={isConfirming}
+                className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 font-medium disabled:opacity-50"
+              >
+                {isConfirming ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
+                <span>Confirm Submission</span>
+              </button>
+            )
           )}
         </div>
       </div>
-
-      {/* Enlarged Photo Modal */}
-      {activePhotoModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
-            <button
-              onClick={() => setActivePhotoModal(null)}
-              className="absolute -top-10 right-0 p-2 text-white hover:text-slate-300 transition"
-            >
-              <X size={26} />
-            </button>
-            <p className="text-white text-xs font-semibold mb-2">{activePhotoModal.title}</p>
-            <img
-              src={activePhotoModal.url}
-              alt={activePhotoModal.title}
-              className="max-w-full max-h-[80vh] rounded-xl shadow-2xl object-contain border border-white/20"
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };
