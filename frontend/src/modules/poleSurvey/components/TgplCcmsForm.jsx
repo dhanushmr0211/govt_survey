@@ -307,6 +307,13 @@ export const TgplCcmsForm = ({ ward, onBack }) => {
       console.warn('Failed to add to local offlineDb:', dbErr);
     }
 
+    // Track accumulated image status so retries know which images are already done
+    const accumulatedImageStatus = {
+      bescom_meter_image_url: false,
+      ccms_meter_image_url: false,
+      ccms_box_image_url: false,
+    };
+
     try {
       setStatusText('Saving CCMS Survey record...');
       const res = await axios.post(
@@ -329,11 +336,12 @@ export const TgplCcmsForm = ({ ward, onBack }) => {
         });
       }
 
-      // Upload the 3 mandatory photos
+      // Upload the 3 mandatory photos one by one with proper status tracking
       if (ccmsId) {
         setStatusText('Uploading 3 mandatory images...');
         for (let i = 0; i < imageFiles.length; i++) {
           const img = imageFiles[i];
+          if (!img.file) continue;
           setStatusText(`Uploading ${i + 1}/3: ${img.fieldName.replace(/_/g, ' ')}...`);
           const formDataUpload = new FormData();
           formDataUpload.append('file', img.file);
@@ -342,76 +350,144 @@ export const TgplCcmsForm = ({ ward, onBack }) => {
           formDataUpload.append('field_name', img.fieldName);
           formDataUpload.append('slot', img.slot || (i + 1));
 
-          await axios.post(
-            `${API_BASE_URL}/projects/${projectId}/tgpl-survey/files`,
-            formDataUpload,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
+          try {
+            await axios.post(
+              `${API_BASE_URL}/projects/${projectId}/tgpl-survey/files`,
+              formDataUpload,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            accumulatedImageStatus[img.fieldName] = true;
+          } catch (imgErr) {
+            console.error(`[CCMS] Image ${img.fieldName} upload failed:`, imgErr.message);
+            // Don't throw — continue uploading remaining images, let retry handle failures
+          }
 
           if (offlineRowId) {
             await offlineDb.submissions.update(offlineRowId, {
-              imageUploadStatus: {
-                ...localRowPayload.imageUploadStatus,
-                [img.fieldName]: true,
-              },
-              uploadedImageCount: i + 1,
+              imageUploadStatus: { ...accumulatedImageStatus },
+              uploadedImageCount: Object.values(accumulatedImageStatus).filter(Boolean).length,
             });
           }
         }
       }
 
-      if (offlineRowId) {
-        await offlineDb.submissions.update(offlineRowId, {
-          status: 'synced',
-          syncedAt: Date.now(),
-        });
-        await offlineSyncService.cleanupSyncedRows();
+      // Check if all images uploaded successfully
+      const allImagesUploaded = Object.values(accumulatedImageStatus).every(Boolean);
+
+      if (allImagesUploaded) {
+        // All done — mark as synced
+        if (offlineRowId) {
+          await offlineDb.submissions.update(offlineRowId, {
+            status: 'synced',
+            syncedAt: Date.now(),
+          });
+          await offlineSyncService.cleanupSyncedRows();
+        }
+
+        queryClient.invalidateQueries(['tgplCcmsByWard', projectId, ward.id]);
+        queryClient.invalidateQueries(['submissions']);
+        queryClient.invalidateQueries(['my-stats']);
+
+        alert('CCMS Survey submitted successfully!');
+
+        // Reset form fields
+        setPhotos({ image1: null, image2: null, image3: null });
+        setFormData((prev) => ({
+          ...prev,
+          installed_pole_number: '',
+          supply_input: '',
+          ccms_phase: '',
+          dtc_number: '',
+          rr_number: '',
+          bescom_meter_sl_number: '',
+          is_ct_meter: '',
+          bescom_meter_status: '',
+          ccms_uid_no: '',
+          ccms_meter_no: '',
+          ccms_imei_no: '',
+          earthing_completed: '',
+          ccms_landmark: '',
+          ccms_meter_voltage: '',
+          ccms_meter_current: '',
+          ccms_meter_pf: '',
+          ccms_meter_power_kw: '',
+          bescom_meter_reading_no: '',
+          bescom_meter_voltage: '',
+          bescom_meter_current: '',
+          bescom_meter_pf: '',
+          bescom_meter_power_kw: '',
+        }));
+      } else {
+        // Some images failed — keep the offline row so the background sync can retry them
+        if (offlineRowId) {
+          const failedFields = Object.entries(accumulatedImageStatus)
+            .filter(([, v]) => !v).map(([k]) => k);
+          await offlineDb.submissions.update(offlineRowId, {
+            status: 'failed',
+            lastError: `Image upload failed for: ${failedFields.join(', ')}. Will retry automatically.`,
+          });
+        }
+
+        queryClient.invalidateQueries(['tgplCcmsByWard', projectId, ward.id]);
+        queryClient.invalidateQueries(['submissions']);
+        queryClient.invalidateQueries(['my-stats']);
+
+        alert('CCMS record saved but some images failed to upload. They will be retried automatically in the background.');
+
+        // Still reset the form — the record exists, images will be retried by offlineSyncService
+        setPhotos({ image1: null, image2: null, image3: null });
+        setFormData((prev) => ({
+          ...prev,
+          installed_pole_number: '',
+          supply_input: '',
+          ccms_phase: '',
+          dtc_number: '',
+          rr_number: '',
+          bescom_meter_sl_number: '',
+          is_ct_meter: '',
+          bescom_meter_status: '',
+          ccms_uid_no: '',
+          ccms_meter_no: '',
+          ccms_imei_no: '',
+          earthing_completed: '',
+          ccms_landmark: '',
+          ccms_meter_voltage: '',
+          ccms_meter_current: '',
+          ccms_meter_pf: '',
+          ccms_meter_power_kw: '',
+          bescom_meter_reading_no: '',
+          bescom_meter_voltage: '',
+          bescom_meter_current: '',
+          bescom_meter_pf: '',
+          bescom_meter_power_kw: '',
+        }));
       }
-
-      queryClient.invalidateQueries(['tgplCcmsByWard', projectId, ward.id]);
-      queryClient.invalidateQueries(['submissions']);
-      queryClient.invalidateQueries(['my-stats']);
-
-      alert('CCMS Survey submitted successfully!');
-
-      // Reset form fields
-      setPhotos({ image1: null, image2: null, image3: null });
-      setFormData((prev) => ({
-        ...prev,
-        installed_pole_number: '',
-        supply_input: '',
-        ccms_phase: '',
-        dtc_number: '',
-        rr_number: '',
-        bescom_meter_sl_number: '',
-        is_ct_meter: '',
-        bescom_meter_status: '',
-        ccms_uid_no: '',
-        ccms_meter_no: '',
-        ccms_imei_no: '',
-        earthing_completed: '',
-        ccms_landmark: '',
-        ccms_meter_voltage: '',
-        ccms_meter_current: '',
-        ccms_meter_pf: '',
-        ccms_meter_power_kw: '',
-        bescom_meter_reading_no: '',
-        bescom_meter_voltage: '',
-        bescom_meter_current: '',
-        bescom_meter_pf: '',
-        bescom_meter_power_kw: '',
-      }));
     } catch (error) {
       console.error('CCMS submit error:', error);
       const isClientError = error.response && error.response.status >= 400 && error.response.status < 500;
-      // If server returned a 4xx validation error while online, clean up this offline attempt so it doesn't linger as duplicate
-      if (isClientError && offlineRowId) {
-        try {
-          await offlineDb.submissions.delete(offlineRowId);
-        } catch (delErr) {
-          console.warn('Could not delete failed offline row:', delErr);
+      
+      if (offlineRowId) {
+        // Check if the record was already created on the server
+        const currentRow = await offlineDb.submissions.get(offlineRowId).catch(() => null);
+        const hasServerRecord = currentRow?.serverEntityId;
+        
+        if (isClientError && !hasServerRecord) {
+          // 4xx on record creation itself (validation error) — safe to delete, no server record exists
+          try {
+            await offlineDb.submissions.delete(offlineRowId);
+          } catch (delErr) {
+            console.warn('Could not delete failed offline row:', delErr);
+          }
+        } else {
+          // Record exists on server but image upload failed, OR network error — keep for retry
+          await offlineDb.submissions.update(offlineRowId, {
+            status: 'failed',
+            lastError: error.response?.data?.message || error.message || 'Upload failed',
+            lastRetryAt: Date.now(),
+          }).catch(() => {});
         }
       }
+      
       const errMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'Error submitting CCMS record';
       if (!navigator.onLine) {
         alert('Offline: CCMS Survey saved to offline queue. It will automatically upload when network reconnects.');

@@ -225,25 +225,62 @@ class OfflineSyncService {
 
     // Step 2: Upload images one by one
     if (entityId && images.length > 0) {
+      // Determine the correct file upload endpoint based on project/type
+      const isTgpl = ['3', '4'].includes(String(sub.projectId));
+      const fileUploadBase = isTgpl
+        ? `${API_BASE_URL}/projects/${sub.projectId}/tgpl-survey/files`
+        : `${API_BASE_URL}/projects/${sub.projectId}/pole-survey/files`;
+      const fileCheckBase = `${API_BASE_URL}/projects/${sub.projectId}/pole-survey/files`;
+
       // Check server for already uploaded files to prevent duplicate image uploads on retry
       try {
         const existingFilesRes = await axios.get(
-          `${API_BASE_URL}/projects/${sub.projectId}/pole-survey/files?entity_type=${sub.type}&entity_id=${entityId}`,
+          `${fileCheckBase}?entity_type=${sub.type}&entity_id=${entityId}`,
           { headers: { 'Authorization': `Bearer ${token}` } }
         );
-        const uploadedCount = Array.isArray(existingFilesRes.data?.files) ? existingFilesRes.data.files.length : 0;
-        if (uploadedCount > 0) {
+        const serverFiles = Array.isArray(existingFilesRes.data?.files) ? existingFilesRes.data.files : [];
+        if (serverFiles.length > 0) {
+          // Match server files to our image keys by file_name or position
           const keys = getImageKeys(sub);
-          keys.slice(0, uploadedCount).forEach((key) => {
-            imageUploadStatus[key] = true;
-          });
+          for (const sf of serverFiles) {
+            const matchedKey = sf.file_name && keys.includes(sf.file_name) ? sf.file_name : null;
+            if (matchedKey) {
+              imageUploadStatus[matchedKey] = true;
+            }
+          }
+          // If no file_name match, fall back to positional mapping
+          const matchedCount = Object.values(imageUploadStatus).filter(Boolean).length;
+          if (matchedCount === 0 && serverFiles.length > 0) {
+            keys.slice(0, serverFiles.length).forEach((key) => {
+              imageUploadStatus[key] = true;
+            });
+          }
           await offlineDb.submissions.update(sub.id, { imageUploadStatus });
-          this.log('SERVER_FILES_SYNCED', { offlineSubmissionId, entityId, uploadedCount });
+          this.log('SERVER_FILES_SYNCED', { offlineSubmissionId, entityId, matchedCount: Object.values(imageUploadStatus).filter(Boolean).length });
         }
       } catch (checkErr) {
         console.warn('Could not fetch existing server files for entity:', checkErr.message);
       }
 
+      // Also check the CCMS record's direct image URL columns for already-uploaded images
+      if (sub.type === 'ccms' && isTgpl) {
+        try {
+          const ccmsCheckRes = await axios.get(
+            `${API_BASE_URL}/projects/${sub.projectId}/tgpl-survey/ccms/${entityId}`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+          );
+          const ccmsRow = ccmsCheckRes.data?.ccms || ccmsCheckRes.data || {};
+          if (ccmsRow.bescom_meter_image_url) imageUploadStatus['bescom_meter_image_url'] = true;
+          if (ccmsRow.ccms_meter_image_url) imageUploadStatus['ccms_meter_image_url'] = true;
+          if (ccmsRow.ccms_box_image_url) imageUploadStatus['ccms_box_image_url'] = true;
+          await offlineDb.submissions.update(sub.id, { imageUploadStatus });
+          this.log('CCMS_COLUMN_CHECK', { offlineSubmissionId, entityId, imageUploadStatus: { ...imageUploadStatus } });
+        } catch (ccmsCheckErr) {
+          console.warn('Could not check CCMS record for existing image URLs:', ccmsCheckErr.message);
+        }
+      }
+
+      let anyImageFailed = false;
       const startAllImages = performance.now();
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
@@ -263,20 +300,37 @@ class OfflineSyncService {
         formDataUpload.append('field_name', img.fieldName || '');
         formDataUpload.append('slot', img.slot || (i + 1));
 
-        await axios.post(
-          `${API_BASE_URL}/projects/${sub.projectId}/pole-survey/files`,
-          formDataUpload,
-          { headers: { 'Authorization': `Bearer ${token}` } }
-        );
-        imageUploadStatus[img.fieldName] = true;
-        await offlineDb.submissions.update(sub.id, {
-          imageUploadStatus,
-          lastUploadedAt: Date.now(),
-        });
-        this.log('IMAGE_UPLOADED', { offlineSubmissionId, entityId, fieldName: img.fieldName });
-        console.log(`⏱️ [Sync] Image ${i + 1} upload: ${(performance.now() - startSingleImage).toFixed(2)}ms`);
+        try {
+          await axios.post(
+            fileUploadBase,
+            formDataUpload,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+          );
+          imageUploadStatus[img.fieldName] = true;
+          await offlineDb.submissions.update(sub.id, {
+            imageUploadStatus: { ...imageUploadStatus },
+            lastUploadedAt: Date.now(),
+          });
+          this.log('IMAGE_UPLOADED', { offlineSubmissionId, entityId, fieldName: img.fieldName });
+          console.log(`⏱️ [Sync] Image ${i + 1} upload: ${(performance.now() - startSingleImage).toFixed(2)}ms`);
+        } catch (imgErr) {
+          anyImageFailed = true;
+          this.log('IMAGE_UPLOAD_FAILED', {
+            offlineSubmissionId, entityId, fieldName: img.fieldName,
+            error: imgErr.response?.data?.message || imgErr.message,
+          });
+          console.error(`❌ [Sync] Image ${img.fieldName} upload failed:`, imgErr.message);
+          // Continue to try remaining images instead of aborting entirely
+        }
       }
       console.log(`⏱️ [Sync] Total images upload: ${(performance.now() - startAllImages).toFixed(2)}ms`);
+
+      // If any image failed, throw to trigger retry rather than marking as synced
+      if (anyImageFailed) {
+        const failedFields = Object.entries(imageUploadStatus)
+          .filter(([, v]) => !v).map(([k]) => k);
+        throw new Error(`Image upload incomplete: ${failedFields.join(', ')} failed. Will retry.`);
+      }
     }
     console.log(`🚀 [Sync] Total time for ${sub.type}: ${(performance.now() - startTotal).toFixed(2)}ms`);
   }
