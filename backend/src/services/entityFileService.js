@@ -185,56 +185,56 @@ async function getFilesForEntity(projectId, entityType, entityId) {
               }
             });
           }
-        }
-
-        const isTgpl2 = String(projectId) === '4';
-        let table = isTgpl2 ? 'tgpl2_poles' : 'poles';
-        if (String(projectId) === '3' && entityType === 'installation') {
-          table = 'tgpl_installations';
-        }
-        const rowRes = await query(`SELECT image_url_1, image_url_2, image_url_3, created_at FROM ${table} WHERE id = $1`, [entityId]);
-        if (rowRes.rows.length > 0) {
-          const row = rowRes.rows[0];
-          const extraFiles = [];
-          if (row.image_url_1) {
-            extraFiles.push({
-              id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityType}-${entityId}-1`,
-              project_id: Number(projectId),
-              entity_type: entityType,
-              entity_id: entityId,
-              url: row.image_url_1,
-              signed_url: row.image_url_1,
-              uploaded_at: row.created_at || new Date()
-            });
+        } else {
+          const isTgpl2 = String(projectId) === '4';
+          let table = isTgpl2 ? 'tgpl2_poles' : 'poles';
+          if (String(projectId) === '3' && entityType === 'installation') {
+            table = 'tgpl_installations';
           }
-          if (row.image_url_2) {
-            extraFiles.push({
-              id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityType}-${entityId}-2`,
-              project_id: Number(projectId),
-              entity_type: entityType,
-              entity_id: entityId,
-              url: row.image_url_2,
-              signed_url: row.image_url_2,
-              uploaded_at: row.created_at || new Date()
-            });
-          }
-          if (row.image_url_3) {
-            extraFiles.push({
-              id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityType}-${entityId}-3`,
-              project_id: Number(projectId),
-              entity_type: entityType,
-              entity_id: entityId,
-              url: row.image_url_3,
-              signed_url: row.image_url_3,
-              uploaded_at: row.created_at || new Date()
-            });
-          }
-          const existingUrls = new Set(filesWithUrls.map(f => f.signed_url));
-          extraFiles.forEach(f => {
-            if (!existingUrls.has(f.signed_url)) {
-              filesWithUrls.push(f);
+          const rowRes = await query(`SELECT image_url_1, image_url_2, image_url_3, created_at FROM ${table} WHERE id = $1`, [entityId]);
+          if (rowRes.rows.length > 0) {
+            const row = rowRes.rows[0];
+            const extraFiles = [];
+            if (row.image_url_1) {
+              extraFiles.push({
+                id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityType}-${entityId}-1`,
+                project_id: Number(projectId),
+                entity_type: entityType,
+                entity_id: entityId,
+                url: row.image_url_1,
+                signed_url: row.image_url_1,
+                uploaded_at: row.created_at || new Date()
+              });
             }
-          });
+            if (row.image_url_2) {
+              extraFiles.push({
+                id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityType}-${entityId}-2`,
+                project_id: Number(projectId),
+                entity_type: entityType,
+                entity_id: entityId,
+                url: row.image_url_2,
+                signed_url: row.image_url_2,
+                uploaded_at: row.created_at || new Date()
+              });
+            }
+            if (row.image_url_3) {
+              extraFiles.push({
+                id: `fallback-tgpl${isTgpl2 ? '2' : ''}-${entityType}-${entityId}-3`,
+                project_id: Number(projectId),
+                entity_type: entityType,
+                entity_id: entityId,
+                url: row.image_url_3,
+                signed_url: row.image_url_3,
+                uploaded_at: row.created_at || new Date()
+              });
+            }
+            const existingUrls = new Set(filesWithUrls.map(f => f.signed_url));
+            extraFiles.forEach(f => {
+              if (!existingUrls.has(f.signed_url)) {
+                filesWithUrls.push(f);
+              }
+            });
+          }
         }
       } catch (fallbackErr) {
         console.error('Error querying record for TGPL image fallback:', fallbackErr.message);

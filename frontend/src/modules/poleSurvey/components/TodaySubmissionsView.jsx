@@ -665,10 +665,10 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
       )}
 
       {/* Inspect Modal */}
-      {(selectedSubmission?.survey_type === 'ccms' || (selectedSubmission && activeSurveyType === 'ccms')) ? (
+      {(selectedSubmission?.survey_type === 'ccms' || selectedSubmission?.type === 'ccms' || (selectedSubmission && activeSurveyType === 'ccms')) ? (
         <CcmsInspectModal
           submission={selectedSubmission}
-          isOpen={!!selectedSubmission}
+          projectId={projectId}
           onClose={() => { setSelectedSubmission(null); setIsEditing(false); }}
           onConfirm={(sub) => {
             confirmMutation.mutate({ id: sub.id, type: 'ccms', survey_type: 'ccms' });
@@ -680,12 +680,10 @@ export const TodaySubmissionsView = ({ projectId: propProjectId }) => {
               setSelectedSubmission(null);
             }
           }}
-          onSuccess={() => {
-            queryClient.invalidateQueries(['tgpl-survey-submissions']);
-            queryClient.invalidateQueries(['todaySubmissions']);
-            setSelectedSubmission(null);
-          }}
-          readOnly={activeTab !== 'pending'}
+          canConfirm={canShowConfirm && activeTab === 'pending'}
+          canDelete={false}
+          isConfirming={confirmMutation.isPending}
+          isDeleting={deleteMutation.isPending}
         />
       ) : selectedSubmission && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

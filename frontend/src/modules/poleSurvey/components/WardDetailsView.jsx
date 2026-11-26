@@ -791,10 +791,10 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
               {/* CCMS Survey Points Section */}
               {isTgpl && (
                 <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1.5">
-                    ⚡ CCMS Points
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    CCMS Points
                     {ccmsPoints.length > 0 && (
-                      <span className="ml-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{ccmsPoints.length}</span>
+                      <span className="ml-1 bg-slate-200 text-slate-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{Object.keys(ccmsPointGroups).length}</span>
                     )}
                   </h4>
                   {isLoadingCcmsPoints ? (
@@ -807,14 +807,14 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                         <button
                           key={group.id}
                           onClick={() => setSelectedCcms({ id: group.id, type: 'ccms' })}
-                          className={`rounded-lg border p-3 text-center transition ${selectedCcms.id === group.id && selectedCcms.type === 'ccms' ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50'}`}
+                          className={`rounded-lg border p-3 text-center transition ${selectedCcms.id === group.id && selectedCcms.type === 'ccms' ? 'border-primary bg-primary/5 text-primary shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'}`}
                         >
                           <p className="text-xs text-slate-500">CCMS</p>
                           <p className="text-base font-bold truncate max-w-full" title={group.switch_point_number}>
                             {group.switch_point_number}
                           </p>
                           <div className="mt-2 text-[10px]">
-                            <span className="inline-block w-full rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700 font-semibold">
+                            <span className="inline-block w-full rounded bg-emerald-50 px-1 py-0.5 text-emerald-700">
                               Poles: {group.poles.length}
                             </span>
                           </div>

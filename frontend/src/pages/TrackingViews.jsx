@@ -8,6 +8,7 @@ import { useMobileUserTracking } from '../shared/hooks/useMobileUserTracking';
 import { getLocalDateString } from '../shared/utils/date';
 import { PoleInspectModal } from '../modules/poleSurvey/components/PoleInspectModal';
 import { SwitchPointInspectModal } from '../modules/poleSurvey/components/SwitchPointInspectModal';
+import { CcmsInspectModal } from '../modules/poleSurvey/components/CcmsInspectModal';
 
 export function AdminTrackingView({ projectId }) {
   const { data: tracking = [], isLoading } = useAdminTracking(projectId);
@@ -575,7 +576,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
       setLoadingImages(true);
       try {
         const res = await axios.get(
-          `${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${selectedSub.type}&entity_id=${selectedSub.id}`,
+          `${API_BASE_URL}/projects/${projectId}/pole-survey/files?entity_type=${(selectedSub.survey_type === 'ccms' || selectedSub.type === 'ccms' || activeSurveyType === 'ccms') ? 'ccms' : selectedSub.survey_type === 'installation' ? 'installation' : selectedSub.type}&entity_id=${selectedSub.id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -638,7 +639,7 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
               Installation
             </button>
             <button
-              className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeSurveyType === 'ccms' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              className={`rounded-md px-4 py-1.5 text-xs font-semibold transition ${activeSurveyType === 'ccms' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
               onClick={() => setActiveSurveyType('ccms')}
             >
               ⚡ CCMS
@@ -716,7 +717,8 @@ function UserSubmissionsList({ projectId, userId, confirmedBy, status, fromDate 
         <div className="py-12 text-center text-slate-500">No submissions found.</div>
       )}
 
-      {selectedSub && selectedSub.type === 'pole' && (
+      {selectedSub && (selectedSub.type === 'ccms' || selectedSub.survey_type === 'ccms' || activeSurveyType === 'ccms') && (<CcmsInspectModal submission={{ ...selectedSub, status: selectedSub.status || status }} projectId={projectId} onClose={() => setSelectedSub(null)} />)}
+      {selectedSub && selectedSub.type === 'pole' && selectedSub.survey_type !== 'ccms' && activeSurveyType !== 'ccms' && (
         <PoleInspectModal
           pole={{ ...selectedSub, status: selectedSub.status || status }}
           onClose={() => setSelectedSub(null)}
