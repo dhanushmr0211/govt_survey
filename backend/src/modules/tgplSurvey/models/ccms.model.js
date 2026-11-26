@@ -1,4 +1,27 @@
-const { query } = require('../../../config/db');
+const { query, pool } = require('../../../config/db');
+
+async function resolveCcmsUsers(rows) {
+  if (!rows || rows.length === 0) return rows;
+  const userIds = new Set();
+  rows.forEach((r) => {
+    if (r.created_by && !isNaN(Number(r.created_by))) userIds.add(Number(r.created_by));
+    if (r.confirmed_by && !isNaN(Number(r.confirmed_by))) userIds.add(Number(r.confirmed_by));
+  });
+  if (userIds.size === 0) return rows;
+  try {
+    const uRes = await pool.query('SELECT id, name FROM users WHERE id = ANY($1)', [Array.from(userIds)]);
+    const userMap = {};
+    uRes.rows.forEach((u) => { userMap[u.id] = u.name; });
+    return rows.map((r) => ({
+      ...r,
+      created_by_name: userMap[r.created_by] || r.created_by_name || null,
+      confirmed_by_name: userMap[r.confirmed_by] || r.confirmed_by_name || null,
+    }));
+  } catch (err) {
+    console.error('Error resolving CCMS user names:', err.message);
+    return rows;
+  }
+}
 
 /**
  * Creates a new CCMS Survey record in tgpl_ccms table.
@@ -195,12 +218,10 @@ async function getAllCcmsRecordsByWard(projectId, wardId) {
   const numId = /^[0-9]+$/.test(raw) ? parseInt(raw, 10) : null;
   const result = await query(
     `SELECT c.*, w.name as ulb_name, w.name as ward_name,
-            u_cr.name as created_by_name,
-            u_conf.name as confirmed_by_name
+            NULL::text as created_by_name,
+            NULL::text as confirmed_by_name
      FROM tgpl_ccms c
      LEFT JOIN wards w ON c.ward_id = w.id
-     LEFT JOIN users u_cr ON c.created_by = u_cr.id
-     LEFT JOIN users u_conf ON c.confirmed_by = u_conf.id
      WHERE (c.project_id = $1 OR c.project_id IS NULL)
        AND (
          ($2::int IS NOT NULL AND (c.ward_id = $2 OR w.id = $2))
@@ -211,22 +232,21 @@ async function getAllCcmsRecordsByWard(projectId, wardId) {
      ORDER BY c.created_at DESC`,
     [Number(projectId) || 3, numId, raw]
   );
-  return result.rows;
+  return resolveCcmsUsers(result.rows);
 }
 
 async function getCcmsById(id, projectId) {
   const result = await query(
-    `SELECT c.*, w.name as ulb_name,
-            u_cr.name as created_by_name,
-            u_conf.name as confirmed_by_name
+    `SELECT c.*, w.name as ulb_name, w.name as ward_name,
+            NULL::text as created_by_name,
+            NULL::text as confirmed_by_name
      FROM tgpl_ccms c
-     JOIN wards w ON c.ward_id = w.id
-     LEFT JOIN users u_cr ON c.created_by = u_cr.id
-     LEFT JOIN users u_conf ON c.confirmed_by = u_conf.id
-     WHERE c.id = $1 AND c.project_id = $2 AND c.is_deleted = FALSE`,
+     LEFT JOIN wards w ON c.ward_id = w.id
+     WHERE c.id = $1 AND (c.project_id = $2 OR c.project_id IS NULL) AND c.is_deleted = FALSE`,
     [Number(id), Number(projectId) || 3]
   );
-  return result.rows[0] || null;
+  const resolved = await resolveCcmsUsers(result.rows);
+  return resolved[0] || null;
 }
 
 async function confirmCcmsRecord(id, projectId, userId) {

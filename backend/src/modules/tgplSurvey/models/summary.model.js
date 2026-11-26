@@ -2018,7 +2018,7 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
         p.id,
         p.ward_id as ulb_id,
         p.created_by as user_id,
-        u_cre.name as user_name,
+        NULL::text as user_name,
         p.created_at,
         w.name as ward_number,
         p.pole_number::text as identifier,
@@ -2026,10 +2026,10 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
         p.ccms_number::text as switch_point_number,
         p.confirmed_by,
         p.confirmed_at,
-        u_conf.name as confirmed_by_name,
+        NULL::text as confirmed_by_name,
         p.deleted_by,
         p.deleted_at,
-        u_del.name as deleted_by_name,
+        NULL::text as deleted_by_name,
         NULL::text as switch_point_type,
         NULL::boolean as meter_exists,
         p.meter_type,
@@ -2086,9 +2086,6 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
         p.remarks as remarks
       FROM poles p
       JOIN wards w ON p.ward_id = w.id
-      LEFT JOIN users u_cre ON p.created_by = u_cre.id
-      LEFT JOIN users u_conf ON p.confirmed_by = u_conf.id
-      LEFT JOIN users u_del ON p.deleted_by = u_del.id
       WHERE p.project_id = $1 AND p.is_deleted = TRUE
       ${pDateFilterP}
       ${scopeFilterP}
@@ -2102,7 +2099,7 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
         i.id,
         i.ward_id as ulb_id,
         i.created_by as user_id,
-        u_cre.name as user_name,
+        NULL::text as user_name,
         i.created_at,
         w.name as ward_number,
         i.pole_number::text as identifier,
@@ -2110,10 +2107,10 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
         i.ccms_number::text as switch_point_number,
         i.confirmed_by,
         i.confirmed_at,
-        u_conf.name as confirmed_by_name,
+        NULL::text as confirmed_by_name,
         i.deleted_by,
         i.deleted_at,
-        u_del.name as deleted_by_name,
+        NULL::text as deleted_by_name,
         NULL::text as switch_point_type,
         NULL::boolean as meter_exists,
         NULL as meter_type,
@@ -2170,9 +2167,6 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
         i.remarks as remarks
       FROM tgpl_installations i
       JOIN wards w ON i.ward_id = w.id
-      LEFT JOIN users u_cre ON i.created_by = u_cre.id
-      LEFT JOIN users u_conf ON i.confirmed_by = u_conf.id
-      LEFT JOIN users u_del ON i.deleted_by = u_del.id
       WHERE i.project_id = $1 AND i.is_deleted = TRUE
       ${pDateFilterI}
       ${scopeFilterI}
@@ -2186,7 +2180,7 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
         c.id,
         c.ward_id as ulb_id,
         c.created_by as user_id,
-        u_cre.name as user_name,
+        NULL::text as user_name,
         c.created_at,
         w.name as ward_number,
         c.installed_pole_number::text as identifier,
@@ -2194,10 +2188,10 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
         c.ccms_number::text as switch_point_number,
         c.confirmed_by,
         c.confirmed_at,
-        u_conf.name as confirmed_by_name,
+        NULL::text as confirmed_by_name,
         c.deleted_by,
         c.deleted_at,
-        u_del.name as deleted_by_name,
+        NULL::text as deleted_by_name,
         'CCMS' as switch_point_type,
         TRUE as meter_exists,
         c.is_ct_meter as meter_type,
@@ -2257,9 +2251,6 @@ async function getDeletedSubmissions(projectId, page = 1, limit = 50, _districtS
         c.ccms_landmark as remarks
       FROM tgpl_ccms c
       JOIN wards w ON c.ward_id = w.id
-      LEFT JOIN users u_cre ON c.created_by = u_cre.id
-      LEFT JOIN users u_conf ON c.confirmed_by = u_conf.id
-      LEFT JOIN users u_del ON c.deleted_by = u_del.id
       WHERE c.project_id = $1 AND c.is_deleted = TRUE
       ${pDateFilterC}
       ${scopeFilterC}
