@@ -137,16 +137,17 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   });
 
   const { data: ccmsPointsData = { allCcms: [] }, isLoading: isLoadingCcmsPoints } = useQuery({
-    queryKey: ['ccmsPoints', effectiveProjectId, selectedWard],
+    queryKey: ['ccmsPoints', effectiveProjectId, ulb?.ulb_id, selectedWard],
     queryFn: async () => {
-      if (!isTgpl || !selectedWard) return { allCcms: [] };
+      const targetWard = ulb?.ulb_id || selectedWard;
+      if (!isTgpl || !targetWard) return { allCcms: [] };
       const res = await axios.get(
-        `${API_BASE_URL}/projects/${effectiveProjectId}/tgpl-survey/ccms/by-ward/${encodeURIComponent(selectedWard)}`,
+        `${API_BASE_URL}/projects/${effectiveProjectId}/tgpl-survey/ccms/by-ward/${encodeURIComponent(targetWard)}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       return res.data;
     },
-    enabled: !!selectedWard && isTgpl,
+    enabled: !!(ulb?.ulb_id || selectedWard) && isTgpl,
   });
   const ccmsPoints = ccmsPointsData?.allCcms || [];
 
@@ -604,7 +605,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
   const surveySwitchPoints = useMemo(() => {
     if (!isCcmsLayout) return {};
     return details.reduce((acc, item) => {
-      if (item.survey_type === 'installation') return acc;
+      if (item.survey_type === 'installation' || item.survey_type === 'ccms') return acc;
       const ccmsKey = item.ccms_number || 'NO_CCMS';
       if (!acc[ccmsKey]) {
         acc[ccmsKey] = {
@@ -701,7 +702,7 @@ export const WardDetailsView = ({ projectId, ulb, onBack, date = null, mode = 'e
                 <div key={i} className="h-16 animate-pulse rounded-lg bg-white"></div>
               ))}
             </div>
-          ) : Object.values(surveySwitchPoints).length === 0 && Object.values(installationSwitchPoints).length === 0 ? (
+          ) : Object.values(surveySwitchPoints).length === 0 && Object.values(installationSwitchPoints).length === 0 && (!isTgpl || ccmsPoints.length === 0) ? (
             <div className="py-4 text-center text-slate-500 text-sm">No CCMS units found in this ward.</div>
           ) : (
             <div className="space-y-4">

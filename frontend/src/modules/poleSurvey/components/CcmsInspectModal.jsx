@@ -43,11 +43,14 @@ export const CcmsInspectModal = ({
 
   // Resolve 3 images: either from entity_files or fallback to direct columns on submission
   const bescomImg = images.find(f => f.file_name?.toLowerCase().includes('bescom'))?.signed_url ||
-                    submission.bescom_meter_image_url || null;
+                    submission.bescom_meter_image_url ||
+                    images[0]?.signed_url || null;
   const ccmsMeterImg = images.find(f => f.file_name?.toLowerCase().includes('ccms_meter'))?.signed_url ||
-                       submission.ccms_meter_image_url || null;
+                       submission.ccms_meter_image_url ||
+                       images[1]?.signed_url || null;
   const ccmsBoxImg = images.find(f => f.file_name?.toLowerCase().includes('box'))?.signed_url ||
-                     submission.ccms_box_image_url || null;
+                     submission.ccms_box_image_url ||
+                     images[2]?.signed_url || null;
 
   const photoList = [
     { label: 'BESCOM Meter Sl. No Image', url: bescomImg },

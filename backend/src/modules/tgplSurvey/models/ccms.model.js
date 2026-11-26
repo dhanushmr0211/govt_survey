@@ -150,8 +150,8 @@ async function getCcmsByWard(projectId, wardId) {
   const result = await query(
     `SELECT c.ccms_number, MAX(c.id) as id, MAX(c.created_at) as created_at
      FROM tgpl_ccms c
-     JOIN wards w ON c.ward_id = w.id
-     WHERE c.project_id = $1 
+     LEFT JOIN wards w ON c.ward_id = w.id
+     WHERE (c.project_id = $1 OR c.project_id IS NULL)
        AND (
          ($2::int IS NOT NULL AND (c.ward_id = $2 OR w.id = $2))
          OR LOWER(TRIM(w.name)) = LOWER($3)
@@ -173,8 +173,8 @@ async function getLastCcmsByWard(projectId, wardId) {
   const numId = /^[0-9]+$/.test(raw) ? parseInt(raw, 10) : null;
   const result = await query(
     `SELECT c.* FROM tgpl_ccms c
-     JOIN wards w ON c.ward_id = w.id
-     WHERE c.project_id = $1 
+     LEFT JOIN wards w ON c.ward_id = w.id
+     WHERE (c.project_id = $1 OR c.project_id IS NULL)
        AND (
          ($2::int IS NOT NULL AND (c.ward_id = $2 OR w.id = $2))
          OR LOWER(TRIM(w.name)) = LOWER($3)
@@ -194,14 +194,14 @@ async function getAllCcmsRecordsByWard(projectId, wardId) {
   const raw = String(wardId || '').trim();
   const numId = /^[0-9]+$/.test(raw) ? parseInt(raw, 10) : null;
   const result = await query(
-    `SELECT c.*, w.name as ulb_name,
+    `SELECT c.*, w.name as ulb_name, w.name as ward_name,
             u_cr.name as created_by_name,
             u_conf.name as confirmed_by_name
      FROM tgpl_ccms c
-     JOIN wards w ON c.ward_id = w.id
+     LEFT JOIN wards w ON c.ward_id = w.id
      LEFT JOIN users u_cr ON c.created_by = u_cr.id
      LEFT JOIN users u_conf ON c.confirmed_by = u_conf.id
-     WHERE c.project_id = $1 
+     WHERE (c.project_id = $1 OR c.project_id IS NULL)
        AND (
          ($2::int IS NOT NULL AND (c.ward_id = $2 OR w.id = $2))
          OR LOWER(TRIM(w.name)) = LOWER($3)
