@@ -4,6 +4,7 @@
  */
 const NUMERIC_COLS = [
   'pole_number',
+  'installed_pole_number',
   'switch_point_number',
   'ccms_number',
   'pole_height',
