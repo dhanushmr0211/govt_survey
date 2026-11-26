@@ -2291,12 +2291,22 @@ async function getMyConfirmedStats(projectId, userId) {
      WHERE project_id = $1 AND confirmed_by = $2 AND is_deleted = FALSE`,
     [projectId, userId]
   );
+  const ccmsResult = await query(
+    `SELECT 
+       COUNT(1)::int as total_ccms,
+       COUNT(CASE WHEN (timezone('Asia/Kolkata', timezone('UTC', confirmed_at)))::date = (timezone('Asia/Kolkata', NOW()))::date THEN 1 END)::int as today_ccms
+     FROM tgpl_ccms 
+     WHERE project_id = $1 AND confirmed_by = $2 AND is_deleted = FALSE`,
+    [projectId, userId]
+  );
 
   return {
     total_survey: surveyResult.rows[0]?.total_survey || 0,
     total_installation: instResult.rows[0]?.total_installation || 0,
+    total_ccms: ccmsResult.rows[0]?.total_ccms || 0,
     today_survey: surveyResult.rows[0]?.today_survey || 0,
-    today_installation: instResult.rows[0]?.today_installation || 0
+    today_installation: instResult.rows[0]?.today_installation || 0,
+    today_ccms: ccmsResult.rows[0]?.today_ccms || 0
   };
 }
 

@@ -347,17 +347,22 @@ export default function Profile() {
                     </div>
                   </div>
                 ) : (
-                  /* Project 3 Layout: Survey & Installation */
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  /* Project 3 Layout: Survey, Installation & CCMS Points */
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.75rem' }}>
                     <div style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', textAlign: 'center' }}>
-                      <p style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>SURVEY POLES</p>
-                      <p style={{ fontSize: '2rem', fontWeight: '800', color: '#0f172a', margin: '0.5rem 0 0.25rem' }}>{statsData.total_survey}</p>
-                      <p style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>+ {statsData.today_survey} today</p>
+                      <p style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SURVEY POLES</p>
+                      <p style={{ fontSize: '2rem', fontWeight: '800', color: '#0f172a', margin: '0.5rem 0 0.25rem' }}>{statsData.total_survey ?? 0}</p>
+                      <p style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>+ {statsData.today_survey ?? 0} today</p>
                     </div>
                     <div style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', textAlign: 'center' }}>
-                      <p style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', tracking: '0.05em' }}>INSTALLATIONS</p>
-                      <p style={{ fontSize: '2rem', fontWeight: '800', color: '#0f172a', margin: '0.5rem 0 0.25rem' }}>{statsData.total_installation}</p>
-                      <p style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>+ {statsData.today_installation} today</p>
+                      <p style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>INSTALLATIONS</p>
+                      <p style={{ fontSize: '2rem', fontWeight: '800', color: '#0f172a', margin: '0.5rem 0 0.25rem' }}>{statsData.total_installation ?? 0}</p>
+                      <p style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>+ {statsData.today_installation ?? 0} today</p>
+                    </div>
+                    <div style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', textAlign: 'center' }}>
+                      <p style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CCMS POINTS</p>
+                      <p style={{ fontSize: '2rem', fontWeight: '800', color: '#0f172a', margin: '0.5rem 0 0.25rem' }}>{statsData.total_ccms ?? 0}</p>
+                      <p style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>+ {statsData.today_ccms ?? 0} today</p>
                     </div>
                   </div>
                 )}

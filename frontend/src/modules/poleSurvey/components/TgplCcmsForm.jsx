@@ -1006,7 +1006,7 @@ export const TgplCcmsForm = ({ ward, onBack }) => {
               <span className="w-2 h-2 rounded-full bg-primary"></span> 3 Compulsory Images
             </h3>
             <p className="text-[11px] text-gray-500 mt-0.5">
-              All 3 images must be captured. Stored in Cloud Storage under <span className="font-semibold text-primary">tgpl_ccms_images/</span>.
+              All 3 images must be captured.<span className="text-gray-600">Ensure that the face of the meter (the part with the display) and the barcode are clearly visible</span>.
             </p>
           </div>
 

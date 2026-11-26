@@ -149,8 +149,8 @@ export default function MobileSurvey() {
                         <span className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.installation_poles ?? 0}</span>
                       </div>
                       <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-emerald-100 col-span-2">
-                        <span className="text-xs font-semibold text-emerald-700">⚡ CCMS Points</span>
-                        <span className="text-2xl font-black text-emerald-600 mt-1">{stats?.today?.ccms_survey ?? 0}</span>
+                        <span className="text-xs font-semibold text-gray-400">CCMS Points</span>
+                        <span className="text-2xl font-black text-gray-900 mt-1">{stats?.today?.ccms_survey ?? 0}</span>
                       </div>
                     </>
                   )}
@@ -186,8 +186,8 @@ export default function MobileSurvey() {
                         <span className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.installation_poles ?? 0}</span>
                       </div>
                       <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col transition-all hover:shadow-md hover:border-blue-100 col-span-2">
-                        <span className="text-xs font-semibold text-blue-700">⚡ CCMS Points</span>
-                        <span className="text-2xl font-black text-blue-600 mt-1">{stats?.total?.ccms_survey ?? 0}</span>
+                        <span className="text-xs font-semibold text-gray-400">CCMS Points</span>
+                        <span className="text-2xl font-black text-gray-900 mt-1">{stats?.total?.ccms_survey ?? 0}</span>
                       </div>
                     </>
                   )}
@@ -232,6 +232,10 @@ export default function MobileSurvey() {
                      <div className="bg-amber-50/30 p-4 rounded-xl border border-amber-100/50 flex flex-col items-center">
                        <span className="text-xs font-semibold text-amber-700/80">Installation Poles</span>
                        <span className="text-2xl font-black text-amber-900 mt-1">{stats?.dateWise?.installation_poles ?? 0}</span>
+                     </div>
+                     <div className="bg-amber-50/30 p-4 rounded-xl border border-amber-100/50 flex flex-col items-center col-span-2">
+                       <span className="text-xs font-semibold text-amber-700/80">CCMS Points</span>
+                       <span className="text-2xl font-black text-amber-900 mt-1">{stats?.dateWise?.ccms_survey ?? 0}</span>
                      </div>
                    </>
                  )}
